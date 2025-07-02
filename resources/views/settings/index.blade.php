@@ -111,15 +111,6 @@
 										<i class="bi bi-plus"></i>
 									</span>
 								</a>
-                                <form method="POST" action="/run-command" id="runCommandForm">
-                                    @csrf
-                                    <button type="submit" class="btn btn-success" title="Generate">
-                                        <span class="d-lg-block d-none">Run Command</span>
-                                        <span class="d-sm-block d-lg-none">
-                                            <i class="bi bi-gear"></i>
-                                        </span>
-                                    </button>
-                                </form>
                             </div>
 							@endif
 						</div>
