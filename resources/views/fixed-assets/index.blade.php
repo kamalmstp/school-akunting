@@ -46,9 +46,15 @@
 										<label for="accountFilter" class="form-label">Akun</label>
 										<select name="account" class="form-select" id="accountFilter">
 											<option value="">Pilih Akun</option>
-											@foreach (\App\Models\Account::where('account_type', 'Aset Tetap')->where('name', 'not like', '%akumulasi%')->get() as $key => $accountData)
-												<option value="{{ $accountData->id }}" {{ $account == $accountData->id ? 'selected' : '' }}>{{ $accountData->code }} - {{ $accountData->name }}</option>
-											@endforeach
+											@if(auth()->user()->role == 'SchoolAdmin')
+												@foreach (\App\Models\Account::where('account_type', 'Aset Tetap')->where('name', 'not like', '%akumulasi%')->where('school_id', '=', auth()->user()->school_id)->get() as $key => $accountData)
+													<option value="{{ $accountData->id }}" {{ $account == $accountData->id ? 'selected' : '' }}>{{ $accountData->code }} - {{ $accountData->name }}</option>
+												@endforeach
+											@else
+												@foreach (\App\Models\Account::where('account_type', 'Aset Tetap')->where('name', 'not like', '%akumulasi%')->get() as $key => $accountData)
+													<option value="{{ $accountData->id }}" {{ $account == $accountData->id ? 'selected' : '' }}>{{ $accountData->code }} - {{ $accountData->name }}</option>
+												@endforeach
+											@endif
 										</select>
 									</div>
 								</div>
