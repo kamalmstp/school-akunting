@@ -124,7 +124,7 @@
 										<th scope="col">No</th>
 										<th scope="col">No Dokumen</th>
 										<th scope="col">Tanggal</th>
-                                        <th scope="col">Sekolah</th>
+                                        <!-- <th scope="col">Sekolah</th> -->
                                         <th scope="col">Akun</th>
                                         <th scope="col">Deskripsi</th>
                                         <th scope="col" class="text-end">Pemasukan</th>
@@ -138,7 +138,7 @@
 											<td>{{ $transactions->currentPage() * 10 - (9 - $index) }}</td>
                                             <td>{{ $transaction->doc_number ?? '-' }}</td>
                                             <td>{{ \Carbon\Carbon::parse($transaction->date)->format('d-m-Y') }}</td>
-                                            <td>{{ $transaction->school->name }}</td>
+                                            <!-- <td>{{ $transaction->school->name }}</td> -->
                                             <td>{{ $transaction->account->code }} - {{ $transaction->account->name }}</td>
                                             <td>{{ $transaction->description ?? '-' }}</td>
                                             <td class="text-end">{{ number_format($transaction->debit, 0, ',', '.') }}</td>
