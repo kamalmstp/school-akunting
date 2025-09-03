@@ -45,9 +45,15 @@
 										<label for="accountType" class="form-label">Tipe Akun</label>
 										<select name="account_type" class="form-select" id="accountType">
 											<option value="">Pilih Tipe Akun</option>
-											@foreach (\App\Models\Account::whereNull('parent_id')->pluck('name', 'id') as $key => $type)
-												<option value="{{ $type }}" {{ $accountType == $type ? 'selected' : '' }}>{{ $type }}</option>
-											@endforeach
+											@if(auth()->user()->role == 'SchoolAdmin')
+												@foreach (\App\Models\Account::whereNull('parent_id')->where('school_id', '=', auth()->user()->school_id)->pluck('name', 'id') as $key => $type)
+													<option value="{{ $type }}" {{ $accountType == $type ? 'selected' : '' }}>{{ $type }}</option>
+												@endforeach
+											@else
+												@foreach (\App\Models\Account::whereNull('parent_id')->pluck('name', 'id') as $key => $type)
+													<option value="{{ $type }}" {{ $accountType == $type ? 'selected' : '' }}>{{ $type }}</option>
+												@endforeach
+											@endif
 										</select>
 									</div>
 								</div>
