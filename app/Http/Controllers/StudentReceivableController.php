@@ -201,6 +201,25 @@ class StudentReceivableController extends Controller
         $totalInfaq = max($totalBayar * $infaq, 0);
         $totalBayarInfaq = max($totalBayar + $totalInfaq, 0);
 
+        //Cek SPP atau bukan
+        $akun = Account::find($request->account_id)->code;
+        $piutangInfaq = Account::where('code', '=', '1-120002')->where('school_id', '=', $schoolId)->first();
+        $pendapatanInfaq = Account::where('code', '=', '4-120002')->where('school_id', '=', $schoolId)->first();
+
+        if ($akun == '1-120001-3') { //jika jenis pembayaran SPP
+            $receivableInfaq = StudentReceivables::create([
+                'school_id' => $schoolId,
+                'student_id' => $request->student_id,
+                'account_id' => $piutangInfaq->id,
+                'amount' => $totalInfaq,
+                'paid_amount' => 0,
+                'due_date' => $request->due_date,
+                'status' => 'Unpaid',
+                'total_discount' => 0,
+                'total_payable' => $totalInfaq,
+            ]);
+        }
+
         // Save student receivable
         $receivable = StudentReceivables::create([
             'school_id' => $schoolId,
@@ -211,8 +230,7 @@ class StudentReceivableController extends Controller
             'due_date' => $request->due_date,
             'status' => 'Unpaid',
             'total_discount' => $totalPotongan,
-            'infaq' => $totalInfaq,
-            'total_payable' => $totalBayarInfaq,
+            'total_payable' => $totalBayar,
         ]);
 
         // Save related discounts
@@ -221,7 +239,32 @@ class StudentReceivableController extends Controller
         }
 
         $description = Account::find($request->account_id)->name . ' siswa: ' . Student::find($request->student_id)->name;
+        $descriptionInfaq = 'Piutang Internal siswa: ' . Student::find($request->student_id)->name;
         // Catat transaksi piutang (Debit pada akun piutang)
+        if ($akun == '1-120001-3') { //jika jenis pembayaran SPP
+            Transaction::create([
+                'school_id' => $schoolId,
+                'account_id' => $piutangInfaq->id,
+                'date' => now(),
+                'description' => $descriptionInfaq,
+                'debit' => $totalInfaq,
+                'credit' => 0,
+                'reference_id' => $receivableInfaq->id,
+                'reference_type' => StudentReceivables::class,
+            ]);
+
+            Transaction::create([
+                'school_id' => $schoolId,
+                'account_id' => $pendapatanInfaq->id,
+                'date' => now(),
+                'description' => $descriptionInfaq,
+                'debit' => 0,
+                'credit' => $totalInfaq,
+                'reference_id' => $receivableInfaq->id,
+                'reference_type' => StudentReceivables::class,
+            ]);
+        }
+
         Transaction::create([
             'school_id' => $schoolId,
             'account_id' => $request->account_id,
