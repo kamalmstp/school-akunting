@@ -43,9 +43,15 @@
 										<label for="accountFilter" class="form-label">Filter Akun</label>
 										<select name="account" class="form-select" id="accountFilter">
 											<option value="">Pilih Akun Induk</option>
-											@foreach(\App\Models\Account::whereNull('parent_id')->pluck('name') as $accountName)
-												<option value="{{ $accountName }}" {{ $account == $accountName ? 'selected' : '' }}>{{ $accountName }}</option>
-											@endforeach
+											@if(auth()->user()->role == 'SchoolAdmin')
+												@foreach(\App\Models\Account::whereNull('parent_id')->where('school_id', '=', auth()->user()->school_id)->pluck('name') as $accountName)
+													<option value="{{ $accountName }}" {{ $account == $accountName ? 'selected' : '' }}>{{ $accountName }}</option>
+												@endforeach
+											@else
+												@foreach(\App\Models\Account::whereNull('parent_id')->pluck('name') as $accountName)
+													<option value="{{ $accountName }}" {{ $account == $accountName ? 'selected' : '' }}>{{ $accountName }}</option>
+												@endforeach
+											@endif
 										</select>
 									</div>
 								</div>
