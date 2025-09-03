@@ -35,6 +35,7 @@ class TransactionController extends Controller
         $endDate = is_null($request->get('end_date')) ? '' : $request->get('end_date');
         $accountType = $request->get('account_type');
         $singleAccount = Account::find($account);
+        $referenceType = 'App\Models\StudentReceivables';
         if (auth()->user()->role != 'SchoolAdmin') {
             // SuperAdmin: Semua transaksi
             $schools = School::pluck('name', 'id');
@@ -60,6 +61,7 @@ class TransactionController extends Controller
         }
 
         // SchoolAdmin atau SuperAdmin dengan sekolah tertentu
+        // App\Models\StudentReceivables
         $school = $school ?? $user->school;
         if (!$school || ($user->role === 'SchoolAdmin' && $user->school_id !== $school->id)) {
             abort(403, 'Unauthorized access to this school.');
@@ -72,6 +74,9 @@ class TransactionController extends Controller
             })
             ->when($startDate, function ($q) use ($startDate, $endDate) {
                 $q->whereBetween('date', [Carbon::parse($startDate)->format('Y-m-d'), Carbon::parse($endDate)->format('Y-m-d')]);
+            })
+            ->when($referenceType, function ($q) use ($referenceType) {
+                $q->where('reference_type', '!=', $referenceType);
             })
             ->orderBy('date', 'desc')
             ->paginate(10)->withQueryString();
