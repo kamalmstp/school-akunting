@@ -104,6 +104,7 @@
 									<tr>
 										<th>No</th>
 										<th>NIS</th>
+										<th>NISN</th>
                                         <th>Nama</th>
                                         <th>Telepon</th>
                                         <th>Alamat</th>
@@ -117,6 +118,7 @@
                                         <tr>
 											<td>{{ $students->currentPage() * 10 - (9 - $index) }}</td>
                                             <td>{{ $student->student_id_number }}</td>
+                                            <td>{{ $student->national_student_number }}</td>
                                             <td>{{ $student->name }}</td>
                                             <td>{{ $student->phone }}</td>
                                             <td>{{ $student->address }}</td>
@@ -135,7 +137,7 @@
                                         </tr>
 									@empty
 										<tr>
-											<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '8' : '7'}}">Belum ada siswa</td>
+											<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '9' : '8'}}">Belum ada siswa</td>
 										</tr>										
 									@endempty
                                 </tbody>

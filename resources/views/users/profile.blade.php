@@ -62,9 +62,29 @@
                             <i class="bi bi-telephone fs-2 me-2"></i>
                             <span>{{ auth()->user()->phone }}</span>
                         </h6>
+                        <h6 class="d-flex align-items-center mb-3">
+                            <i class="bi bi-map fs-2 me-2"></i>
+                            <span>{{ auth()->user()->school_id ? auth()->user()->school->address : '-' }}</span>
+                        </h6>
                     </div>
                 </div>
             </div>
+            @if (auth()->user()->school_id)
+            <div class="col-xxl-3 col-sm-6 col-12 order-xxl-1 order-xl-2 order-lg-2 order-md-2 order-sm-2">
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h5 class="card-title">Logo Sekolah</h5>
+                    </div>
+                    <div class="card-body">
+                        @if(auth()->user()->school->logo)
+                        <div class="mb-2">
+                            <img src="{{ asset('/' . auth()->user()->school->logo) }}" alt="Logo Sekolah" style="max-height: 100px;">
+                        </div>
+                        @endif
+                    </div>
+                </div>
+            </div>
+            @endif
             <div class="col-xxl-9 col-sm-12 col-12 order-xxl-2 order-xl-1 order-lg-1 order-md-1 order-sm-1">
                 <div class="card mb-3">
                     <div class="card-header">
@@ -135,13 +155,14 @@
 	<div class="modal fade" id="profilModal" tabindex="-1" aria-hidden="true">
 		<div class="modal-dialog">
 			<div class="modal-content">
-                <form action="{{ route('users.edit-profile', auth()->user()) }}" method="POST">
+                <form action="{{ route('users.edit-profile', auth()->user()) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
                     <div class="modal-header">
                         <h5 class="modal-title">Edit Profil</h5>
                     </div>
                     <div class="modal-body">
+                        <input type="hidden" name="school_id" value="{{ auth()->user()->school_id }}">
                         <div class="mb-3">
                             <label for="name" class="form-label">Nama</label>
                             <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ auth()->user()->name }}">
@@ -164,6 +185,27 @@
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
                         </div>
+                        @if (auth()->user()->school_id)
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Alamat</label>
+                            <textarea class="form-control @error('address', auth()->user()->school->address) is-invalid @enderror" id="address" name="address">{{ old('address') }}</textarea>
+                            @error('address')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="mb-3">
+                            <label for="logo" class="form-label">Upload Logo Sekolah (Maks. 2MB)</label>
+                            @if(auth()->user()->school->logo)
+                            <div class="mb-2">
+                                <img src="{{ asset('/' . auth()->user()->school->logo) }}" alt="Logo Sekolah" style="max-height: 100px;">
+                            </div>
+                            @endif
+                            <input type="file" class="form-control @error('logo') is-invalid @enderror" id="logo" name="logo" accept="image/*">
+                            @error('logo')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        @endif
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">

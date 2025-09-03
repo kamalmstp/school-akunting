@@ -31,9 +31,9 @@
 					<div class="card-body">
                         <p><strong>Siswa:</strong> {{ $receivable->student->name }} ({{ $receivable->student->student_id_number }})</p>
                         <p><strong>Akun:</strong> {{ $receivable->account->name }} ({{ $receivable->account->code }})</p>
-                        <p><strong>Jumlah Piutang:</strong> {{ number_format($receivable->amount, 0, ',', '.') }}</p>
+                        <p><strong>Jumlah Piutang:</strong> {{ number_format($receivable->total_payable, 0, ',', '.') }}</p>
                         <p><strong>Terbayar:</strong> {{ number_format($receivable->paid_amount, 0, ',', '.') }}</p>
-                        <p class="mb-4"><strong>Sisa:</strong> {{ number_format($receivable->amount - $receivable->paid_amount, 0, ',', '.') }}</p>
+                        <p class="mb-4"><strong>Sisa:</strong> {{ number_format($receivable->total_payable - $receivable->paid_amount, 0, ',', '.') }}</p>
                         @if ($errors->has('amount'))
                         <div class="row gx-3">
                             <div class="col-sm-6 col-12">

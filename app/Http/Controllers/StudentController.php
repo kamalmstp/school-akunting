@@ -87,6 +87,12 @@ class StudentController extends Controller
 
         $rules = [
             'student_id_number' => 'required|string|max:20|unique:students',
+            'national_student_number' => 'required|string|max:20|unique:students',
+            'year' => 'required|integer',
+            'parent_name' => 'required|string|max:255',
+            'parent_phone' => 'required|max:13',
+            'parent_mail' => 'required|email',
+            'parent_job' => 'required|string|max:255',
             'name' => 'required|string|max:255',
             'phone' => 'required|max:13',
             'class' => 'required|string|max:50',
@@ -97,15 +103,25 @@ class StudentController extends Controller
             'student_id_number.required' => 'NIS wajib diisi',
             'student_id_number.max' => 'NIS maksimal 20 digit',
             'student_id_number.unique' => 'NIS sudah digunakan',
+            'national_student_number.required' => 'NISN wajib diisi',
+            'national_student_number.max' => 'NISN maksimal 20 digit',
+            'national_student_number.unique' => 'NISN sudah digunakan',
+            'year.required' => 'Tahun Masuk wajib diisi',
+            'parent_name.required' => 'Nama Orang Tua wajib diisi',
+            'parent_phone.required' => 'Telepon Orang Tua wajib diisi',
+            'parent_phone.max' => 'Telepon Orang Tua maksimal 13 angka',
+            'parent_mail.required' => 'Email Orang Tua wajib diisi',
+            'parent_mail.email' => 'Format email tidak valid',
+            'parent_job.required' => 'Pekerjaan Orang Tua wajib diisi',
             'name.required' => 'Nama siswa wajib diisi',
             'phone.required' => 'Telepon siswa wajib diisi',
             'phone.max' => 'Telepon siswa maksimal 13 angka',
             'class.required' => 'Kelas siswa wajib diisi'
         ];
 
-        if (auth()->user()->role == 'SuperAdmin' && isset($request->school_id)) {
+        if (auth()->user()->role == 'SuperAdmin' && !isset($request->school_id)) {
             $rules['school_id'] = 'required';
-            $messages['school_id.reuired'] = 'Pilih sekolah';
+            $messages['school_id.required'] = 'Pilih sekolah';
         }
 
         $validator = Validator::make($request->all(), $rules, $messages);
@@ -117,6 +133,12 @@ class StudentController extends Controller
         Student::create([
             'school_id' => auth()->user()->role == 'SuperAdmin' ? $request->school_id : $school->id,
             'student_id_number' => $request->student_id_number,
+            'national_student_number' => $request->national_student_number,
+            'year' => $request->year,
+            'parent_name' => $request->parent_name,
+            'parent_phone' => $request->parent_phone,
+            'parent_mail' => $request->parent_mail,
+            'parent_job' => $request->parent_job,
             'name' => $request->name,
             'phone' => $request->phone,
             'address' => $request->address,
@@ -161,6 +183,12 @@ class StudentController extends Controller
 
         $validator = Validator::make($request->all(), [
             'student_id_number' => 'required|string|max:20|unique:students,student_id_number,' . $student->id,
+            'national_student_number' => 'required|string|max:20|unique:students,national_student_number,' . $student->id,
+            'year' => 'required|integer',
+            'parent_name' => 'required|string|max:255',
+            'parent_phone' => 'required|max:13',
+            'parent_mail' => 'required|email',
+            'parent_job' => 'required|string|max:255',
             'name' => 'required|string|max:255',
             'phone' => 'required|max:13',
             'class' => 'required|string|max:50',
@@ -169,6 +197,16 @@ class StudentController extends Controller
             'student_id_number.required' => 'NIS wajib diisi',
             'student_id_number.max' => 'NIS maksimal 20 digit',
             'student_id_number.unique' => 'NIS sudah digunakan',
+            'national_student_number.required' => 'NISN wajib diisi',
+            'national_student_number.max' => 'NISN maksimal 20 digit',
+            'national_student_number.unique' => 'NISN sudah digunakan',
+            'year.required' => 'Tahun Masuk wajib diisi',
+            'parent_name.required' => 'Nama Orang Tua wajib diisi',
+            'parent_phone.required' => 'Telepon Orang Tua wajib diisi',
+            'parent_phone.max' => 'Telepon Orang Tua maksimal 13 angka',
+            'parent_mail.required' => 'Email Orang Tua wajib diisi',
+            'parent_mail.email' => 'Format email tidak valid',
+            'parent_job.required' => 'Pekerjaan Orang Tua wajib diisi',
             'phone.required' => 'Telepon siswa wajib diisi',
             'phone.max' => 'Telepon siswa maksimal 13 angka',
             'name.required' => 'Nama siswa wajib diisi',
@@ -181,6 +219,12 @@ class StudentController extends Controller
 
         $student->update([
             'student_id_number' => $request->student_id_number,
+            'national_student_number' => $request->national_student_number,
+            'year' => $request->year,
+            'parent_name' => $request->parent_name,
+            'parent_phone' => $request->parent_phone,
+            'parent_mail' => $request->parent_mail,
+            'parent_job' => $request->parent_job,
             'name' => $request->name,
             'phone' => $request->phone,
             'address' => $request->address,
@@ -212,7 +256,7 @@ class StudentController extends Controller
             ->where('reference_type', 'App\Models\StudentReceivables')
             ->update(['deleted_at' => now()]);
         StudentReceivables::where('student_id', $student->id)->update(['deleted_at' => now()]);
-        $student->update(['deleted_at', now()]);
+        $student->update(['deleted_at' => now()]);
 
         $route = back();
         if (auth()->user()->role == 'SuperAdmin') {
@@ -245,7 +289,6 @@ class StudentController extends Controller
         if ($user->school_id !== $school->id) {
             abort(403, 'Unauthorized access to this school.');
         }
-
         $rules = ['file' => 'required|mimes:xlsx,xls|max:2048'];
         $messages = [
             'file.required' => 'File wajib diupload',
@@ -291,14 +334,17 @@ class StudentController extends Controller
     protected function getClass()
     {
         $nums = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX'];
-        $otherNums = ['X', 'XI', 'XII'];
+        // $otherNums = ['X', 'XI', 'XII'];
         $majors = SchoolMajor::pluck('name');
         $newNums = [];
-        foreach ($otherNums as $value) {
-            foreach ($majors as $major) {
-                $newNums[] = $value . ' ' . $major;
+        // foreach ($otherNums as $value) {
+        //     foreach ($majors as $major) {
+        //         $newNums[] = $value . ' ' . $major;
+        //     }
+        // }
+        foreach ($majors as $major) {
+                $newNums[] = $major;
             }
-        }
         return array_merge($nums, $newNums);
     }
 }

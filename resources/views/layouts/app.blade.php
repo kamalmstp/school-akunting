@@ -119,14 +119,17 @@
                                             <a href="{{ route('employees.index') }}" class="m-second">Kelola Karyawan</a>
                                         </li>
 										<li>
-                                            <a href="{{ route('school-majors.index') }}" class="m-fourth">Kelola Jurusan</a>
+                                            <a href="{{ route('school-majors.index') }}" class="m-third">Kelola Kelas</a>
                                         </li>
                                         <li>
-                                            <a href="{{ route('students.index') }}" class="m-third">Kelola Siswa</a>
+                                            <a href="{{ route('students.index') }}" class="m-fourth">Kelola Siswa</a>
                                         </li>
 										<li>
-                                            <a href="{{ route('schedules.index') }}" class="m-fifth">Kelola Pembayaran</a>
+                                            <a href="{{ route('fund-managements.index') }}" class="m-fifth">Kelola Dana</a>
                                         </li>
+										<!-- <li>
+                                            <a href="{{ route('schedules.index') }}" class="m-sixth">Kelola Pembayaran</a>
+                                        </li> -->
                                     </ul>
                                 </li>
                                 <li class="@if(Route::is('accounts.index')) active current-page @endif">
@@ -135,24 +138,10 @@
                                         <span class="menu-text">Kelola Akun</span>
                                     </a>
                                 </li>
-                                <li class="treeview transaction">
-                                    <a href="#!">
-                                        <i class="bi bi-cash"></i>
-                                        <span class="menu-text">Transaksi</span>
-                                    </a>
-                                    <ul class="treeview-menu">
-                                        <li>
-                                            <a href="{{ route('transactions.index') }}" class="tr-first">Semua Transaksi</a>
-                                        </li>
-                                        <li class="tr-third">
-                                            <a href="{{ route('fixed-assets.index') }}" class="tr-second">Aset Tetap</a>
-                                        </li>
-                                    </ul>
-                                </li>
 								<li class="treeview receivable">
                                     <a href="#!">
                                         <i class="bi bi-cash-coin"></i>
-                                        <span class="menu-text">Piutang</span>
+                                        <span class="menu-text">Penerimaan</span>
                                     </a>
                                     <ul class="treeview-menu">
                                         <li>
@@ -163,6 +152,31 @@
                                         </li>
                                         <li>
                                             <a href="{{ route('employee-receivables.index') }}" class="p-third">Piutang Karyawan</a>
+                                        </li>
+                                    </ul>
+                                </li>
+								<li class="treeview alumni">
+                                    <a href="#!">
+                                        <i class="bi bi-mortarboard"></i>
+                                        <span class="menu-text">Alumni</span>
+                                    </a>
+                                    <ul class="treeview-menu">
+                                        <li>
+                                            <a href="{{ route('student-alumni.index') }}" class="a-first">Alumni Siswa</a>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li class="treeview transaction">
+                                    <a href="#!">
+                                        <i class="bi bi-cash"></i>
+                                        <span class="menu-text">Transaksi</span>
+                                    </a>
+                                    <ul class="treeview-menu">
+                                        <li>
+                                            <a href="{{ route('transactions.index') }}" class="tr-first">Tunai</a>
+                                        </li>
+                                        <li class="tr-third">
+                                            <a href="{{ route('fixed-assets.index') }}" class="tr-second">Non Tunai</a>
                                         </li>
                                     </ul>
                                 </li>
@@ -184,14 +198,17 @@
 										<li>
 											<a href="{{ route('reports.trial-balance-before') }}" class="rp-fourth">Neraca Saldo Awal</a>
 										</li>
-										<li>
-											<a href="{{ route('reports.adjusting-entries') }}" class="rp-fifth">Jurnal Penyesuaian</a>
-										</li>
+										<!--<li>-->
+										<!--	<a href="{{ route('reports.adjusting-entries') }}" class="rp-fifth">Jurnal Penyesuaian</a>-->
+										<!--</li>-->
 										<li>
 											<a href="{{ route('reports.trial-balance-after') }}" class="rp-sixth">Neraca Saldo Akhir</a>
 										</li>
 										<li>
 											<a href="{{ route('reports.financial-statements') }}" class="rp-seventh">Laporan Keuangan</a>
+										</li>
+										<li>
+											<a href="{{ route('reports.cash-reports') }}" class="rp-eighth">Laporan Kas</a>
 										</li>
                                     </ul>
                                 </li>
@@ -226,15 +243,18 @@
                                         <li>
                                             <a href="{{ route('employees.index') }}" class="m-second">Kelola Karyawan</a>
                                         </li>
-										<li>
-                                            <a href="{{ route('school-majors.index') }}" class="m-fourth">Kelola Jurusan</a>
-                                        </li>
+										<!-- <li>
+                                            <a href="{{ route('school-majors.index') }}" class="m-third">Kelola Kelas</a>
+                                        </li> -->
                                         <li>
-                                            <a href="{{ route('students.index') }}" class="m-third">Kelola Siswa</a>
+                                            <a href="{{ route('students.index') }}" class="m-fourth">Kelola Siswa</a>
                                         </li>
-										<li>
-                                            <a href="{{ route('schedules.index') }}" class="m-fifth">Kelola Pembayaran</a>
-                                        </li>
+										<!-- <li>
+                                            <a href="{{ route('fund-managements.index') }}" class="m-fifth">Kelola Dana</a>
+                                        </li> -->
+										<!-- <li>
+                                            <a href="{{ route('schedules.index') }}" class="m-sixth">Kelola Pembayaran</a>
+                                        </li> -->
                                     </ul>
                                 </li>
                                 <li class="@if(Route::is('accounts.index')) active current-page @endif">
@@ -243,24 +263,10 @@
                                         <span class="menu-text">Kelola Akun</span>
                                     </a>
                                 </li>
-								<li class="treeview transaction">
-                                    <a href="#!">
-                                        <i class="bi bi-cash"></i>
-                                        <span class="menu-text">Transaksi</span>
-                                    </a>
-                                    <ul class="treeview-menu">
-                                        <li>
-                                            <a href="{{ route('transactions.index') }}" class="tr-first">Semua Transaksi</a>
-                                        </li>
-                                        <li class="tr-third">
-                                            <a href="{{ route('fixed-assets.index') }}" class="tr-second">Aset Tetap</a>
-                                        </li>
-                                    </ul>
-                                </li>
 								<li class="treeview receivable">
                                     <a href="#!">
                                         <i class="bi bi-cash-coin"></i>
-                                        <span class="menu-text">Piutang</span>
+                                        <span class="menu-text">Penerimaan</span>
                                     </a>
                                     <ul class="treeview-menu">
                                         <li>
@@ -271,6 +277,31 @@
                                         </li>
                                         <li>
                                             <a href="{{ route('employee-receivables.index') }}" class="p-third">Piutang Karyawan</a>
+                                        </li>
+                                    </ul>
+                                </li>
+								<li class="treeview alumni">
+                                    <a href="#!">
+                                        <i class="bi bi-mortarboard"></i>
+                                        <span class="menu-text">Alumni</span>
+                                    </a>
+                                    <ul class="treeview-menu">
+                                        <li>
+                                            <a href="{{ route('student-alumni.index') }}" class="a-first">Alumni Siswa</a>
+                                        </li>
+                                    </ul>
+                                </li>
+								<li class="treeview transaction">
+                                    <a href="#!">
+                                        <i class="bi bi-cash"></i>
+                                        <span class="menu-text">Transaksi</span>
+                                    </a>
+                                    <ul class="treeview-menu">
+                                        <li>
+                                            <a href="{{ route('transactions.index') }}" class="tr-first">Tunai</a>
+                                        </li>
+                                        <li class="tr-third">
+                                            <a href="{{ route('fixed-assets.index') }}" class="tr-second">Non Tunai</a>
                                         </li>
                                     </ul>
                                 </li>
@@ -292,14 +323,17 @@
 										<li>
 											<a href="{{ route('reports.trial-balance-before') }}" class="rp-fourth">Neraca Saldo Awal</a>
 										</li>
-										<li>
-											<a href="{{ route('reports.adjusting-entries') }}" class="rp-fifth">Jurnal Penyesuaian</a>
-										</li>
+										<!--<li>-->
+										<!--	<a href="{{ route('reports.adjusting-entries') }}" class="rp-fifth">Jurnal Penyesuaian</a>-->
+										<!--</li>-->
 										<li>
 											<a href="{{ route('reports.trial-balance-after') }}" class="rp-sixth">Neraca Saldo Akhir</a>
 										</li>
 										<li>
 											<a href="{{ route('reports.financial-statements') }}" class="rp-seventh">Laporan Keuangan</a>
+										</li>
+										<li>
+											<a href="{{ route('reports.cash-reports') }}" class="rp-eighth">Laporan Kas</a>
 										</li>
                                     </ul>
                                 </li>
@@ -323,34 +357,30 @@
                                             <a href="{{ route('school-employees.index', auth()->user()->school_id) }}" class="m-second">Kelola Karyawan</a>
                                         </li>
 										<li>
-                                            <a href="{{ route('school-school-majors.index', auth()->user()->school_id) }}" class="m-fourth">Kelola Jurusan</a>
+                                            <a href="{{ route('school-school-majors.index', auth()->user()->school_id) }}" class="m-third">Kelola Kelas</a>
                                         </li>
                                         <li>
-                                            <a href="{{ route('school-students.index', auth()->user()->school_id) }}" class="m-third">Kelola Siswa</a>
+                                            <a href="{{ route('school-students.index', auth()->user()->school_id) }}" class="m-fourth">Kelola Siswa</a>
                                         </li>
 										<li>
-                                            <a href="{{ route('school-schedules.index', auth()->user()->school_id) }}" class="m-fifth">Kelola Pembayaran</a>
+                                            <a href="{{ route('school-fund-managements.index', auth()->user()->school_id) }}" class="m-fifth">Kelola Dana</a>
                                         </li>
+										<!-- <li>
+                                            <a href="{{ route('school-schedules.index', auth()->user()->school_id) }}" class="m-sixth">Kelola Pembayaran</a>
+                                        </li> -->
                                     </ul>
                                 </li>
-                                <li class="treeview transaction">
-                                    <a href="#!">
-                                        <i class="bi bi-cash"></i>
-                                        <span class="menu-text">Transaksi</span>
+                                <!-- todo -->
+                                <li class="@if(Route::is('school-accounts.index')) active current-page @endif">
+                                    <a href="{{ route('school-accounts.index', auth()->user()->school_id) }}">
+                                        <i class="bi bi-list"></i>
+                                        <span class="menu-text">Kelola Akun</span>
                                     </a>
-                                    <ul class="treeview-menu">
-                                        <li>
-                                            <a href="{{ route('school-transactions.index', auth()->user()->school_id) }}" class="tr-first">Transaksi</a>
-                                        </li>
-                                        <li>
-                                            <a href="{{ route('school-fixed-assets.index', auth()->user()->school_id) }}" class="tr-second">Aset Tetap</a>
-                                        </li>
-                                    </ul>
                                 </li>
 								<li class="treeview receivable">
                                     <a href="#!">
                                         <i class="bi bi-cash-coin"></i>
-                                        <span class="menu-text">Piutang</span>
+                                        <span class="menu-text">Penerimaan</span>
                                     </a>
                                     <ul class="treeview-menu">
                                         <li>
@@ -361,6 +391,31 @@
                                         </li>
                                         <li>
                                             <a href="{{ route('school-employee-receivables.index', auth()->user()->school_id) }}" class="p-third">Piutang Karyawan</a>
+                                        </li>
+                                    </ul>
+                                </li>
+								<li class="treeview alumni">
+                                    <a href="#!">
+                                        <i class="bi bi-mortarboard"></i>
+                                        <span class="menu-text">Alumni</span>
+                                    </a>
+                                    <ul class="treeview-menu">
+                                        <li>
+                                            <a href="{{ route('school-student-alumni.index', auth()->user()->school_id) }}" class="a-first">Alumni Siswa</a>
+                                        </li>
+                                    </ul>
+                                </li>
+                                <li class="treeview transaction">
+                                    <a href="#!">
+                                        <i class="bi bi-cash"></i>
+                                        <span class="menu-text">Transaksi</span>
+                                    </a>
+                                    <ul class="treeview-menu">
+                                        <li>
+                                            <a href="{{ route('school-transactions.index', auth()->user()->school_id) }}" class="tr-first">Tunai</a>
+                                        </li>
+                                        <li>
+                                            <a href="{{ route('school-fixed-assets.index', auth()->user()->school_id) }}" class="tr-second">Non Tunai</a>
                                         </li>
                                     </ul>
                                 </li>
@@ -382,14 +437,17 @@
 										<li>
 											<a href="{{ route('school-reports.trial-balance-before', auth()->user()->school_id) }}" class="rp-fourth">Neraca Saldo Awal</a>
 										</li>
-										<li>
-											<a href="{{ route('school-reports.adjusting-entries', auth()->user()->school_id) }}" class="rp-fifth">Jurnal Penyesuaian</a>
-										</li>
+										<!--<li>-->
+										<!--	<a href="{{ route('school-reports.adjusting-entries', auth()->user()->school_id) }}" class="rp-fifth">Jurnal Penyesuaian</a>-->
+										<!--</li>-->
 										<li>
 											<a href="{{ route('school-reports.trial-balance-after', auth()->user()->school_id) }}" class="rp-sixth">Neraca Saldo Akhir</a>
 										</li>
 										<li>
 											<a href="{{ route('school-reports.financial-statements', auth()->user()->school_id) }}" class="rp-seventh">Laporan Keuangan</a>
+										</li>
+										<li>
+											<a href="{{ route('school-reports.cash-reports', auth()->user()->school_id) }}" class="rp-eighth">Laporan Kas</a>
 										</li>
                                     </ul>
                                 </li>
@@ -498,6 +556,11 @@
 					$('.report > ul').addClass('menu-open');
 					$('.rp-seventh').addClass('active-sub');
 				}
+				if (url.includes('cash-reports')) {
+					$('.report').addClass('active current-page');
+					$('.report > ul').addClass('menu-open');
+					$('.rp-eighth').addClass('active-sub');
+				}
 				if (url.includes('teachers')) {
 					$('.master').addClass('active current-page');
 					$('.master > ul').addClass('menu-open');
@@ -508,20 +571,25 @@
 					$('.master > ul').addClass('menu-open');
 					$('.m-second').addClass('active-sub');
 				}
-				if (url.includes('students')) {
+				if (url.includes('majors')) {
 					$('.master').addClass('active current-page');
 					$('.master > ul').addClass('menu-open');
 					$('.m-third').addClass('active-sub');
 				}
-				if (url.includes('majors')) {
+				if (url.includes('students')) {
 					$('.master').addClass('active current-page');
 					$('.master > ul').addClass('menu-open');
 					$('.m-fourth').addClass('active-sub');
 				}
-				if (url.includes('payments')) {
+				if (url.includes('fund')) {
 					$('.master').addClass('active current-page');
 					$('.master > ul').addClass('menu-open');
 					$('.m-fifth').addClass('active-sub');
+				}
+				if (url.includes('payments')) {
+					$('.master').addClass('active current-page');
+					$('.master > ul').addClass('menu-open');
+					$('.m-sixth').addClass('active-sub');
 				}
 				if (url.includes('student-receivables')) {
 					$('.receivable').addClass('active current-page');
@@ -537,6 +605,11 @@
 					$('.receivable').addClass('active current-page');
 					$('.receivable > ul').addClass('menu-open');
 					$('.p-third').addClass('active-sub');
+				}
+				if (url.includes('student-alumni')) {
+					$('.alumni').addClass('active current-page');
+					$('.alumni > ul').addClass('menu-open');
+					$('.a-first').addClass('active-sub');
 				}
 
 				$(document).on('input', '.angka', function () {

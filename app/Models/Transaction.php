@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class Transaction extends Model
 {
-    protected $fillable = ['school_id', 'account_id', 'date', 'description', 'debit', 'credit', 'reference_id', 'reference_type', 'payment_method', 'deleted_at', 'type'];
+    protected $fillable = ['school_id', 'account_id', 'fund_management_id', 'doc_number', 'date', 'description', 'debit', 'credit', 'reference_id', 'reference_type', 'payment_method', 'deleted_at', 'type'];
 
     protected static function boot()
     {
@@ -26,5 +26,10 @@ class Transaction extends Model
     public function account()
     {
         return $this->belongsTo(Account::class);
+    }
+
+    public function fund_management()
+    {
+        return $this->belongsTo(FundManagement::class);
     }
 }

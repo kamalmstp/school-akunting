@@ -20,6 +20,12 @@ class AccountsImport implements ToModel, WithHeadingRow, WithValidation
         'Biaya' => '/^5-[0-9]{0,6}(-[0-9]+)*$/',
         'Investasi' => '/^7-[0-9]{0,6}(-[0-9]+)*$/'
     ];
+    protected $schoolId;
+
+    public function __construct($schoolId)
+    {
+        $this->schoolId = $schoolId;
+    }
 
     /**
      * Transform Excel row to Account model or update existing.
@@ -29,6 +35,7 @@ class AccountsImport implements ToModel, WithHeadingRow, WithValidation
         $parent = null;
         if (!empty($row['parent_kode'])) {
             $parent = Account::where('code', $row['parent_kode'])
+                ->where('school_id', $this->schoolId)
                 ->first();
             if (!$parent) {
                 throw new \Exception("Kode parent {$row['parent_kode']} tidak ditemukan");
@@ -47,7 +54,7 @@ class AccountsImport implements ToModel, WithHeadingRow, WithValidation
         ];
 
         // Cari akun berdasarkan code
-        $account = Account::where('code', $row['kode'])->first();
+        $account = Account::where('code', $row['kode'])->where('school_id', $this->schoolId)->first();
 
         if ($account) {
             // Update jika akun sudah ada
@@ -99,7 +106,9 @@ class AccountsImport implements ToModel, WithHeadingRow, WithValidation
     public function prepareForValidation($data, $index)
     {
         // Validasi kode unik hanya untuk akun baru
-        $existingAccount = Account::where('code', $data['kode'])->exists();
+        $existingAccount = Account::where('code', $data['kode'])
+            ->where('school_id', $this->schoolId)
+            ->exists();
 
         if ($existingAccount && $data['kode']) {
             // Jika kode ada, skip validasi unik karena akan diupdate
@@ -108,7 +117,7 @@ class AccountsImport implements ToModel, WithHeadingRow, WithValidation
 
         // Tambahkan validasi unik untuk kode baru
         validator($data, [
-            'kode' => ['required', Rule::unique('accounts', 'code')],
+            'kode' => ['required', Rule::unique('accounts', 'code')->where('school_id', $this->schoolId)],
         ])->validate();
 
         return $data;

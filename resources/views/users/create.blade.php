@@ -169,17 +169,20 @@
 
 	</div>
 	<!-- App body ends -->
-
-    <script>
-        document.getElementById('role').addEventListener('change', function() {
-            const schoolIdContainer = document.getElementById('school_id_container');
-            schoolIdContainer.style.display = this.value === 'SchoolAdmin' ? 'block' : 'none';
-        });
-        // Trigger change event on page load
-        document.getElementById('role').dispatchEvent(new Event('change'));
-    </script>
 @endsection
 @section('js')
+    <script>
+        $(document).ready(function () {
+            // Attach event handler to Select2 element
+            $('#role').on('change', function () {
+                const schoolIdContainer = document.getElementById('school_id_container');
+                schoolIdContainer.style.display = this.value === 'SchoolAdmin' ? 'block' : 'none';
+            });
+
+            // Trigger change on page load
+            $('#role').trigger('change');
+        });
+    </script>
 	<script>
 		$(document).ready(function() {
 			$('#role').select2();

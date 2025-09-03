@@ -10,7 +10,7 @@
 				<i class="bi bi-pie-chart lh-1"></i>
 				<a href="{{ auth()->user()->role != 'SchoolAdmin' ? route('dashboard') : route('dashboard.index', auth()->user()->school_id) }}" class="text-decoration-none">Dashboard</a>
 			</li>
-			<li class="breadcrumb-item" aria-current="page">Kelola Jurusan</li>
+			<li class="breadcrumb-item" aria-current="page">Kelola Kelas</li>
 		</ol>
 		<!-- Breadcrumb end -->
 	</div>
@@ -40,7 +40,7 @@
 								@endif
 								<div class="col-xl-4 col-md-6 col-12">
 									<div class="mb-3">
-										<label for="name" class="form-label">Nama Jurusan</label>
+										<label for="name" class="form-label">Nama Kelas</label>
 										<input type="text" class="form-control" id="name" name="name" value="{{ $name }}">
 									</div>
 								</div>
@@ -62,11 +62,11 @@
 				<div class="card">
 					<div class="card-header">
 						<div class="d-flex justify-content-between align-items-center">
-							<h5 class="card-title">Daftar Jurusan</h5>
+							<h5 class="card-title">Daftar Kelas</h5>
 							@if(auth()->user()->role != 'AdminMonitor')
 							<div>
-                                <a href="{{ auth()->user()->role == 'SuperAdmin' ? route('school-majors.create') : route('school-school-majors.create', $school) }}" class="btn btn-primary" title="Tambah Jurusan">
-									<span class="d-lg-block d-none">Tambah Jurusan</span>
+                                <a href="{{ auth()->user()->role == 'SuperAdmin' ? route('school-majors.create') : route('school-school-majors.create', $school) }}" class="btn btn-primary" title="Tambah Kelas">
+									<span class="d-lg-block d-none">Tambah Kelas</span>
 									<span class="d-sm-block d-lg-none">
 										<i class="bi bi-plus"></i>
 									</span>
@@ -91,8 +91,8 @@
 								<thead>
 									<tr>
 										<th>No</th>
-                                        <th>Sekolah</th>
-                                        <th>Nama</th>
+                                        <!--<th>Sekolah</th>-->
+                                        <th>Nama Kelas</th>
                                         @if(auth()->user()->role != 'AdminMonitor')<th></th>@endif
 									</tr>
 								</thead>
@@ -100,7 +100,7 @@
 									@forelse($majors as $index => $school_major)
                                         <tr>
 											<td>{{ $majors->currentPage() * 10 - (9 - $index) }}</td>
-                                            <td>{{ $school_major->school->name }}</td>
+                                            <!--<td>{{ $school_major->school->name }}</td>-->
                                             <td>{{ $school_major->name }}</td>
 											@if(auth()->user()->role != 'AdminMonitor')
 												<td>
@@ -115,7 +115,7 @@
                                         </tr>
 									@empty
 										<tr>
-											<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '4' : '3'}}">Belum ada jurusan</td>
+											<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '4' : '3'}}">Belum ada Kelas</td>
 										</tr>										
 									@endempty
                                 </tbody>

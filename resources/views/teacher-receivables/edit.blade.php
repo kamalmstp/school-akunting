@@ -84,7 +84,7 @@
                                                     <label for="income_account_id" class="form-label">Akun Pendapatan</label>
                                                     <select class="form-select @error('income_account_id') is-invalid @enderror" id="income_account_id" name="income_account_id">
                                                         <option value="">Pilih Akun Pendapatan</option>
-                                                        @foreach(\App\Models\Account::where('account_type', 'Pendapatan')->get() as $account)
+                                                        @foreach(\App\Models\Account::where('school_id', auth()->user()->school_id)->where('account_type', 'Pendapatan')->get() as $account)
                                                             <option value="{{ $account->id }}" {{ old('account_id', $transaction->account_id) == $account->id ? 'selected' : '' }}>
                                                                 {{ $account->code }} - {{ $account->name }}
                                                             </option>
@@ -106,6 +106,7 @@
                                                     @error('amount')
                                                         <div class="invalid-feedback">{{ $message }}</div>
                                                     @enderror
+                                                    <input type="hidden" id="final_amount" name="final_amount" value="{{ old('amount', number_format($teacher_receivable->amount, 0, ',', '.')) }}">
                                                 </div>
                                                 <!-- Form group end -->
                                             </div>
@@ -152,5 +153,10 @@
 			$('#account_id').select2();
 			$('#income_account_id').select2();
 		})
+
+        $('#amount').on('input', function () {
+            let total = parseInt($(this).val().replaceAll('.', '')) || 0;
+            $('#final_amount').val(total);
+        });
 	</script>
 @endsection

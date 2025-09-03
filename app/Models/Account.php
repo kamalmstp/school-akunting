@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class Account extends Model
 {
-    protected $fillable = ['code', 'name', 'parent_id', 'account_type', 'normal_balance', 'deleted_at'];
+    protected $fillable = ['school_id', 'code', 'name', 'parent_id', 'account_type', 'normal_balance', 'deleted_at'];
 
     protected static function boot()
     {
@@ -16,6 +16,11 @@ class Account extends Model
         static::addGlobalScope('deleted', function (Builder $builder) {
             $builder->whereNull('accounts.deleted_at');
         });
+    }
+
+    public function school()
+    {
+        return $this->belongsTo(School::class);
     }
 
     public function parent()

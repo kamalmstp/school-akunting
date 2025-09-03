@@ -103,7 +103,8 @@
 								<thead>
 									<tr>
 										<th>No</th>
-										<th>NIK</th>
+										<th>NBM</th>
+										<th>NIK KTP</th>
                                         <th>Nama</th>
                                         <th>Email</th>
                                         <th>Telepon</th>
@@ -117,6 +118,7 @@
                                         <tr>
 											<td>{{ $teachers->currentPage() * 10 - (9 - $index) }}</td>
                                             <td>{{ $teacher->teacher_id_number }}</td>
+                                            <td>{{ $teacher->nik }}</td>
                                             <td>{{ $teacher->name }}</td>
                                             <td>{{ $teacher->email }}</td>
                                             <td>{{ $teacher->phone }}</td>
@@ -135,7 +137,7 @@
                                         </tr>
 									@empty
 										<tr>
-											<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '8' : '7' }}">Belum ada guru</td>
+											<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '9' : '8' }}">Belum ada guru</td>
 										</tr>										
 									@endempty
                                 </tbody>

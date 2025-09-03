@@ -16,6 +16,13 @@ use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithTitle;
+
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithStyles;
+use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
+use PhpOffice\PhpSpreadsheet\Style\Alignment;
+
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -63,7 +70,7 @@ class ReportController extends Controller
                         // Sekolah spesifik
                         foreach ($this->transactions as $transaction) {
                             $data->push([
-                                \Carbon\Carbon::parse($transaction['date'])->format('d/m/Y'),
+                                Carbon::parse($transaction['date'])->format('d/m/Y'),
                                 $transaction['account'],
                                 $transaction['description'],
                                 $transaction['debit'],
@@ -77,7 +84,7 @@ class ReportController extends Controller
                             $data->push([$schoolData['school']->name]);
                             foreach ($schoolData['transactions'] as $transaction) {
                                 $data->push([
-                                    \Carbon\Carbon::parse($transaction['date'])->format('d/m/Y'),
+                                    Carbon::parse($transaction['date'])->format('d/m/Y'),
                                     $transaction['school']->name,
                                     $transaction['account'],
                                     $transaction['description'],
@@ -296,6 +303,7 @@ class ReportController extends Controller
 
         $transactions = Transaction::whereIn('school_id', $schoolIds)
             ->whereBetween('date', [$startDate, $endDate])
+            ->where('reference_type', '!=', 'App\Models\Depreciation')
             ->with(['school', 'account'])
             ->orderBy('date')
             ->orderBy('id')
@@ -985,6 +993,328 @@ class ReportController extends Controller
             }, $fileName);
         } catch (\Exception $e) {
             Log::error('Failed to export Financial Statements', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Gagal mengekspor ke Excel: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Laporan Keluar Masuk Keuangan
+     */
+    public function cashReports(Request $request, School $school = null)
+    {
+        Log::info('Accessing Cash Reports', ['request' => $request->all()]);
+        $user = auth()->user();
+        $school = $this->resolveSchool($user, $school);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+
+        $account = $request->account;
+        $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
+        $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
+        $items = $this->calculateItems($school->id, $account, $startDate, $endDate);
+
+        if ($request->has('export') && $request->export === 'excel') {
+            return $this->exportCashReports($items, $school, $account, $startDate, $endDate);
+        }
+
+        return view('reports.cash-reports', compact('items', 'school', 'schools', 'account', 'startDate', 'endDate'));
+    }
+
+    /**
+     * Calculate Laba Rugi
+     */
+    protected function calculateItems($schoolId, $account, $startDate, $endDate)
+    {
+        $dbcr = ($account == 'keluar' ? 'debit' : 'credit');
+
+        $results = DB::table('transactions as t')
+            ->selectRaw("
+                a.code,
+                t.date,
+                t.description,
+                t.doc_number,
+                SUM(CASE WHEN a.name LIKE '%ppdb%' THEN t.credit ELSE 0 END) as ppdb,
+                SUM(CASE WHEN a.name LIKE '%dpp%' THEN t.credit ELSE 0 END) as dpp,
+                SUM(CASE WHEN a.name LIKE '%spp%' THEN t.credit ELSE 0 END) as spp,
+                SUM(CASE WHEN (a.name LIKE '%uks%' OR a.name LIKE '%biaya%' OR a.name LIKE '%beli%' OR a.account_type = 'Aset Tetap') THEN t.credit ELSE 0 END) as uks,
+                SUM(CASE WHEN a.name LIKE '%uis%' THEN t.credit ELSE 0 END) as uis,
+                SUM(CASE WHEN a.name LIKE '%uig%' THEN t.credit ELSE 0 END) as uig,
+                SUM(CASE WHEN a.name LIKE '%uik%' THEN t.credit ELSE 0 END) as uik,
+                SUM(CASE WHEN a.name LIKE '%unit usaha%' THEN t.credit ELSE 0 END) as unit_usaha,
+                SUM(CASE WHEN a.name LIKE '%pemerintah%' THEN t.credit ELSE 0 END) as pemerintah,
+                SUM(CASE WHEN a.name LIKE '%swasta%' THEN t.credit ELSE 0 END) as swasta,
+                SUM(
+                    CASE 
+                        WHEN a.name NOT LIKE '%ppdb%'
+                        AND a.name NOT LIKE '%dpp%'
+                        AND a.name NOT LIKE '%spp%'
+                        AND a.name NOT LIKE '%uks%'
+                        AND a.name NOT LIKE '%biaya%'
+                        AND a.name NOT LIKE '%beli%'
+                        AND a.name NOT LIKE '%uis%'
+                        AND a.name NOT LIKE '%uig%'
+                        AND a.name NOT LIKE '%uik%'
+                        AND a.name NOT LIKE '%unit usaha%'
+                        AND a.name NOT LIKE '%pemerintah%'
+                        AND a.name NOT LIKE '%swasta%'
+                        AND a.account_type <> 'Aset Tetap'
+                        THEN t.credit ELSE 0
+                    END
+                ) as lain_lain
+            ")
+            ->join('accounts as a', 'a.id', '=', 't.account_id')
+            ->where('t.school_id', $schoolId)->where('t.deleted_at', NULL)
+            ->where('a.normal_balance', ($account == 'keluar' ? 'debit' : 'kredit'))
+            ->when($account == 'keluar', function ($q) {
+                // $q->where('a.account_type', 'Biaya');
+                $q->where('t.description', 'not like', '%piutang%');
+            })
+            // ->when($account == 'masuk', function ($q) {
+            // })
+            ->whereBetween('t.date', [$startDate, $endDate])
+            ->groupBy(['a.code','t.date','t.description','t.doc_number'])
+            ->orderBy('t.date')->orderBy('t.id')
+            ->get();
+
+        $items = [
+            'data' => [],
+            'totals' => [
+                'ppdb'        => 0,
+                'dpp'         => 0,
+                'spp'         => 0,
+                'uks'         => 0,
+                'uis'         => 0,
+                'uig'         => 0,
+                'uik'         => 0,
+                'unit_usaha'  => 0,
+                'pemerintah'  => 0,
+                'swasta'      => 0,
+                'lain_lain'   => 0,
+                'grand_total' => 0
+            ]
+        ];
+
+        $i = 1;
+        foreach ($results as $row) {
+            $item = [
+                'no'           => $i,
+                'code'         => $row->code,
+                'date'         => $row->date,
+                'description'  => $row->description,
+                'doc_number'   => $row->doc_number,
+                'ppdb'         => (float) $row->ppdb,
+                'dpp'          => (float) $row->dpp,
+                'spp'          => (float) $row->spp,
+                'uks'          => (float) $row->uks,
+                'uis'          => (float) $row->uis,
+                'uig'          => (float) $row->uig,
+                'uik'          => (float) $row->uik,
+                'unit_usaha'   => (float) $row->unit_usaha,
+                'pemerintah'   => (float) $row->pemerintah,
+                'swasta'       => (float) $row->swasta,
+                'lain_lain'    => (float) $row->lain_lain,
+            ];
+            $i++;
+
+            // Tambahkan ke $items
+            $items['data'][] = $item;
+
+            // Hitung total per kolom
+            $items['totals']['ppdb']       += $item['ppdb'];
+            $items['totals']['dpp']        += $item['dpp'];
+            $items['totals']['spp']        += $item['spp'];
+            $items['totals']['uks']        += $item['uks'];
+            $items['totals']['uis']        += $item['uis'];
+            $items['totals']['uig']        += $item['uig'];
+            $items['totals']['uik']        += $item['uik'];
+            $items['totals']['unit_usaha'] += $item['unit_usaha'];
+            $items['totals']['pemerintah'] += $item['pemerintah'];
+            $items['totals']['swasta']     += $item['swasta'];
+            $items['totals']['lain_lain']  += $item['lain_lain'];
+        }
+
+        // Hitung grand total (jumlah semua kategori)
+        $items['totals']['grand_total'] = $items['totals']['ppdb']
+            + $items['totals']['dpp']
+            + $items['totals']['spp']
+            + $items['totals']['uks']
+            + $items['totals']['uis']
+            + $items['totals']['uig']
+            + $items['totals']['uik']
+            + $items['totals']['unit_usaha']
+            + $items['totals']['pemerintah']
+            + $items['totals']['swasta']
+            + $items['totals']['lain_lain'];
+
+        return $items;
+    }
+
+    /**
+     * Export Laporan Keluar Masuk Keuangan
+     */
+    protected function exportCashReports($items, $school, $account, $startDate, $endDate)
+    {
+        $headType = ucwords($account);
+        $schoolName = $school ? Str::slug($school->name) : 'Semua_Sekolah';
+        $fileName = "Laporan_Kas_{$headType}_{$startDate}_to_{$endDate}_{$schoolName}.xlsx";
+
+        $item_data = $items['data'];
+        $item_total = $items['totals'];
+
+        try {
+            return Excel::download(new class($item_data, $item_total, $schoolName, $school, $headType, $startDate, $endDate) implements FromCollection, WithHeadings, WithTitle, WithStyles, WithEvents {
+                protected $item_data;
+                protected $item_total;
+                protected $schoolName;
+                protected $school;
+                protected $headType;
+                protected $startDate;
+                protected $endDate;
+
+                public function __construct($item_data, $item_total, $schoolName, $school, $headType, $startDate, $endDate)
+                {
+                    $this->item_data = $item_data;
+                    $this->item_total = $item_total;
+                    $this->schoolName = $schoolName;
+                    $this->school = $school;
+                    $this->headType = $headType;
+                    $this->startDate = $startDate;
+                    $this->endDate = $endDate;
+                }
+
+                public function collection()
+                {
+                    $data = collect();
+
+                    // Header teks
+                    $data->push(['Lampiran '.($this->headType=='Masuk'?2:3).'. Catatan Uang '.ucwords($this->headType)]);
+                    $data->push(['Nama Sekolah : '.$this->school->name]);
+                    $data->push(['Alamat Sekolah : '.$this->school->address]);
+                    $data->push(['']);
+                    $startDate = Carbon::parse($this->startDate)->format('d-m-Y');
+                    $endDate = Carbon::parse($this->endDate)->format('d-m-Y');
+                    $data->push(['CATATAN UANG '.strtoupper($this->headType).' ('.$startDate.' - '.$endDate.')']);
+                    $data->push(['']);
+
+                    // Header tabel
+                    $data->push([
+                        'NO', 'TGL', 'Uraian', 'No. Bukti', 'PPDB', 'DPP', 'SPP', 'UKS', 'UIS', 'UIG', 'UIK', 'UNIT USAHA', 'PEMERINTAH', 'SWASTA', 'LAIN-LAIN'
+                    ]);
+
+                    // Data item_data
+                    foreach ($this->item_data as $item) {
+                        $data->push([ $item['no'], Carbon::parse($item['date'])->format('d-m-Y'), $item['description'], $item['doc_number'], $item['ppdb'], $item['dpp'], $item['spp'], $item['uks'], $item['uis'], $item['uig'], $item['uik'], $item['unit_usaha'], $item['pemerintah'], $item['swasta'], $item['lain_lain'] ]);
+                    }
+                    $this->lastRow = $data->count();
+
+                    // Footer
+                    $data->push(['Jumlah Uang '.($this->headType), '', '', '', $this->item_total['ppdb'], $this->item_total['dpp'], $this->item_total['spp'], $this->item_total['uks'], $this->item_total['uis'], $this->item_total['uig'], $this->item_total['uik'], $this->item_total['unit_usaha'], $this->item_total['pemerintah'], $this->item_total['swasta'], $this->item_total['lain_lain']]);
+                    $data->push(['','','','',$this->item_total['grand_total']]);
+
+                    $data->push(['Nama Kota, '.date('d-m-Y')]);
+                    $data->push(['']);
+                    $data->push(['Mengetahui', '', '', '', '', '', '', '', '', '', '', '', '']);
+                    $data->push(['Kepala Sekolah', '', '', '', '', '', '', '', '', '', '', '', 'Bendahara']);
+                    $data->push(['']);
+                    $data->push(['']);
+                    $data->push(['']);
+                    $data->push(['(..............................)', '', '', '', '', '', '', '', '', '', '', '', '(..............................)']);
+
+                    return $data;
+                }
+
+                public function headings(): array
+                {
+                    return [];
+                }
+
+                public function title(): string
+                {
+                    return 'Laporan Kas';
+                }
+
+                public function styles(Worksheet $sheet)
+                {
+                    return [
+                        1 => ['font' => ['bold' => true]], // Lampiran
+                        5 => ['font' => ['bold' => true]], // CATATAN UANG KELUAR
+                        7 => [
+                            'font' => ['bold' => true],
+                            'alignment' => ['horizontal' => 'center', 'vertical' => 'center'],
+                            'borders' => [
+                                'outline' => ['borderStyle' => 'thin'],
+                                'inside' => ['borderStyle' => 'thin'],
+                            ]
+                        ]
+                    ];
+                }
+
+                public function registerEvents(): array
+                {
+                    return [
+                        AfterSheet::class => function(AfterSheet $event) {
+                            $sheet = $event->sheet;
+
+                            // Merge cell untuk header
+                            $sheet->mergeCells('A1:O1'); // Lampiran
+                            $sheet->mergeCells('A2:O2'); // Nama Sekolah
+                            $sheet->mergeCells('A3:O3'); // Alamat
+                            $sheet->mergeCells('A5:O5'); // CATATAN UANG KELUAR
+
+                            $sheet->getStyle('D7:O7')->getAlignment()->setTextRotation(90);
+
+                            // Style untuk header
+                            $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(12);
+                            $sheet->getStyle('A5')->getFont()->setBold(true)->setSize(12);
+                            $sheet->getStyle('A5')->getAlignment()->setHorizontal('center');
+
+                            // Table range (mulai baris 7)
+                            $lastRow = 2 + $this->lastRow; // jumlah baris
+                            $tableRange = "A7:O{$lastRow}";
+
+                            // Border tabel
+                            $sheet->getStyle($tableRange)->applyFromArray([
+                                'borders' => [
+                                    'allBorders' => [
+                                        'borderStyle' => \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN,
+                                    ]
+                                ]
+                            ]);
+
+                            // Align kolom NO, TGL, No. Bukti ke center
+                            $sheet->getStyle("A8:A{$lastRow}")->getAlignment()->setHorizontal('center');
+                            $sheet->getStyle("B8:B{$lastRow}")->getAlignment()->setHorizontal('center');
+                            $sheet->getStyle("D8:D{$lastRow}")->getAlignment()->setHorizontal('center');
+
+                            // Kolom width
+                            $sheet->getColumnDimension('A')->setWidth(5);
+                            $sheet->getColumnDimension('B')->setWidth(11);
+                            $sheet->getColumnDimension('C')->setWidth(45);
+                            $sheet->getColumnDimension('D')->setWidth(12);
+                            foreach (range('E', 'N') as $col) {
+                                $sheet->getColumnDimension($col)->setWidth(10);
+                            }
+
+                            // Format angka (E sampai N)
+                            $sheet->getStyle("E8:O{$lastRow}")->getNumberFormat()->setFormatCode('#,##0');
+
+                            // Footer style
+                            $tblSummary = $lastRow - 1;
+                            $footerStart = $lastRow + 1;
+
+                            $sheet->mergeCells("A{$tblSummary}:D{$lastRow}");
+                            $sheet->mergeCells("E{$lastRow}:O{$lastRow}");
+                            $sheet->getStyle("E{$lastRow}")->getAlignment()->setHorizontal('center');
+
+                            $sheet->mergeCells("A{$footerStart}:O{$footerStart}"); // Jumlah uang keluar
+                            $sheet->getStyle("A{$tblSummary}")->getAlignment()->setVertical(Alignment::VERTICAL_CENTER);
+
+                            $sheet->getStyle("A{$footerStart}")->getAlignment()->setHorizontal('right');
+                        }
+                    ];
+                }
+            }, $fileName);
+        } catch (\Exception $e) {
+            Log::error('Failed to export Cash Reports', ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'Gagal mengekspor ke Excel: ' . $e->getMessage());
         }
     }

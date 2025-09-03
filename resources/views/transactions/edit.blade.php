@@ -29,6 +29,15 @@
 						</div>
 					</div>
 					<div class="card-body">
+                        @if ($errors->has('balance'))
+                        <div class="row gx-3">
+                            <div class="col-sm-6 col-12">
+                                <div class="alert alert-danger">
+                                    {{ $errors->first('balance') }}
+                                </div>
+                            </div>
+                        </div>
+                        @endif
                         <form action="{{ route('school-transactions.update', [$school, $transaction]) }}" method="POST">
                         @csrf
                         @method('PUT')
@@ -37,8 +46,19 @@
                                 <div class="row gx-3">
                                     <div class="col-sm-6 col-12">
                                         <!-- Row start -->
-                                        <div class="row gx-3">
-                                            <div class="col-sm-12 col-12">
+                                        <div class="row gx-3 mb-3 account-row0">
+                                            <div class="col-6">
+                                                <!-- Form group start -->
+                                                <div class="mb-3">
+                                                    <label for="doc_number" class="form-label">No Dokumen</label>
+                                                    <input type="text" class="form-control @error('doc_number') is-invalid @enderror" id="doc_number" name="doc_number" value="{{ old('doc_number', $transaction->doc_number) }}">
+                                                    @error('doc_number')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <!-- Form group end -->
+                                            </div>
+                                            <div class="col-6">
                                                 <!-- Form group start -->
                                                 <div class="mb-3">
                                                     <label for="date" class="form-label">Tanggal</label>
@@ -64,7 +84,7 @@
                                             </div>
                                         </div>
                                         <div class="row gx-3">
-                                            <div class="col-sm-12 col-12">
+                                            <div class="col-sm-6 col-12">
                                                 <!-- Form group start -->
                                                 <div class="mb-3">
                                                     <label for="account_id" class="form-label">Akun</label>
@@ -82,9 +102,27 @@
                                                 </div>
                                                 <!-- Form group end -->
                                             </div>
+                                            <div class="col-sm-6 col-12">
+                                                <!-- Form group start -->
+                                                <div class="mb-3" id="sumber-dana">
+                                                    <label for="fund_management_id" class="form-label">Sumber Dana</label>
+                                                    <select class="form-select @error('fund_management_id') is-invalid @enderror" id="fund_management_id" name="fund_management_id">
+                                                        <option value="">Pilih Sumber Dana</option>
+                                                        @foreach($funds as $fund)
+                                                            <option value="{{ $fund->id }}" data-amount="{{ $fund->amount }}" {{ old('fund_management_id', $transaction->fund_management_id) == $fund->id ? 'selected' : '' }}>
+                                                                {{ $fund->name }} (Rp{{ number_format($fund->amount, 0, ',', '.') }})
+                                                            </option>
+                                                        @endforeach
+                                                    </select>
+                                                    @error('fund_management_id')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <!-- Form group end -->
+                                            </div>
                                         </div>
                                         <div class="row gx-3">
-                                            <div class="col-sm-12 col-12">
+                                            <div class="col-sm-6 col-12">
                                                 <!-- Form group start -->
                                                 <div class="mb-3">
                                                     <label for="debit" class="form-label">Pemasukan</label>
@@ -95,9 +133,7 @@
                                                 </div>
                                                 <!-- Form group end -->
                                             </div>
-                                        </div>
-                                        <div class="row gx-3">
-                                            <div class="col-sm-12 col-12">
+                                            <div class="col-sm-6 col-12">
                                                 <!-- Form group start -->
                                                 <div class="mb-3">
                                                     <label for="credit" class="form-label">Pengeluaran</label>
@@ -134,7 +170,27 @@
     <script>
         $(document).ready(function() {
             $('#account_id').select2();
+            $('#fund_management_id').select2();
             $('#payment_method').select2();
+
+            function toggleFundManagement(selectElement) {
+                const selectedText = selectElement.find('option:selected').text().toLowerCase();
+                const fundField = $('#fund_management_id').closest('.col-sm-6, .col-6, .col-5');
+
+                if (selectedText.toLowerCase().includes('infaq')) {
+                    fundField.hide();
+                } else {
+                    fundField.show();
+                }
+            }
+
+            // Jalankan saat pertama kali halaman dimuat
+            toggleFundManagement($('#account_id'));
+
+            // Jalankan saat user mengubah akun
+            $('#account_id').on('change', function () {
+                toggleFundManagement($(this));
+            });
         });
     </script>
 @endsection

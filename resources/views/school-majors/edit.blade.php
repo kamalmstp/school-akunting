@@ -10,7 +10,7 @@
 				<i class="bi bi-pie-chart lh-1"></i>
 				<a href="{{ auth()->user()->role == 'SuperAdmin' ? route('dashboard') : route('dashboard.index', auth()->user()->school_id) }}" class="text-decoration-none">Dashboard</a>
 			</li>
-			<li class="breadcrumb-item" aria-current="page">Kelola Jurusan - Edit</li>
+			<li class="breadcrumb-item" aria-current="page">Kelola Kelas - Edit</li>
 		</ol>
 		<!-- Breadcrumb end -->
 	</div>
@@ -25,7 +25,7 @@
 				<div class="card mb-3">
 					<div class="card-header">
 						<div class="d-flex justify-content-between align-items-center">
-							<h5 class="card-title">Edit Jurusan - {{ $school->name }}</h5>
+							<h5 class="card-title">Edit Kelas - {{ $school->name }}</h5>
 						</div>
 					</div>
 					<div class="card-body">
@@ -41,7 +41,7 @@
                                             <div class="col-sm-12 col-12">
                                                 <!-- Form group start -->
                                                 <div class="mb-3">
-                                                    <label for="name" class="form-label">Nama Jurusan</label>
+                                                    <label for="name" class="form-label">Nama Kelas</label>
                                                     <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name', $school_major->name) }}">
                                                     @error('name')
                                                         <div class="invalid-feedback">{{ $message }}</div>

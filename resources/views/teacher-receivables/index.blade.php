@@ -100,8 +100,8 @@
 						<div class="d-flex justify-content-between align-items-center">
 							<h5 class="card-title">Daftar Piutang Guru</h5>
 							@if(auth()->user()->role != 'AdminMonitor')
-								<a href="{{ auth()->user()->role == 'SuperAdmin' ? route('teacher-receivables.create') : route('school-teacher-receivables.create', $school) }}" class="btn btn-primary" title="Tambah Piutang">
-									<span class="d-lg-block d-none">Tambah Piutang</span>
+								<a href="{{ auth()->user()->role == 'SuperAdmin' ? route('teacher-receivables.create') : route('school-teacher-receivables.create', $school) }}" class="btn btn-primary" title="Tambah Penerimaan">
+									<span class="d-lg-block d-none">Tambah Penerimaan</span>
 									<span class="d-sm-block d-lg-none">
 										<i class="bi bi-plus"></i>
 									</span>
@@ -190,7 +190,9 @@
                                                                 <td>{{ $detail->reason ?? '-' }}</td>
 																@if (auth()->user()->role != 'AdminMonitor')
 																<td class="text-center">
+																	<a href="{{ route('school-teacher-receivables.receipt', [$receivable->school, $detail]) }}" class="btn btn-sm btn-info">Kwitansi</a>
 																	<a href="{{ route('school-teacher-receivables.edit-pay', [$receivable->school, $detail]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+																	<a href="https://wa.me/{{ preg_replace('/^0/', '62', $receivable->teacher->phone) }}?text=halo%2C%20berikut%20kami%20sampaikan%20kwitansi%20pembayaran%20bpk%2Fibu" class="btn btn-sm btn-outline-success" target="_blank" title="Kirim WhatsApp">WA</a>
 																</td>
 																@endif
                                                             </tr>

@@ -14,19 +14,41 @@ class AccountController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware(['role:SuperAdmin,AdminMonitor']);
+        // $this->middleware(['role:SuperAdmin,AdminMonitor']);
+        $this->middleware('school.access');
     }
 
     /**
      * Display a listing of accounts.
      */
-    public function index(Request $request)
+    public function index(Request $request, School $school)
     {
         $user = auth()->user();
-        $schools = School::all();
         $account = $request->get('account');
         $type = $request->get('type');
-        $accounts = Account::with('parent')
+
+        if ($user->school_id !== $school->id) {
+            abort(403, 'Unauthorized access to this school.');
+        }
+
+        if (auth()->user()->role != 'SchoolAdmin') {
+            $schoolId = $request->get('school');
+            $accounts = Account::with('parent','school')
+                ->when($schoolId, function($q) use ($schoolId) {
+                    $q->where('school_id', $schoolId);
+                })
+                ->when($account, function ($q) use ($account) {
+                    $q->where('account_type', $account);
+                })
+                ->when($type, function ($q) use ($type) {
+                    $q->where('normal_balance', $type);
+                })
+                ->paginate(10)->withQueryString();
+            return view('accounts.index', compact('accounts', 'school', 'account', 'type', 'schoolId'));
+        }
+
+        $accounts = Account::with('parent','school')
+            ->where('school_id', $school->id)
             ->when($account, function ($q) use ($account) {
                 $q->where('account_type', $account);
             })
@@ -34,27 +56,35 @@ class AccountController extends Controller
                 $q->where('normal_balance', $type);
             })
             ->paginate(10)->withQueryString();
-        
-        return view('accounts.index', compact('accounts', 'schools', 'account', 'type'));
+        return view('accounts.index', compact('accounts', 'school', 'account', 'type'));
     }
 
     /**
      * Show the form for creating a new account.
      */
-    public function create()
+    public function create(School $school)
     {
-        $schools = School::all();
-        $accounts =  Account::all();
+        $user = auth()->user();
+        if ($user->school_id !== $school->id) {
+            abort(403, 'Unauthorized access to this school.');
+        }
 
-        return view('accounts.create', compact('schools', 'accounts'));
+        $schools = School::all();
+        $accounts = $this->getAccounts($school->id);
+
+        return view('accounts.create', compact('school', 'schools', 'accounts'));
     }
 
     /**
      * Store a newly created account in storage.
      */
-    public function store(Request $request)
+    public function store(Request $request, School $school)
     {
         $user = auth()->user();
+        if ($user->school_id !== $school->id) {
+            abort(403, 'Unauthorized access to this school.');
+        }
+
         $rules = [
             'code' => 'required|string|max:20|unique:accounts',
             'name' => 'required|string|max:255',
@@ -69,7 +99,7 @@ class AccountController extends Controller
             $rules['code'] .= '|' . 'regex:' . $codeRules[$request->account_type]['regex'];
         }
 
-        $validator = Validator::make($request->all(), $rules, [
+        $messages = [
             'code.required' => 'Kode akun wajib diisi',
             'code.max' => 'Kode akun maksimal 20 digit',
             'code.unique' => 'Kode akun sudah digunakan',
@@ -77,7 +107,14 @@ class AccountController extends Controller
             'name.required' => 'Nama akun wajib diisi',
             'account_type.required' => 'Pilih salah satu tipe akun',
             'normal_balance.required' => 'Pilih salah satu saldo normal',
-        ]);
+        ];
+
+        if (auth()->user()->role == 'SuperAdmin' && !isset($request->school_id)) {
+            $rules['school_id'] = 'required';
+            $messages['school_id.required'] = 'Pilih sekolah';
+        }
+
+        $validator = Validator::make($request->all(), $rules, $messages);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
@@ -92,6 +129,7 @@ class AccountController extends Controller
         }
 
         Account::create([
+            'school_id' => auth()->user()->role == 'SuperAdmin' ? $request->school_id : $school->id,
             'code' => $request->code,
             'name' => $request->name,
             'account_type' => $request->account_type,
@@ -99,25 +137,42 @@ class AccountController extends Controller
             'parent_id' => $request->parent_id,
         ]);
 
-        return redirect()->route('accounts.index', ['school_id' => $user->role == 'SuperAdmin' ? '' : $request->school_id])->with('success', 'Akun berhasil ditambahkan.');
+        $route = back();
+        if (auth()->user()->role == 'SuperAdmin') {
+            $route = redirect()->route('accounts.index');
+        } else if (auth()->user()->role == 'SchoolAdmin') {
+            $route = redirect()->route('school-accounts.index', $school);
+        }
+
+        return $route->with('success', 'Akun berhasil ditambahkan.');
     }
 
     /**
      * Show the form for editing the specified account.
      */
-    public function edit(Account $account)
+    public function edit(School $school, Account $account)
     {
-        $schools = School::all();
-        $accounts = Account::where('id', '!=', $account->id)->get();
+        $user = auth()->user();
+        if (($user->role != 'SuperAdmin' && $user->school_id !== $school->id) || $account->school_id !== $school->id) {
+            abort(403, 'Unauthorized access to this school or account.');
+        }
 
-        return view('accounts.edit', compact('account', 'schools', 'accounts'));
+        $schools = School::all();
+        $accounts = $this->getAccounts($school->id);
+
+        return view('accounts.edit', compact('school', 'account', 'schools', 'accounts'));
     }
 
     /**
      * Update the specified account in storage.
      */
-    public function update(Request $request, Account $account)
+    public function update(Request $request, School $school, Account $account)
     {
+        $user = auth()->user();
+        if (($user->role != 'SuperAdmin' && $user->school_id !== $school->id) || $account->school_id !== $school->id) {
+            abort(403, 'Unauthorized access to this school or account.');
+        }
+
         $rules = [
             'code' => 'required|string|max:20|unique:accounts,code,' . $account->id,
             'name' => 'required|string|max:255',
@@ -132,7 +187,7 @@ class AccountController extends Controller
             $rules['code'] .= '|' . 'regex:' . $codeRules[$request->account_type]['regex'];
         }
 
-        $validator = Validator::make($request->all(), $rules, [
+        $messages = [
             'code.required' => 'Kode akun wajib diisi',
             'code.max' => 'Kode akun maksimal 20 digit',
             'code.unique' => 'Kode akun sudah digunakan',
@@ -140,7 +195,9 @@ class AccountController extends Controller
             'name.required' => 'Nama akun wajib diisi',
             'account_type.required' => 'Pilih salah satu tipe akun',
             'normal_balance.required' => 'Pilih salah satu saldo normal',
-        ]);
+        ];
+
+        $validator = Validator::make($request->all(), $rules, $messages);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
@@ -165,14 +222,26 @@ class AccountController extends Controller
             'parent_id' => $request->parent_id,
         ]);
 
-        return redirect()->route('accounts.index')->with('success', 'Akun berhasil diperbarui.');
+        $route = back();
+        if (auth()->user()->role == 'SuperAdmin') {
+            $route = redirect()->route('accounts.index');
+        } else if (auth()->user()->role == 'SchoolAdmin') {
+            $route = redirect()->route('school-accounts.index', $school);
+        }
+
+        return $route->with('success', 'Akun berhasil diperbarui.');
     }
 
     /**
      * Remove the specified account from storage.
      */
-    public function destroy(Account $account)
+    public function destroy(School $school, Account $account)
     {
+        $user = auth()->user();
+        if (($user->role != 'SuperAdmin' && $user->school_id !== $school->id) || $account->school_id !== $school->id) {
+            abort(403, 'Unauthorized access to this school or account.');
+        }
+
         if ($account->transactions()->exists()) {
             return redirect()->route('accounts.index')->with('error', 'Akun tidak dapat dihapus karena memiliki transaksi terkait.');
         }
@@ -182,36 +251,68 @@ class AccountController extends Controller
         }
 
         $account->delete();
-        return redirect()->route('accounts.index')->with('success', 'Akun berhasil dihapus.');
+
+        $route = back();
+        if (auth()->user()->role == 'SuperAdmin') {
+            $route = redirect()->route('accounts.index');
+        } else if (auth()->user()->role == 'SchoolAdmin') {
+            $route = redirect()->route('school-accounts.index', $school);
+        }
+        return $route->with('success', 'Akun berhasil dihapus.');
     }
 
     /**
      * Show the import form.
      */
-    public function importForm()
+    public function importForm(School $school)
     {
-        return view('accounts.import');
+        $user = auth()->user();
+        if ($user->school_id !== $school->id) {
+            abort(403, 'Unauthorized access to this school.');
+        }
+
+        return view('accounts.import', compact('school'));
     }
 
     /**
      * Handle the import of accounts from Excel.
      */
-    public function import(Request $request)
+    public function import(Request $request, School $school)
     {
-        $validator = Validator::make($request->all(), [
-            'file' => 'required|mimes:xlsx,xls|max:2048',
-        ]);
+        $user = auth()->user();
+        if ($user->school_id !== $school->id) {
+            abort(403, 'Unauthorized access to this school.');
+        }
+        $rules = ['file' => 'required|mimes:xlsx,xls|max:2048'];
+        $messages = [
+            'file.required' => 'File wajib diupload',
+            'file.mimes' => 'Tipe file tidak valid',
+            'file.max' => 'File maksimal 2MB'
+        ];
+
+        if (auth()->user()->role == 'SuperAdmin') {
+            $rules['school'] = 'required';
+            $messages['school.required'] = 'Pilih salah satu sekolah';
+        }
+
+        $validator = Validator::make($request->all(), $rules, $messages);
 
         if ($validator->fails()) {
             return redirect()->back()->withErrors($validator)->withInput();
         }
 
         try {
-            Excel::import(new AccountsImport(), $request->file('file'));
-            return redirect()->route('accounts.index') ->with('success', 'Data akun berhasil diimpor.');
-        }
+            $schoolId = auth()->user()->role == 'SuperAdmin' ? $request->school : $school->id;
+            Excel::import(new AccountsImport($schoolId), $request->file('file'));
 
-        catch (\Exception $e) {
+            $route = back();
+            if (auth()->user()->role == 'SuperAdmin') {
+                $route = redirect()->route('accounts.index');
+            } else if (auth()->user()->role == 'SchoolAdmin') {
+                $route = redirect()->route('school-accounts.index', $school);
+            }
+            return $route->with('success', 'Data akun berhasil diimpor.');
+        } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Gagal mengimpor data: ' . $e->getMessage());
         }
     }
@@ -238,5 +339,11 @@ class AccountController extends Controller
             'Biaya' => ['regex' => '/^6-[0-9]{0,6}(-[0-9]+)*$/', 'message' => 'Kode Biaya harus dimulai dengan 6- opsional -[angka].'],
             'Investasi' => ['regex' => '/^7-[0-9]{0,6}(-[0-9]+)*$/', 'message' => 'Kode Investasi harus dimulai dengan 7- dan opsional -[angka].'],
         ];
+    }
+
+    protected function getAccounts($school_id)
+    {
+        $accounts = Account::where('school_id', $school_id)->get();
+        return $accounts;
     }
 }

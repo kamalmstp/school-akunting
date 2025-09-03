@@ -93,6 +93,28 @@ class EmployeeReceivableController extends Controller
         return view('partials.employee-receivable-modal', compact('details', 'totalReceivable'));
     }
 
+    public function getPaymentHistory(Request $request)
+    {
+        $employeeId = $request->input('employee_id');
+        $accountId = $request->input('account_id');
+        $schoolId  = $request->input('school_id');
+        
+        if (!$employeeId || !$accountId || !$schoolId)
+             return response()->json([], 200);
+
+        // Validasi (opsional tapi disarankan)
+        $request->validate([
+            'employee_id' => 'required',
+            'account_id' => 'required',
+            'school_id' => 'required',
+        ]);
+
+        // Query menggunakan scope yang sudah dibuat sebelumnya
+        $details = EmployeeReceivableDetail::filterByEmployeeAccountSchool($employeeId, $accountId, $schoolId)->get();
+
+        return response()->json($details, 200);
+    }
+
     /**
      * Show the form for creating a new receivable.
      */
@@ -106,7 +128,10 @@ class EmployeeReceivableController extends Controller
         $employees = Employee::when($schoolId, function ($q) use ($schoolId) {
             $q->where('school_id', $schoolId);
         })->get();
-        $accounts = Account::where('account_type', 'Aset Lancar')
+        $accounts = Account::when($schoolId, function ($q) use ($schoolId) {
+                $q->where('school_id', $schoolId);
+            })
+            ->where('account_type', 'Aset Lancar')
             ->where('code', 'like', '1-12%') // Piutang (1-12)
             ->get();
         return view('employee-receivables.create', compact('school', 'employees', 'accounts'));
@@ -144,12 +169,14 @@ class EmployeeReceivableController extends Controller
 
         $request->validate($rules, $messages);
 
+        $amount = (float) str_replace('.', '', $request->final_amount);
+
         $schoolId = auth()->user()->role == 'SuperAdmin' ? $request->school_id : $school->id;
         EmployeeReceivable::create([
             'school_id' => $schoolId,
             'employee_id' => $request->employee_id,
             'account_id' => $request->account_id,
-            'amount' => (float)str_replace('.', '', $request->amount),
+            'amount' => $amount,
             'paid_amount' => 0,
             'due_date' => $request->due_date,
             'status' => 'Unpaid',
@@ -161,7 +188,7 @@ class EmployeeReceivableController extends Controller
             'account_id' => $request->account_id,
             'date' => now(),
             'description' => Account::find($request->account_id)->name . ' karyawan: ' . Employee::find($request->employee_id)->name,
-            'debit' => (float)str_replace('.', '', $request->amount),
+            'debit' => $amount,
             'credit' => 0,
             'reference_id' => EmployeeReceivable::latest()->first()->id,
             'reference_type' => EmployeeReceivable::class,
@@ -174,10 +201,15 @@ class EmployeeReceivableController extends Controller
             'date' => now(),
             'description' => Account::find($request->account_id)->name . ' karyawan: ' . Employee::find($request->employee_id)->name,
             'debit' => 0,
-            'credit' => (float)str_replace('.', '', $request->amount),
+            'credit' => $amount,
             'reference_id' => EmployeeReceivable::latest()->first()->id,
             'reference_type' => EmployeeReceivable::class,
         ]);
+
+        // update jumlah dana untuk akun terkait
+        FundManagement::where('school_id', $schoolId)
+            ->where('account_id', $request->income_account_id)
+            ->increment('amount', $amount);
 
         $route = back();
         if (auth()->user()->role == 'SuperAdmin') {
@@ -199,8 +231,12 @@ class EmployeeReceivableController extends Controller
             abort(403, 'Unauthorized access to this school.');
         }
 
-        $employees = Employee::where('school_id', $school->id)->get();
-        $accounts = Account::where('account_type', 'Aset Lancar')
+        $schoolId = $school->id;
+        $employees = Employee::where('school_id', $schoolId)->get();
+        $accounts = Account::when($schoolId, function ($q) use ($schoolId) {
+                $q->where('school_id', $schoolId);
+            })
+            ->where('account_type', 'Aset Lancar')
             ->where('code', 'like', '1-12%')
             ->get();
         $transaction = Transaction::where([
@@ -235,10 +271,12 @@ class EmployeeReceivableController extends Controller
             'amount.required' => 'Jumlah wajib diisi'
         ]);
 
+        $amount = (float) str_replace('.', '', $request->final_amount);
+
         $employee_receivable->update([
             'employee_id' => $request->employee_id,
             'account_id' => $request->account_id,
-            'amount' => (float)str_replace('.', '', $request->amount),
+            'amount' => $amount,
             'due_date' => $request->due_date,
         ]);
 
@@ -254,7 +292,7 @@ class EmployeeReceivableController extends Controller
             'school_id' => $school->id,
             'account_id' => $request->account_id,
             'description' => Account::find($request->account_id)->name . ' karyawan: ' . $employee_receivable->employee->name,
-            'debit' => (float)str_replace('.', '', $request->amount),
+            'debit' => $amount,
             'credit' => 0,
         ]);
 
@@ -266,7 +304,7 @@ class EmployeeReceivableController extends Controller
             'account_id' => $request->income_account_id,
             'description' => Account::find($request->income_account_id)->name . ' karyawan: ' . $employee_receivable->employee->name,
             'debit' => 0,
-            'credit' => (float)str_replace('.', '', $request->amount),
+            'credit' => $amount,
         ]);
 
         $route = back();
@@ -508,5 +546,44 @@ class EmployeeReceivableController extends Controller
         }
 
         return $route->with('success', 'Pembayaran piutang berhasil diperbarui.');
+    }
+
+    /**
+     * Download receipt
+     */
+    public function receipt(School $school, EmployeeReceivableDetail $employee_receivable_detail)
+    {
+        $user = auth()->user();
+        if ($user->role === 'SchoolAdmin' && $user->school_id !== $school->id) {
+            abort(403, 'Unauthorized access to this school.');
+        }
+
+        $receivable_detail = $employee_receivable_detail;
+        $receivables = EmployeeReceivable::where('id', $receivable_detail->employee_receivable_id)->first();
+        $employees = Employee::where('id', $receivables->employee_id)->first();
+        
+        $year = \Carbon\Carbon::parse($receivable_detail->period);
+        $idFormatted = str_pad($receivable_detail->id, 4, '0', STR_PAD_LEFT);
+        $invoiceNo = 'INV/' . $year->format('Y') . '/' . $idFormatted;
+
+        $terbilang = new \App\Services\TerbilangService();
+
+        $data = [
+            'invoice_no' => $invoiceNo,
+            'date' => $year->format('M d, Y'),
+            'from' => $employees->name,
+            'amount' => $receivable_detail->amount,
+            'amount_words' => trim($terbilang->convert($receivable_detail->amount)).' Rupiah',
+            'payment_note' => $receivable_detail->description,
+            'company' => [
+                'name' => $school->name,
+                'telp' => $school->phone,
+                'email' => $school->email,
+                'logo' => $school->logo
+            ]
+        ];
+
+        $pdf = PDF::loadView('employee-receivables.receipt', $data);
+        return $pdf->download('kwitansi.pdf');
     }
 }

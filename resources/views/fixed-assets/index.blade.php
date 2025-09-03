@@ -82,7 +82,7 @@
 				<div class="card">
 					<div class="card-header">
 						<div class="d-flex justify-content-between align-items-center">
-							<h5 class="card-title">Daftar Aset Tetap</h5>
+							<h5 class="card-title">Daftar Penyusutan Aset Tetap</h5>
                             @if(auth()->user()->role != 'AdminMonitor')
                                 <a href="{{ auth()->user()->role == 'SuperAdmin' ? route('fixed-assets.create') : route('school-fixed-assets.create', $school) }}" class="btn btn-primary" title="Tambah Aset Tetap">
 									<span class="d-lg-block d-none">Tambah Aset Tetap</span>
@@ -113,11 +113,11 @@
                                         <th scope="col">Nama Aset</th>
                                         <th scope="col">Akun</th>
                                         <th scope="col">Tanggal Perolehan</th>
-                                        <th scope="col" class="text-end">Biaya Perolehan</th>
+                                        <!--<th scope="col" class="text-end">Biaya Perolehan</th>-->
                                         <th scope="col" class="text-end">Umur Manfaat (Tahun)</th>
                                         <th scope="col" class="text-end">Persentase Penyusutan (%)</th>
-                                        <th scope="col" class="text-end">Akumulasi Penyusutan</th>
-                                        <th scope="col" class="text-end">Nilai Buku</th>
+                                        <!--<th scope="col" class="text-end">Akumulasi Penyusutan</th>-->
+                                        <!--<th scope="col" class="text-end">Nilai Buku</th>-->
                                         @if (auth()->user()->role != 'AdminMonitor')<th></th>@endif
 									</tr>
 								</thead>
@@ -133,11 +133,11 @@
 											</td>
 											<td>{{ $fixedAsset->account->code }} - {{ $fixedAsset->account->name }}</td>
 											<td>{{ \Carbon\Carbon::parse($fixedAsset->acquisition_date)->format('d-m-Y') }}</td>
-											<td class="text-end">{{ number_format($fixedAsset->acquisition_cost, 0, ',', '.') }}</td>
+											<!--<td class="text-end">{{ number_format($fixedAsset->acquisition_cost, 0, ',', '.') }}</td>-->
 											<td class="text-end">{{ $fixedAsset->useful_life }}</td>
 											<td class="text-end">{{ number_format($fixedAsset->depreciation_percentage, 2, ',', '.') }}</td>
-											<td class="text-end">{{ number_format($fixedAsset->accumulated_depriciation, 0, ',', '.') }}</td>
-											<td class="text-end">{{ number_format($fixedAsset->acquisition_cost - $fixedAsset->accumulated_depriciation, 0, ',', '.') }}</td>
+											<!--<td class="text-end">{{ number_format($fixedAsset->accumulated_depriciation, 0, ',', '.') }}</td>-->
+											<!--<td class="text-end">{{ number_format($fixedAsset->acquisition_cost - $fixedAsset->accumulated_depriciation, 0, ',', '.') }}</td>-->
 											@if (auth() ->user()->role != 'AdminMonitor')
 												<td class="text-center">
 													@if($fixedAsset->useful_life != $fixedAsset->depreciations()->count())
@@ -159,9 +159,10 @@
                                                         <tr>
                                                             <th scope="col">Tanggal Penyusutan</th>
                                                             <th scope="col">Deskripsi</th>
-                                                            <th scope="col" class="text-end">Nilai Buku Awal</th>
-                                                            <th scope="col" class="text-end">Jumlah Penyusutan</th>
-                                                            <th scope="col" class="text-end">Nilai Buku Akhir</th>
+                                                            <th scope="col" class="text-end">Persentase Penyusutan (%)</th>
+                                                            <!-- <th scope="col" class="text-end">Nilai Buku Awal</th> -->
+                                                            <!-- <th scope="col" class="text-end">Jumlah Penyusutan</th> -->
+                                                            <!-- <th scope="col" class="text-end">Nilai Buku Akhir</th> -->
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -170,9 +171,10 @@
                                                             <tr>
                                                                 <td>{{ \Carbon\Carbon::parse($detail->date)->format('d-m-Y') }}</td>
                                                                 <td>{{ $detail->description }}</td>
-                                                                <td class="text-end">{{ number_format($detail->balance + $detail->amount, 0, ',', '.') }}</td>
-                                                                <td class="text-end">{{ number_format($detail->amount, 0, ',', '.') }}</td>
-                                                                <td class="text-end">{{ number_format($detail->balance, 0, ',', '.') }}</td>
+                                                                <td class="text-end">{{ number_format($detail->amount, 2, ',', '.') }}</td>
+                                                                <!-- <td class="text-end">{{ number_format($detail->balance + $detail->amount, 0, ',', '.') }}</td> -->
+                                                                <!-- <td class="text-end">{{ number_format($detail->amount, 0, ',', '.') }}</td> -->
+                                                                <!-- <td class="text-end">{{ number_format($detail->balance, 0, ',', '.') }}</td> -->
                                                             </tr>
 														@empty
 															<tr>

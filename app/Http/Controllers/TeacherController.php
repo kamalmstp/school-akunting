@@ -84,6 +84,12 @@ class TeacherController extends Controller
 
         $rules = [
             'teacher_id_number' => 'required|string|max:20|unique:teachers',
+            'nik' => 'required|integer|digits:16',
+            'education' => 'required|string',
+            'tmt' => 'required|integer',
+            'work_period' => 'required|string',
+            'certification' => 'required|string',
+            'employment_status' => 'required|string',
             'name' => 'required|string|max:255',
             'email' => 'required|email|unique:teachers',
             'phone' => 'required|max:13',
@@ -94,6 +100,15 @@ class TeacherController extends Controller
             'teacher_id_number.required' => 'NIK wajib diisi',
             'teacher_id_number.max' => 'NIK maksimal 20 digit',
             'teacher_id_number.unique' => 'NIK sudah digunakan',
+            'nik.required' => 'NIK KTP wajib diisi',
+            'nik.integer' => 'NIK KTP harus berupa angka',
+            'nik.digits' => 'NIK KTP terdiri dari 16 angka',
+            'education.required' => 'Pendidikan terakhir wajib diisi',
+            'tmt.required' => 'TMT wajib diisi',
+            'tmt.integer' => 'TMT harus berupa angka',
+            'work_period.required' => 'Masa kerja wajib diisi',
+            'certification.required' => 'Sertifikasi wajib diisi',
+            'employment_status.required' => 'Status kepegawaian wajib diisi',
             'name.required' => 'Nama guru wajib diisi',
             'email.required' => 'Email guru wajib diisi',
             'email.email' => 'Format email tidak valid',
@@ -102,9 +117,9 @@ class TeacherController extends Controller
             'phone.max' => 'Telepon guru maksimal 13 angka',
         ];
 
-        if (auth()->user()->role == 'SuperAdmin' && isset($request->school_id)) {
+        if (auth()->user()->role == 'SuperAdmin' && !isset($request->school_id)) {
             $rules['school_id'] = 'required';
-            $messages['school_id.reuired'] = 'Pilih sekolah';
+            $messages['school_id.required'] = 'Pilih sekolah';
         }
 
         $validator = Validator::make($request->all(), $rules, $messages);
@@ -116,9 +131,16 @@ class TeacherController extends Controller
         Teacher::create([
             'school_id' => auth()->user()->role == 'SuperAdmin' ? $request->school_id : $school->id,
             'teacher_id_number' => $request->teacher_id_number,
+            'nik' => $request->nik,
+            'education' => $request->education,
+            'tmt' => $request->tmt,
+            'work_period' => $request->work_period,
+            'certification' => $request->certification,
+            'employment_status' => $request->employment_status,
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
+            'address' => $request->address,
             'is_active' => $request->is_active ?? true,
         ]);
 
@@ -157,6 +179,12 @@ class TeacherController extends Controller
 
         $validator = Validator::make($request->all(), [
             'teacher_id_number' => 'required|string|max:20|unique:teachers,teacher_id_number,' . $teacher->id,
+            'nik' => 'required|integer|digits:16',
+            'education' => 'required|string',
+            'tmt' => 'required|integer',
+            'work_period' => 'required|string',
+            'certification' => 'required|string',
+            'employment_status' => 'required|string',
             'name' => 'required|string|max:255',
             'email' => 'required|email',
             'phone' => 'required|max:13',
@@ -165,6 +193,15 @@ class TeacherController extends Controller
             'teacher_id_number.required' => 'NIK wajib diisi',
             'teacher_id_number.max' => 'NIK maksimal 20 digit',
             'teacher_id_number.unique' => 'NIK sudah digunakan',
+            'nik.required' => 'NIK KTP wajib diisi',
+            'nik.integer' => 'NIK KTP harus berupa angka',
+            'nik.digits' => 'NIK KTP terdiri dari 16 angka',
+            'education.required' => 'Pendidikan terakhir wajib diisi',
+            'tmt.required' => 'TMT wajib diisi',
+            'tmt.integer' => 'TMT harus berupa angka',
+            'work_period.required' => 'Masa kerja wajib diisi',
+            'certification.required' => 'Sertifikasi wajib diisi',
+            'employment_status.required' => 'Status kepegawaian wajib diisi',
             'name.required' => 'Nama guru wajib diisi',
             'email.required' => 'Email guru wajib diisi',
             'email.email' => 'Format email tidak valid',
@@ -178,9 +215,16 @@ class TeacherController extends Controller
 
         $teacher->update([
             'teacher_id_number' => $request->teacher_id_number,
+            'nik' => $request->nik,
+            'education' => $request->education,
+            'tmt' => $request->tmt,
+            'work_period' => $request->work_period,
+            'certification' => $request->certification,
+            'employment_status' => $request->employment_status,
             'name' => $request->name,
             'email' => $request->email,
             'phone' => $request->phone,
+            'address' => $request->address,
             'is_active' => $request->is_active ?? true,
         ]);
 

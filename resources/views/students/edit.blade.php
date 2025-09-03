@@ -30,20 +30,31 @@
 					</div>
 					<div class="card-body">
                         <form action="{{ route('school-students.update', [$school, $student]) }}" method="POST">
-                        @csrf
-                        @method('PUT')
+                            @csrf
+                            @method('PUT')
                             <div class="create-invoice-wrapper">
                                 <!-- Row start -->
                                 <div class="row gx-3">
                                     <div class="col-sm-6 col-12">
                                         <!-- Row start -->
                                         <div class="row gx-3">
-                                            <div class="col-sm-12 col-12">
+                                            <div class="col-sm-6 col-12">
                                                 <!-- Form group start -->
                                                 <div class="mb-3">
                                                     <label for="student_id_number" class="form-label">NIS</label>
                                                     <input type="text" class="form-control @error('student_id_number') is-invalid @enderror" id="student_id_number" name="student_id_number" value="{{ old('student_id_number', $student->student_id_number) }}">
                                                     @error('student_id_number')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <!-- Form group end -->
+                                            </div>
+                                            <div class="col-sm-6 col-12">
+                                                <!-- Form group start -->
+                                                <div class="mb-3">
+                                                    <label for="national_student_number" class="form-label">NISN</label>
+                                                    <input type="text" class="form-control @error('national_student_number') is-invalid @enderror" id="national_student_number" name="national_student_number" value="{{ old('national_student_number', $student->national_student_number) }}">
+                                                    @error('national_student_number')
                                                         <div class="invalid-feedback">{{ $message }}</div>
                                                     @enderror
                                                 </div>
@@ -80,9 +91,33 @@
                                             <div class="col-sm-12 col-12">
                                                 <!-- Form group start -->
                                                 <div class="mb-3">
-                                                    <label for="address" class="form-label">Alamat</label>
-                                                    <textarea class="form-control @error('address') is-invalid @enderror" id="address" name="address">{{ old('address', $student->address) }}</textarea>
-                                                    @error('address')
+                                                    <label for="parent_name" class="form-label">Nama Orang Tua</label>
+                                                    <input type="text" class="form-control @error('parent_name') is-invalid @enderror" id="parent_name" name="parent_name" value="{{ old('parent_name', $student->parent_name) }}">
+                                                    @error('parent_name')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <!-- Form group end -->
+                                            </div>
+                                        </div>
+                                        <div class="row gx-3">
+                                            <div class="col-sm-6 col-12">
+                                                <!-- Form group start -->
+                                                <div class="mb-3">
+                                                    <label for="parent_phone" class="form-label">Telepon Orang Tua</label>
+                                                    <input type="text" class="form-control @error('parent_phone') is-invalid @enderror" id="parent_phone" name="parent_phone" value="{{ old('parent_phone', $student->parent_phone) }}">
+                                                    @error('parent_phone')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <!-- Form group end -->
+                                            </div>
+                                            <div class="col-sm-6 col-12">
+                                                <!-- Form group start -->
+                                                <div class="mb-3">
+                                                    <label for="parent_mail" class="form-label">Email Orang Tua</label>
+                                                    <input type="email" class="form-control @error('parent_mail') is-invalid @enderror" id="parent_mail" name="parent_mail" value="{{ old('parent_mail', $student->parent_mail) }}">
+                                                    @error('parent_mail')
                                                         <div class="invalid-feedback">{{ $message }}</div>
                                                     @enderror
                                                 </div>
@@ -93,6 +128,32 @@
                                             <div class="col-sm-12 col-12">
                                                 <!-- Form group start -->
                                                 <div class="mb-3">
+                                                    <label for="parent_job" class="form-label">Pekerjaan Orang Tua</label>
+                                                    <input type="text" class="form-control @error('parent_job') is-invalid @enderror" id="parent_job" name="parent_job" value="{{ old('parent_job', $student->parent_job) }}">
+                                                    @error('parent_job')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <!-- Form group end -->
+                                            </div>
+                                        </div>
+                                        <div class="row gx-3">
+                                            <div class="col-sm-12 col-12">
+                                                <!-- Form group start -->
+                                                <div class="mb-3">
+                                                    <label for="address" class="form-label">Alamat</label>
+                                                    <textarea class="form-control @error('address') is-invalid @enderror" id="address" name="address">{{ old('address', $student->address) }}</textarea>
+                                                    @error('address')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <!-- Form group end -->
+                                            </div>
+                                        </div>
+                                        <div class="row gx-3">
+                                            <div class="col-sm-6 col-12">
+                                                <!-- Form group start -->
+                                                <div class="mb-3">
                                                     <label for="class" class="form-label">Kelas</label>
                                                     <select class="form-select @error('class') is-invalid @enderror" id="class" name="class">
                                                         <option value="">Pilih Kelas</option>
@@ -101,6 +162,17 @@
                                                         @endforeach
                                                     </select>
                                                     @error('is_active')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <!-- Form group end -->
+                                            </div>
+                                            <div class="col-sm-6 col-12">
+                                                <!-- Form group start -->
+                                                <div class="mb-3">
+                                                    <label for="year" class="form-label">Tahun Masuk</label>
+                                                    <input type="number" class="form-control @error('year') is-invalid @enderror" id="year" name="year" value="{{ old('year', $student->year) }}" min="2000" max="2025">
+                                                    @error('year')
                                                         <div class="invalid-feedback">{{ $message }}</div>
                                                     @enderror
                                                 </div>

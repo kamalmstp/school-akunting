@@ -29,7 +29,7 @@
 						</div>
 					</div>
 					<div class="card-body">
-                        <form action="{{ route('schools.update', $school) }}" method="POST">
+                        <form action="{{ route('schools.update', $school) }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             @method('PUT')
                             <div class="create-invoice-wrapper">
@@ -84,6 +84,24 @@
                                                     <textarea class="form-control @error('address') is-invalid @enderror" id="address" name="address">{{ old('address', $school->address) }}</textarea>
                                                     @error('address')
                                                         <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <!-- Form group end -->
+                                            </div>
+                                        </div>
+                                        <div class="row gx-3">
+                                            <div class="col-sm-12 col-12">
+                                                <!-- Form group start -->
+                                                <div class="mb-3">
+                                                    <label for="logo" class="form-label">Upload Logo Sekolah (Maks. 2MB)</label>
+                                                    @if($school->logo)
+                                                    <div class="mb-2">
+                                                        <img src="{{ asset('/' . $school->logo) }}" alt="Logo Sekolah" style="max-height: 100px;">
+                                                    </div>
+                                                    @endif
+                                                    <input type="file" class="form-control @error('logo') is-invalid @enderror" id="logo" name="logo" accept="image/*">
+                                                    @error('logo')
+                                                    <div class="invalid-feedback">{{ $message }}</div>
                                                     @enderror
                                                 </div>
                                                 <!-- Form group end -->

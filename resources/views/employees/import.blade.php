@@ -29,9 +29,14 @@
 						</div>
 					</div>
 					<div class="card-body">
-                        <p>Unduh template Excel <a href="{{ route('employees.download-template') }}" class="btn btn-sm btn-info">di sini</a> dan isi sesuai format.</p>
+                        <p>Unduh template Excel <a href="{{ route('employees.download-template') }}?t={{ time() }}" class="btn btn-sm btn-info">di sini</a> dan isi sesuai format.</p>
                         <p><strong>Catatan:</strong> NIK yang sudah ada akan memperbarui data karyawan, NIK baru akan membuat entri baru.</p>
-                        <form action="{{ route('employees.import', $school) }}" method="POST" enctype="multipart/form-data">
+                        @if(session('error'))
+                            <div class="alert alert-danger">
+                                {{ session('error') }}
+                            </div>
+                        @endif
+                        <form action="{{ auth()->user()->role == 'SuperAdmin' ? route('employees.import', $school) : route('school-employees.import', $school) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                             <div class="create-invoice-wrapper">
                                 <!-- Row start -->
@@ -64,10 +69,10 @@
                                                 <div class="mb-3">
                                                     <label for="file" class="form-label">Pilih File Excel</label>
                                                     <input type="file" class="form-control @error('file') is-invalid @enderror" id="file" name="file" accept=".xlsx,.xls">
+                                                    @error('file')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
                                                 </div>
-                                                @error('file')
-                                                    <div class="invalid-feedback">{{ $message }}</div>
-                                                @enderror
                                                 <!-- Form group end -->
                                             </div>
                                         </div>

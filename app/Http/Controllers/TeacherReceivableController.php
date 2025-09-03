@@ -93,6 +93,28 @@ class TeacherReceivableController extends Controller
         return view('partials.teacher-receivable-modal', compact('details', 'totalReceivable'));
     }
 
+    public function getPaymentHistory(Request $request)
+    {
+        $teacherId = $request->input('teacher_id');
+        $accountId = $request->input('account_id');
+        $schoolId  = $request->input('school_id');
+        
+        if (!$teacherId || !$accountId || !$schoolId)
+             return response()->json([], 200);
+
+        // Validasi (opsional tapi disarankan)
+        $request->validate([
+            'teacher_id' => 'required',
+            'account_id' => 'required',
+            'school_id' => 'required',
+        ]);
+
+        // Query menggunakan scope yang sudah dibuat sebelumnya
+        $details = TeacherReceivableDetail::filterByTeacherAccountSchool($teacherId, $accountId, $schoolId)->get();
+
+        return response()->json($details, 200);
+    }
+
     /**
      * Show the form for creating a new receivable.
      */
@@ -106,7 +128,10 @@ class TeacherReceivableController extends Controller
         $teachers = Teacher::when($schoolId, function ($q) use ($schoolId) {
             $q->where('school_id', $schoolId);
         })->get();
-        $accounts = Account::where('account_type', 'Aset Lancar')
+        $accounts = Account::when($schoolId, function ($q) use ($schoolId) {
+                $q->where('school_id', $schoolId);
+            })
+            ->where('account_type', 'Aset Lancar')
             ->where('code', 'like', '1-12%') // Piutang (1-12)
             ->get();
         return view('teacher-receivables.create', compact('school', 'teachers', 'accounts'));
@@ -144,12 +169,14 @@ class TeacherReceivableController extends Controller
 
         $request->validate($rules, $messages);
 
+        $amount = (float) str_replace('.', '', $request->final_amount);
+
         $schoolId = auth()->user()->role == 'SuperAdmin' ? $request->school_id : $school->id;
         TeacherReceivable::create([
             'school_id' => $schoolId,
             'teacher_id' => $request->teacher_id,
             'account_id' => $request->account_id,
-            'amount' => (float)str_replace('.', '', $request->amount),
+            'amount' => $amount,
             'paid_amount' => 0,
             'due_date' => $request->due_date,
             'status' => 'Unpaid',
@@ -161,7 +188,7 @@ class TeacherReceivableController extends Controller
             'account_id' => $request->account_id,
             'date' => now(),
             'description' => Account::find($request->account_id)->name . ' guru: ' . Teacher::find($request->teacher_id)->name,
-            'debit' => (float)str_replace('.', '', $request->amount),
+            'debit' => $amount,
             'credit' => 0,
             'reference_id' => TeacherReceivable::latest()->first()->id,
             'reference_type' => TeacherReceivable::class,
@@ -174,10 +201,15 @@ class TeacherReceivableController extends Controller
             'date' => now(),
             'description' => Account::find($request->account_id)->name . ' guru: ' . Teacher::find($request->teacher_id)->name,
             'debit' => 0,
-            'credit' => (float)str_replace('.', '', $request->amount),
+            'credit' => $amount,
             'reference_id' => TeacherReceivable::latest()->first()->id,
             'reference_type' => TeacherReceivable::class,
         ]);
+
+        // update jumlah dana untuk akun terkait
+        FundManagement::where('school_id', $schoolId)
+            ->where('account_id', $request->income_account_id)
+            ->increment('amount', $amount);
 
         $route = back();
         if (auth()->user()->role == 'SuperAdmin') {
@@ -199,8 +231,12 @@ class TeacherReceivableController extends Controller
             abort(403, 'Unauthorized access to this school.');
         }
 
-        $teachers = Teacher::where('school_id', $school->id)->get();
-        $accounts = Account::where('account_type', 'Aset Lancar')
+        $schoolId = $school->id;
+        $teachers = Teacher::where('school_id', $schoolId)->get();
+        $accounts = Account::when($schoolId, function ($q) use ($schoolId) {
+                $q->where('school_id', $schoolId);
+            })
+            ->where('account_type', 'Aset Lancar')
             ->where('code', 'like', '1-12%')
             ->get();
         $transaction = Transaction::where([
@@ -235,11 +271,12 @@ class TeacherReceivableController extends Controller
             'amount.required' => 'Jumlah wajib diisi'
         ]);
 
+        $amount = (float) str_replace('.', '', $request->final_amount);
 
         $teacher_receivable->update([
             'teacher_id' => $request->teacher_id,
             'account_id' => $request->account_id,
-            'amount' => (float)str_replace('.', '', $request->amount),
+            'amount' => $amount,
             'due_date' => $request->due_date,
         ]);
 
@@ -250,7 +287,7 @@ class TeacherReceivableController extends Controller
             'school_id' => $school->id,
             'account_id' => $request->account_id,
             'description' => Account::find($request->account_id)->name . ' guru: ' . $teacher_receivable->teacher->name,
-            'debit' => (float)str_replace('.', '', $request->amount),
+            'debit' => $amount,
             'credit' => 0,
             'reference_id' => $teacher_receivable->id,
             'reference_type' => TeacherReceivable::class,
@@ -264,7 +301,7 @@ class TeacherReceivableController extends Controller
             'account_id' => $request->income_account_id,
             'description' => Account::find($request->income_account_id)->name . ' guru: ' . $teacher_receivable->teacher->name,
             'debit' => 0,
-            'credit' => (float)str_replace('.', '', $request->amount),
+            'credit' => $amount,
             'reference_id' => $teacher_receivable->id,
             'reference_type' => TeacherReceivable::class,
         ]);
@@ -508,5 +545,44 @@ class TeacherReceivableController extends Controller
         }
 
         return $route->with('success', 'Pembayaran piutang berhasil diperbarui.');
+    }
+
+    /**
+     * Download receipt
+     */
+    public function receipt(School $school, TeacherReceivableDetail $teacher_receivable_detail)
+    {
+        $user = auth()->user();
+        if ($user->role === 'SchoolAdmin' && $user->school_id !== $school->id) {
+            abort(403, 'Unauthorized access to this school.');
+        }
+
+        $receivable_detail = $teacher_receivable_detail;
+        $receivables = TeacherReceivable::where('id', $receivable_detail->teacher_receivable_id)->first();
+        $teachers = Teacher::where('id', $receivables->teacher_id)->first();
+        
+        $year = \Carbon\Carbon::parse($receivable_detail->period);
+        $idFormatted = str_pad($receivable_detail->id, 4, '0', STR_PAD_LEFT);
+        $invoiceNo = 'INV/' . $year->format('Y') . '/' . $idFormatted;
+
+        $terbilang = new \App\Services\TerbilangService();
+
+        $data = [
+            'invoice_no' => $invoiceNo,
+            'date' => $year->format('M d, Y'),
+            'from' => $teachers->name,
+            'amount' => $receivable_detail->amount,
+            'amount_words' => trim($terbilang->convert($receivable_detail->amount)).' Rupiah',
+            'payment_note' => $receivable_detail->description,
+            'company' => [
+                'name' => $school->name,
+                'telp' => $school->phone,
+                'email' => $school->email,
+                'logo' => $school->logo
+            ]
+        ];
+
+        $pdf = PDF::loadView('teacher-receivables.receipt', $data);
+        return $pdf->download('kwitansi.pdf');
     }
 }

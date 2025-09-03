@@ -83,7 +83,7 @@ class FixedAssetController extends Controller
             abort(403, 'Unauthorized access to this school.');
         }
 
-        $accounts = Account::get();
+        $accounts = Account::where('school_id', $school->id)->get();
         return view('fixed-assets.create', compact('school', 'accounts'));
     }
 
@@ -120,23 +120,24 @@ class FixedAssetController extends Controller
 
         $debit = [];
         $credit = [];
-        foreach ($request->debit as $index => $value) {
-            $debit[] = $value ? (float)str_replace('.', '', $value) : 0;
-            $credit[] = $request->credit[$index] ? (float)str_replace('.', '', $request->credit[$index]) : 0;
-        }
+        // foreach ($request->debit as $index => $value) {
+            // $debit[] = $value ? (float)str_replace('.', '', $value) : 0;
+            // $credit[] = $request->credit[$index] ? (float)str_replace('.', '', $request->credit[$index]) : 0;
+        // }
         $totalDebit = array_sum($debit);
         $totalCredit = array_sum($credit);
 
-        if ($totalDebit != $totalCredit) {
-            return back()->withErrors(['balance' => 'Pastikan pemasukan dan pengeluaran seimbang']);
-        }
+        // if ($totalDebit != $totalCredit) {
+        //     return back()->withErrors(['balance' => 'Pastikan pemasukan dan pengeluaran seimbang']);
+        // }
 
-        if ($debit[0] == 0) {
-            return back()->withErrors(['balance' => 'Pastikan akun pemasukan diinput terlebih dulu']);
-        }
+        // if ($debit[0] == 0) {
+        //     return back()->withErrors(['balance' => 'Pastikan akun pemasukan diinput terlebih dulu']);
+        // }
 
         $schoolId = auth()->user()->role == 'SuperAdmin' ? $request->school_id : $school->id;
-        $percentageValue = 1 / $request->useful_life * 100;
+        // $percentageValue = 1 / $request->useful_life * 100;
+        $percentageValue = $request->condition;
         $fixedAsset = FixAsset::create([
             'school_id' => $schoolId,
             'account_id' => $request->account_id[0],
@@ -155,8 +156,10 @@ class FixedAssetController extends Controller
                 'account_id' => $value,
                 'date' => $request->acquisition_date,
                 'description' => Account::find($value)->name . ' : ' . $request->name,
-                'debit' => (float)str_replace('.', '', $request->debit[$index]) ?? 0,
-                'credit' => (float)str_replace('.', '', $request->credit[$index]) ?? 0,
+                // 'debit' => (float)str_replace('.', '', $request->debit[$index]) ?? 0,
+                // 'credit' => (float)str_replace('.', '', $request->credit[$index]) ?? 0,
+                'debit' => (float)str_replace('.', '', $totalDebit) ?? 0,
+                'credit' => (float)str_replace('.', '', $totalCredit) ?? 0,
                 'reference_id' => $fixedAsset->id,
                 'reference_type' => FixAsset::class,
             ]);
@@ -183,7 +186,7 @@ class FixedAssetController extends Controller
         }
 
         $fixedAsset = $fixed_asset;
-        $accounts = Account::get();
+        $accounts = Account::where('school_id', $school->id)->get();
         $transactions = Transaction::where([
             ['reference_id', '=', $fixedAsset->id],
             ['reference_type', '=', 'App\Models\FixAsset']
@@ -203,13 +206,13 @@ class FixedAssetController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'account_id.*' => 'required',
+            // 'account_id.*' => 'required',
             'acquisition_date' => 'required|date',
             'useful_life' => 'required|integer|min:1',
             'depreciation_percentage' => 'required|max:100'
         ], [
             'name.required' => 'Nama aset wajib diisi',
-            'account_id.*.required' => 'Pilih akun',
+            // 'account_id.*.required' => 'Pilih akun',
             'acquisition_date.required' => 'Tanggal perolehan wajib diisi',
             'useful_life' => 'Umur manfaat wajib diisi',
             'depreciation_percentage.required' => 'Persentase wajib diisi',
@@ -218,24 +221,24 @@ class FixedAssetController extends Controller
 
         $debit = [];
         $credit = [];
-        foreach ($request->debit as $index => $value) {
-            $debit[] = $value ? (float)str_replace('.', '', $value) : 0;
-            $credit[] = $request->credit[$index] ? (float)str_replace('.', '', $request->credit[$index]) : 0;
-        }
+        // foreach ($request->debit as $index => $value) {
+            // $debit[] = $value ? (float)str_replace('.', '', $value) : 0;
+            // $credit[] = $request->credit[$index] ? (float)str_replace('.', '', $request->credit[$index]) : 0;
+        // }
         $totalDebit = array_sum($debit);
         $totalCredit = array_sum($credit);
 
-        if ($totalDebit != $totalCredit) {
-            return back()->withErrors(['balance' => 'Pastikan pemasukan dan pengeluaran seimbang']);
-        }
+        // if ($totalDebit != $totalCredit) {
+        //     return back()->withErrors(['balance' => 'Pastikan pemasukan dan pengeluaran seimbang']);
+        // }
 
-        if ($debit[0] == 0) {
-            return back()->withErrors(['balance' => 'Pastikan akun pemasukan diinput terlebih dulu']);
-        }
+        // if ($debit[0] == 0) {
+        //     return back()->withErrors(['balance' => 'Pastikan akun pemasukan diinput terlebih dulu']);
+        // }
 
         $fixed_asset->update([
             'name' => $request->name,
-            'account_id' => $request->account_id[0],
+            // 'account_id' => $request->account_id[0],
             'acquisition_date' => $request->acquisition_date,
             'acquisition_cost' => $totalDebit,
             'useful_life' => $request->useful_life,
@@ -247,19 +250,21 @@ class FixedAssetController extends Controller
             ['reference_type', '=', 'App\Models\FixAsset']
         ])->delete();
 
-        foreach ($request->account_id as $index => $value) {
+        /*foreach ($request->account_id as $index => $value) {
             // Catat transaksi pembelian aset tetap (Debit Kredit: Aset Tetap)
             Transaction::create([
                 'school_id' => $school->id,
                 'account_id' => $value,
                 'date' => $request->acquisition_date,
                 'description' => Account::find($value)->name . ' : ' . $request->name,
-                'debit' => (float)str_replace('.', '', $request->debit[$index]) ?? 0,
-                'credit' => (float)str_replace('.', '', $request->credit[$index]) ?? 0,
+                // 'debit' => (float)str_replace('.', '', $request->debit[$index]) ?? 0,
+                // 'credit' => (float)str_replace('.', '', $request->credit[$index]) ?? 0,
+                'debit' => (float)str_replace('.', '', $totalDebit) ?? 0,
+                'credit' => (float)str_replace('.', '', $totalCredit) ?? 0,
                 'reference_id' => $fixed_asset->id,
                 'reference_type' => FixAsset::class,
             ]);
-        }
+        }*/
 
         $route = back();
         if (auth()->user()->role == 'SuperAdmin') {
@@ -287,10 +292,10 @@ class FixedAssetController extends Controller
             ['reference_type', '=', 'App\Models\FixAsset']
         ])->update(['deleted_at' => now()]);
         Depreciation::where('fix_asset_id', $fixedAsset->id)->pluck('id');
-        Transaction::whereIn([
-            ['reference_id', '=', $depreciation],
-            ['reference_type', '=', 'App\Models\Depreciation']
-        ])->update(['deleted_at' => now()]);
+        // Transaction::whereIn([
+        //     ['reference_id', '=', $depreciation],
+        //     ['reference_type', '=', 'App\Models\Depreciation']
+        // ])->update(['deleted_at' => now()]);
         $fixedAsset->update(['deleted_at' => now()]);
 
         $route = back();
@@ -314,7 +319,8 @@ class FixedAssetController extends Controller
         }
 
         $fixedAsset = $fixed_asset;
-        $accounts = Account::where('account_type', 'Biaya')
+        $accounts = Account::where('school_id', $school->id)
+            ->where('account_type', 'Biaya')
             ->where('code', 'like', '6-12%') // Biaya Penyusutan (1-11)
             ->get();
         return view('fixed-assets.depreciate', compact('fixedAsset', 'school', 'accounts'));
@@ -332,53 +338,61 @@ class FixedAssetController extends Controller
         }
 
         $request->validate([
-            'account_id' => [
-                function ($attribute, $value, $fail) use ($fixedAsset) {
-                    if ($fixedAsset->depreciations->isEmpty() && empty($value)) {
-                        $fail('Pilih akun biaya penyusutan');
-                    }
-                }
-            ],
+            // 'account_id' => [
+            //     function ($attribute, $value, $fail) use ($fixedAsset) {
+            //         if ($fixedAsset->depreciations->isEmpty() && empty($value)) {
+            //             $fail('Pilih akun biaya penyusutan');
+            //         }
+            //     }
+            // ],
             'date' => 'required|date',
-            'description' => 'required'
+            'description' => 'required',
+            'depreciation_percentage' => 'required|max:100'
         ], [
             'date.required' => 'Tanggal penyusutan wajib diisi',
             'description.required' => 'Deskripsi penyusutan wajib diisi',
+            'depreciation_percentage.required' => 'Persentase wajib diisi',
+            'depreciation_percentage.max' => 'Persentase maksimal 100%',
         ]);
 
         $existDepreciation = Depreciation::where('fix_asset_id', $fixedAsset->id)->latest()->first();
 
-        $accountId = $existDepreciation ? $existDepreciation->account_id : $request->account_id;
-        $accountName = Account::find($accountId)->name;
+        // $accountId = $existDepreciation ? $existDepreciation->account_id : $request->account_id;
+        // $accountName = Account::find($accountId)->name;
 
-        $accumulateAccount = Account::where([
-            ['account_type', '=', 'Aset Tetap'],
-            ['code', 'like', '1-25%'],
-            ['name', '=', str_replace('Biaya', 'Akumulasi', $accountName)]
-        ])->first();
+        // $accumulateAccount = Account::where([
+        //     ['account_type', '=', 'Aset Tetap'],
+        //     ['code', 'like', '1-25%'],
+        //     ['name', '=', str_replace('Biaya', 'Akumulasi', $accountName)]
+        // ])->first();
 
-        if (!$accumulateAccount) {
-            return back()->withErrors(['amount' => 'Akun ' . str_replace('Biaya', 'Akumulasi', $accountName) . ' tidak ditemukan.']);
-        }
+        // if (!$accumulateAccount) {
+        //     return back()->withErrors(['amount' => 'Akun ' . str_replace('Biaya', 'Akumulasi', $accountName) . ' tidak ditemukan.']);
+        // }
+
+        $fixed_asset->update([
+            'depreciation_percentage' => $request->depreciation_percentage
+        ]);
+
         // Tambah penyusutan
-        $depreciateAmount = ($fixedAsset->acquisition_cost - $fixedAsset->accumulated_depriciation) * $fixedAsset->depreciation_percentage / 100;
+        $depreciateAmount = ($fixedAsset->acquisition_cost - $fixedAsset->accumulated_depriciation) * $request->depreciation_percentage / 100;
         $balance = $existDepreciation ? $existDepreciation->balance - $depreciateAmount : $fixedAsset->acquisition_cost - $depreciateAmount;
         $fixedAsset->accumulated_depriciation += $depreciateAmount;
         $fixedAsset->update(['accumulated_depriciation' => $fixedAsset->accumulated_depriciation]);
 
         $depreciation = Depreciation::create([
             'fix_asset_id' => $fixedAsset->id,
-            'account_id' => $accountId,
+            'account_id' => null,//$accountId,
             'date' => $request->date,
             'description' => $request->description,
-            'amount' => $depreciateAmount,
+            'amount' => $request->depreciation_percentage,//$depreciateAmount,
             'balance' => $balance
         ]);
 
         // Catat transaksi penyusutan
-        Transaction::create([
+        /*Transaction::create([
             'school_id' => $fixedAsset->school_id,
-            'account_id' => $accountId,
+            'account_id' => null,//$accountId,
             'date' => $request->date,
             'description' => 'Penyusutan aset: ' . $fixedAsset->name,
             'debit' => $depreciateAmount,
@@ -389,14 +403,14 @@ class FixedAssetController extends Controller
 
         Transaction::create([
             'school_id' => $fixedAsset->school_id,
-            'account_id' => $accumulateAccount->id,
+            'account_id' => null,//$accumulateAccount->id,
             'date' => $request->date,
             'description' => 'Penyusutan aset: ' . $fixedAsset->name,
             'debit' => 0,
             'credit' => $depreciateAmount,
             'reference_id' => $depreciation->id,
             'reference_type' => Depreciation::class,
-        ]);
+        ]);*/
 
         $route = back();
         if (auth()->user()->role == 'SuperAdmin') {

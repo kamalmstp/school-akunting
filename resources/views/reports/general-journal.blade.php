@@ -76,7 +76,7 @@
                             <div class="row gx-3">
                                 <div class="col-12">
                                     <div class="table-responsive">
-                                        <table class="table table-striped" style="width: max-content;">
+                                        <table class="table table-striped" style="width: 100%;">
                                             <thead>
                                                 <tr>
                                                     <th scope="col">Tanggal</th>

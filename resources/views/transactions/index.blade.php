@@ -122,19 +122,21 @@
 								<thead>
 									<tr>
 										<th scope="col">No</th>
+										<th scope="col">No Dokumen</th>
 										<th scope="col">Tanggal</th>
                                         <th scope="col">Sekolah</th>
                                         <th scope="col">Akun</th>
                                         <th scope="col">Deskripsi</th>
                                         <th scope="col" class="text-end">Pemasukan</th>
                                         <th scope="col" class="text-end">Pengeluaran</th>
-                                        @if (auth()->user()->role === 'SchoolAdmin') <th scope="col"></th> @endif
+                                        @if (auth()->user()->role !== 'AdminMonitor') <th scope="col"></th> @endif
 									</tr>
 								</thead>
 								<tbody>
 									@forelse($transactions as $index => $transaction)
                                         <tr>
 											<td>{{ $transactions->currentPage() * 10 - (9 - $index) }}</td>
+                                            <td>{{ $transaction->doc_number ?? '-' }}</td>
                                             <td>{{ \Carbon\Carbon::parse($transaction->date)->format('d-m-Y') }}</td>
                                             <td>{{ $transaction->school->name }}</td>
                                             <td>{{ $transaction->account->code }} - {{ $transaction->account->name }}</td>
@@ -154,7 +156,7 @@
                                         </tr>
 									@empty
 										<tr>
-											<td colspan="7">Belum ada transaksi</td>
+											<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '9' : '8' }}">Belum ada transaksi</td>
 										</tr>										
 									@endempty
                                 </tbody>

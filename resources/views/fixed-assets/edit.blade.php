@@ -60,7 +60,7 @@
                                             </div>
                                         </div>
                                         <div class="row gx-3">
-                                            <div class="col-sm-12 col-12">
+                                            <div class="col-sm-6 col-12">
                                                 <!-- Form group start -->
                                                 <div class="mb-3">
                                                     <label for="acquisition_date" class="form-label">Tanggal Perolehan</label>
@@ -71,9 +71,7 @@
                                                 </div>
                                                 <!-- Form group end -->
                                             </div>
-                                        </div>
-                                        <div class="row gx-3">
-                                            <div class="col-sm-12 col-12">
+                                            <div class="col-sm-6 col-12">
                                                 <!-- Form group start -->
                                                 <div class="mb-3">
                                                     <label for="useful_life" class="form-label">Umur Manfaat (Tahun)</label>
@@ -102,7 +100,7 @@
                                             <!-- Form group start -->
                                             @foreach($transactions as $i => $transaction)        
                                             <div class="row gx-3 mb-3 account-row0">
-                                                <div class="col-5">
+                                                <div class="col-8 mb-3">
                                                     <label for="account_id" class="form-label">Akun</label>
                                                     <select class="form-select account-select" id="account_id{{$i}}" name="account_id[]">
                                                         <option value="">Pilih Akun</option>
@@ -113,25 +111,32 @@
                                                         @endforeach
                                                     </select>
                                                 </div>
-                                                <div class="col-3">
+                                                <div class="col-4 mb-3">
+                                                    <label for="condition" class="form-label">Kondisi Saat Ini</label>
+                                                    <div class="input-group">
+                                                        <input type="number" class="form-control angka" id="condition" name="condition" min="0" max="100" value="{{ old('depreciation_percentage', $fixedAsset->depreciation_percentage) }}" readonly>
+                                                        <span class="input-group-text">%</span>
+                                                    </div>
+                                                </div>
+                                                <!-- <div class="col-6">
                                                     <label for="debit" class="form-label">Pemasukan</label>
                                                     <input type="text" class="form-control angka" id="debit" name="debit[]" value="{{ number_format($transaction->debit, 0, ',', '.') }}">
                                                 </div>
-                                                <div class="col-3">
+                                                <div class="col-6">
                                                     <label for="credit" class="form-label">Pengeluaran</label>
                                                     <input type="text" class="form-control angka" id="credit" name="credit[]" value="{{ number_format($transaction->credit, 0, ',', '.') }}">
-                                                </div>
+                                                </div> -->
                                             </div>
                                             @endforeach
                                             <!-- Form group end -->
                                         </div>
-                                        <div class="row gx-3">
+                                        <!-- <div class="row gx-3">
                                             <div class="col-sm-12 col-12">
                                                 <div class="mb-3">
                                                     <button type="button" id="addrow" class="btn btn-outline-success btn-sm">+ Tambah Akun</button>
                                                 </div>
                                             </div>
-                                        </div>
+                                        </div> -->
                                     </div>
                                 </div>
                             </div>
@@ -170,21 +175,28 @@
                 })
                 html = 
                 '<div class="row gx-3 mb-3 account-row'+i+'">' +
-                    '<div class="col-5">' +
+                    '<div class="col-8 mb-3">' +
                         '<label for="account_id" class="form-label">Akun</label>' +
                         '<select class="form-select account-select" id="account_id'+ i +'" name="account_id[]"><option value="">Pilih Akun</option>' + options + '</select>' +
                     '</div>' +
-                    '<div class="col-3">' +
+                    '<div class="col-4 mb-3">'+
+                        '<label for="condition" class="form-label">Kondisi Saat Ini</label>' +
+                        '<div class="input-group">' +
+                            '<input type="number" class="form-control angka" id="condition" name="condition" min="0" max="100"  value="100" readonly>' +
+                            '<span class="input-group-text">%</span>' +
+                        '</div>' +
+                    '</div>' +
+                    '<!--<div class="col-1" style="margin-top: 30px;">' +
+                        '<button type="button" id="'+i+'" class="btn btn-danger btn-sm btn_remove">X</button>' +
+                    '</div>' +
+                    '<div class="col-6">' +
                         '<label for="debit" class="form-label">Pemasukan</label>' +
                         '<input type="text" class="form-control angka" id="debit" name="debit[]">' +
                     '</div>' +
-                    '<div class="col-3">' +
+                    '<div class="col-6">' +
                         '<label for="credit" class="form-label">Pengeluaran</label>' +
                         '<input type="text" class="form-control angka" id="credit" name="credit[]">' +
-                    '</div>' +
-                    '<div class="col-1" style="margin-top: 30px;">' +
-                        '<button type="button" id="'+i+'" class="btn btn-danger btn-sm btn_remove">X</button>' +
-                    '</div>' +
+                    '</div>-->' +
                 '</div>';
                 $('#account-container').append(html);
                 $('#account_id' + i).select2();

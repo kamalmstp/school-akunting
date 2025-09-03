@@ -19,15 +19,32 @@ class SchoolMajorController extends Controller
      */
     public function index(Request $request, School $school)
     {
+        $user = auth()->user();
         $name = $request->get('name');
-        $schoolId = $request->get('school');
-        $majors = SchoolMajor::when($name, function ($q) use ($name) {
-                $q->where('name', '%' . $name . '%');
-            })
-            ->when($schoolId, function ($q) use ($schoolId) {
-                $q->where('school_id', $schoolId);
-            })
-            ->paginate(10)->withQueryString();
+
+        if ($user->school_id !== $school->id) {
+            abort(403, 'Unauthorized access to this school.');
+        }
+
+        if (auth()->user()->role != 'SchoolAdmin') {
+            $schoolId = $request->get('school');
+            $majors = SchoolMajor::when($name, function ($q) use ($name) {
+                    $q->where('name', 'like', '%' . $name . '%');
+                })
+                ->when($schoolId, function ($q) use ($schoolId) {
+                    $q->where('school_id', $schoolId);
+                })
+                ->paginate(10)->withQueryString();
+            return view('school-majors.index', compact('majors', 'name', 'schoolId','school','schoolId'));
+        }
+
+        $schoolId = $school->id;
+        $majors = SchoolMajor::where('school_id', $schoolId)
+                ->when($name, function ($q) use ($name) {
+                    $q->where('name', 'like', '%' . $name . '%');
+                })
+                ->paginate(10)->withQueryString();
+
         return view('school-majors.index', compact('majors', 'name', 'schoolId','school'));
     }
 
@@ -62,9 +79,9 @@ class SchoolMajorController extends Controller
             'name.required' => 'Nama jurusan wajib diisi',
         ];
 
-        if (auth()->user()->role == 'SuperAdmin' && isset($request->school_id)) {
+        if (auth()->user()->role == 'SuperAdmin' && !isset($request->school_id)) {
             $rules['school_id'] = 'required';
-            $messages['school_id.reuired'] = 'Pilih sekolah';
+            $messages['school_id.required'] = 'Pilih sekolah';
         }
 
         $request->validate($rules, $messages);

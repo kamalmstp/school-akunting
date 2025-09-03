@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\School;
 use App\Models\Transaction;
 use App\Models\Account;
+use App\Models\FundManagement;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
@@ -96,17 +98,25 @@ class TransactionController extends Controller
         return response()->json($accounts, 200);
     }
 
+    public function getFundSource(Request $request)
+    {
+        $funds = FundManagement::where('school_id', $request->school_id)
+            ->get();
+        return response()->json($funds, 200);
+    }
+
     /**
      * Show the form for creating a new transaction.
      */
     public function create(School $school)
     {
         $user = auth()->user();
+
         if ($user->role === 'SchoolAdmin' && $user->school_id !== $school->id) {
             abort(403, 'Unauthorized access to this school.');
         }
 
-        $accounts = Account::get();
+        $accounts = Account::where('school_id', $school->id)->get();
         return view('transactions.create', compact('school', 'accounts'));
     }
 
@@ -122,18 +132,20 @@ class TransactionController extends Controller
 
         $rules = [
             'account_id.*' => 'required',
+            'doc_number' => 'required',
             'date' => 'required|date',
             'description' => 'required|string',
         ];
 
         $messages = [
             'account_id.*.required' => 'Pilih akun',
+            'doc_number.required' => 'Nomor Dokumen wajib diisi',
             'date.required' => 'Tanggal transaksi wajib diisi'
         ];
 
-        if (auth()->user()->role == 'SuperAdmin' && isset($request->school_id)) {
+        if (auth()->user()->role == 'SuperAdmin' && !isset($request->school_id)) {
             $rules['school_id'] = 'required';
-            $messages['school_id.reuired'] = 'Pilih sekolah';
+            $messages['school_id.required'] = 'Pilih sekolah';
         }
 
         $request->validate($rules, $messages);
@@ -152,15 +164,23 @@ class TransactionController extends Controller
         }
 
         foreach ($request->account_id as $index => $account) {
+            $total_debit = (float)str_replace('.', '', $request->debit[$index]) ?? 0;
+            $total_credit = (float)str_replace('.', '', $request->credit[$index]) ?? 0;
             Transaction::create([
                 'school_id' => auth()->user()->role == 'SuperAdmin' ? $request->school_id : $school->id,
                 'account_id' => $account,
+                'fund_management_id' => $request->fund_management_id[$index],
+                'doc_number' => $request->doc_number,
                 'date' => $request->date,
                 'description' => $request->description,
-                'debit' => (float)str_replace('.', '', $request->debit[$index]) ?? 0,
-                'credit' => (float)str_replace('.', '', $request->credit[$index]) ?? 0,
+                'debit' => $total_debit,
+                'credit' => $total_credit,
                 'type' => $request->type == 'true' ? 'adjustment' : 'general'
             ]);
+            FundManagement::where([
+                ['school_id', '=', auth()->user()->role == 'SuperAdmin' ? $request->school_id : $school->id],
+                ['id', '=', $request->fund_management_id[$index]]
+            ])->update(['amount' => DB::raw('amount - '.$total_credit),'updated_at' => now()]);
         }
 
         $route = back();
@@ -183,12 +203,13 @@ class TransactionController extends Controller
             abort(403, 'Unauthorized access to this school.');
         }
 
-        $accounts = Account::get();
+        $accounts = Account::where('school_id', $school->id)->get();
+        $funds = FundManagement::where('school_id', $school->id)->get();
         $otherTrans = Transaction::where([
             ['description', '=', $transaction->description],
             ['id', '!=', $transaction->id]
         ])->get();
-        return view('transactions.edit', compact('transaction', 'school', 'accounts', 'otherTrans'));
+        return view('transactions.edit', compact('transaction', 'school', 'accounts', 'funds', 'otherTrans'));
     }
 
     /**
@@ -203,10 +224,14 @@ class TransactionController extends Controller
 
         $request->validate([
             'account_id' => 'required',
+            'fund_management_id' => 'required',
+            'doc_number' => 'required',
             'date' => 'required|date',
             'description' => 'required|string',
         ], [
             'account_id.required' => 'Pilih akun',
+            'fund_management_id.required' => 'Pilih sumber dana',
+            'doc_number.required' => 'Nomor Dokumen wajib diisi',
             'date.required' => 'Tanggal transaksi wajib diisi'
         ]);
 
@@ -224,8 +249,10 @@ class TransactionController extends Controller
             ])->update(['description' => $request->description]);
         }
 
-        $transaction->update([
+        $tes = $transaction->update([
             'account_id' => $request->account_id,
+            'fund_management_id' => $request->fund_management_id,
+            'doc_number' => $request->doc_number,
             'date' => $request->date,
             'description' => $request->description,
             'debit' => (float)str_replace('.', '', $request->debit) ?? 0,

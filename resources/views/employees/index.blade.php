@@ -104,6 +104,7 @@
 									<tr>
 										<th>No</th>
 										<th>NIK</th>
+										<th>NIK KTP</th>
                                         <th>Nama</th>
                                         <th>Email</th>
                                         <th>Telepon</th>
@@ -117,6 +118,7 @@
                                         <tr>
 											<td>{{ $employees->currentPage() * 10 - (9 - $index) }}</td>
                                             <td>{{ $employee->employee_id_number }}</td>
+                                            <td>{{ $employee->nik }}</td>
                                             <td>{{ $employee->name }}</td>
                                             <td>{{ $employee->email }}</td>
                                             <td>{{ $employee->phone }}</td>
@@ -135,7 +137,7 @@
                                         </tr>
 									@empty
 										<tr>
-											<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '8' : '7' }}">Belum ada karyawan</td>
+											<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '9' : '8' }}">Belum ada karyawan</td>
 										</tr>										
 									@endempty
                                 </tbody>

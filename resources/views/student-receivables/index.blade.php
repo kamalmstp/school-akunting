@@ -100,8 +100,8 @@
 						<div class="d-flex justify-content-between align-items-center">
 							<h5 class="card-title">Daftar Piutang Siswa</h5>
 							@if(auth()->user()->role !== 'AdminMonitor')
-								<a href="{{ auth()->user()->role == 'SuperAdmin' ? route('student-receivables.create') : route('school-student-receivables.create', $school) }}" class="btn btn-primary" title="Tambah Piutang">
-									<span class="d-lg-block d-none">Tambah Piutang</span>
+								<a href="{{ auth()->user()->role == 'SuperAdmin' ? route('student-receivables.create') : route('school-student-receivables.create', $school) }}" class="btn btn-primary" title="Tambah Penerimaan">
+									<span class="d-lg-block d-none">Tambah Penerimaan</span>
 									<span class="d-sm-block d-lg-none">
 										<i class="bi bi-plus"></i>
 									</span>
@@ -146,7 +146,7 @@
 												</a>
 											</td>
                                             <td>{{ $receivable->account->code }} - {{ $receivable->account->name }}</td>
-                                            <td class="text-end">{{ number_format($receivable->amount, 0, ',', '.') }}</td>
+                                            <td class="text-end">{{ number_format($receivable->total_payable, 0, ',', '.') }}</td>
                                             <td class="text-end">{{ number_format($receivable->paid_amount, 0, ',', '.') }}</td>
                                             <td class="text-center">
                                                 <span class="badge bg-{{ $receivable->status === 'Paid' ? 'success' : ($receivable->status === 'Partial' ? 'warning' : 'danger') }}">
@@ -163,7 +163,7 @@
                                                     <form action="{{ route('school-student-receivables.destroy', [$receivable->school, $receivable]) }}" method="POST" style="display:inline;">
                                                         @csrf
                                                         @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus piutang ini?')">Hapus</button>
+                                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus Piutang ini?')">Hapus</button>
                                                     </form>
                                                 </td> 
                                             @endif
@@ -190,7 +190,9 @@
 																<td>{{ $detail->reason ?? '-' }}</td>
 																@if (auth()->user()->role != 'AdminMonitor')
 																<td class="text-center">
+																	<a href="{{ route('school-student-receivables.receipt', [$receivable->school, $detail]) }}" class="btn btn-sm btn-info">Kwitansi</a>
 																	<a href="{{ route('school-student-receivables.edit-pay', [$receivable->school, $detail]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+																	<a href="https://wa.me/{{ preg_replace('/^0/', '62', $receivable->student->phone) }}?text=halo%2C%20berikut%20kami%20sampaikan%20kwitansi%20pembayaran%20bpk%2Fibu" class="btn btn-sm btn-outline-success" target="_blank" title="Kirim WhatsApp">WA</a>
 																</td>
 																@endif
                                                             </tr>
@@ -203,9 +205,9 @@
                                                     </tbody>
                                                 </table>
 												<div class="d-flex gap-4">
-													<span><strong>Piutang</strong> : {{ number_format($receivable->amount, 0, ',', '.') }}</span>
+													<span><strong>Piutang</strong> : {{ number_format($receivable->total_payable, 0, ',', '.') }}</span>
 													<span><strong>Terbayar</strong> : {{ number_format($receivable->paid_amount, 0, ',', '.') }}</span>
-													<span><strong>Belum Terbayar</strong> : {{ number_format($receivable->amount - $receivable->paid_amount, 0, ',', '.') }}</span>
+													<span><strong>Belum Terbayar</strong> : {{ number_format($receivable->total_payable - $receivable->paid_amount, 0, ',', '.') }}</span>
 												</div>
                                             </td>
                                         </tr>

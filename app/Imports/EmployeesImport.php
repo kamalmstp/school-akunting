@@ -54,6 +54,12 @@ class EmployeesImport implements ToModel, WithHeadingRow, WithValidation
     {
         return [
             'nik' => 'required|string|max:20', // Unik dihapus karena akan dihandle oleh model
+            'nik_ktp' => 'required|integer|digits:16',
+            'pendidikan_terakhir' => 'required|string',
+            'tmt' => 'required|integer',
+            'masa_kerja' => 'required|string',
+            'sertifikasi' => 'required|string',
+            'status_kepegawaian' => 'required|string',
             'nama' => 'required|string|max:255',
             'email' => 'required|email',
             'telepon' => 'required|max:13',
@@ -68,6 +74,15 @@ class EmployeesImport implements ToModel, WithHeadingRow, WithValidation
     {
         return [
             'nik.required' => 'NIK wajib diisi.',
+            'nik_ktp.required' => 'NIK KTP wajib diisi.',
+            'nik_ktp.integer' => 'NIK KTP harus berupa angka',
+            'nik_ktp.digits' => 'NIK KTP terdiri dari 16 angka',
+            'pendidikan_terakhir.required' => 'Pendidikan terakhir wajib diisi.',
+            'tmt.required' => 'TMT wajib diisi.',
+            'tmt.integer' => 'TMT harus berupa angka',
+            'masa_kerja.required' => 'Masa kerja wajib diisi.',
+            'sertifikasi.required' => 'Sertifikasi wajib diisi.',
+            'status_kepegawaian.required' => 'Status kepegawaian wajib diisi.',
             'nama.required' => 'Nama wajib diisi.',
             'email.required' => 'Email wajib diisi.',
             'telepon.required' => 'Telepon wajib diisi',

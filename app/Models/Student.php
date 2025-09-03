@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Builder;
 
 class Student extends Model
 {
-    protected $fillable = ['school_id', 'name', 'student_id_number', 'class', 'is_active', 'phone', 'address', 'deleted_at'];
+    protected $fillable = ['school_id', 'name', 'student_id_number', 'national_student_number', 'year', 'parent_name', 'parent_phone', 'parent_mail', 'parent_job', 'class', 'phone', 'address', 'is_active', 'deleted_at'];
 
     protected static function boot()
     {

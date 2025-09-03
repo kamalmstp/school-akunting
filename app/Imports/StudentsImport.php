@@ -23,15 +23,23 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation
     public function model(array $row)
     {
         // Cari siswa berdasarkan NIS dan school_id
-        $student = Student::where('student_id_number', $row['nisn'])
+        $student = Student::where('student_id_number', $row['nis'])
             ->where('school_id', $this->schoolId)
             ->first();
 
         $data = [
             'school_id' => $this->schoolId,
-            'student_id_number' => $row['nisn'],
+            'student_id_number' => $row['nis'],
+            'national_student_number' => $row['nisn'],
+            'year' => $row['tahun'],
+            'parent_name' => $row['nama_orang_tua'],
+            'parent_phone' => $row['telepon_orang_tua'],
+            'parent_mail' => $row['email_orang_tua'],
+            'parent_job' => $row['pekerjaan_orang_tua'],
             'name' => $row['nama'],
             'class' => $row['kelas'],
+            'phone' => $row['telepon'],
+            'address' => $row['alamat'],
             'is_active' => $row['status_aktif'] == 1,
         ];
 
@@ -51,10 +59,16 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation
     public function rules(): array
     {
         return [
-            'nisn' => 'required|string|max:20', // Unik dihapus karena akan dihandle oleh model
+            'nis' => 'required|max:20', // Unik dihapus karena akan dihandle oleh model
+            'nisn' => 'required|max:20',
+            'tahun' => 'required|integer',
+            'nama_orang_tua' => 'required|string|max:255',
+            'telepon_orang_tua' => 'required|max:13',
+            'email_orang_tua' => 'required|email',
+            'pekerjaan_orang_tua' => 'required|string|max:255',
             'nama' => 'required|string|max:255',
-            'telepon' => 'required|max:13',
             'kelas' => 'required|string|max:50',
+            'telepon' => 'required|max:13',
             'status_aktif' => 'required|in:0,1',
         ];
     }
@@ -65,32 +79,38 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation
     public function customValidationMessages()
     {
         return [
-            'nisn.required' => 'NIS wajib diisi.',
+            'nis.required' => 'NIS wajib diisi.',
+            'nisn.required' => 'NISN wajib diisi',
+            'tahun.required' => 'Tahun Masuk wajib diisi',
+            'nama_orang_tua.required' => 'Nama Orang Tua wajib diisi',
+            'telepon_orang_tua.required' => 'Telepon Orang Tua wajib diisi',
+            'email_orang_tua.required' => 'Email Orang Tua wajib diisi',
+            'pekerjaan_orang_tua.required' => 'Pekerjaan Orang Tua wajib diisi',
             'nama.required' => 'Nama wajib diisi.',
-            'telepon.required' => 'Telepon wajib diisi',
             'kelas.required' => 'Kelas wajib diisi.',
+            'telepon.required' => 'Telepon wajib diisi',
             'status_aktif.required' => 'Status Aktif wajib diisi (1 untuk aktif, 0 untuk tidak aktif).',
         ];
     }
 
     /**
-     * Prepare data for validation (check NISN uniqueness manually).
+     * Prepare data for validation (check NIS uniqueness manually).
      */
     public function prepareForValidation($data, $index)
     {
-        // Validasi NISN unik hanya jika siswa baru
-        $existingStudent = Student::where('student_id_number', $data['nisn'])
+        // Validasi NIS unik hanya jika siswa baru
+        $existingStudent = Student::where('student_id_number', $data['nis'])
             ->where('school_id', $this->schoolId)
             ->exists();
 
-        if ($existingStudent && $data['nisn']) {
-            // Jika NISN ada, skip validasi unik karena akan diupdate
+        if ($existingStudent && $data['nis']) {
+            // Jika NIS ada, skip validasi unik karena akan diupdate
             return $data;
         }
 
-        // Tambahkan validasi unik untuk NISN baru
+        // Tambahkan validasi unik untuk NIS baru
         validator($data, [
-            'nisn' => ['required', Rule::unique('students', 'student_id_number')->where('school_id', $this->schoolId)],
+            'nis' => ['required', Rule::unique('students', 'student_id_number')->where('school_id', $this->schoolId)],
         ])->validate();
 
         return $data;

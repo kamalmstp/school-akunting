@@ -30,18 +30,18 @@
 					</div>
 					<div class="card-body">
                         <p><strong>Nama Aset:</strong> {{ $fixedAsset->name }}</p>
-                        <p><strong>Biaya Perolehan:</strong> {{ number_format($fixedAsset->acquisition_cost, 0, ',', '.') }}</p>
-                        <p><strong>Akumulasi Penyusutan:</strong> {{ number_format($fixedAsset->accumulated_depriciation, 0, ',', '.') }}</p>
-                        <p class="mb-4"><strong>Nilai Sisa:</strong> {{ number_format($fixedAsset->acquisition_cost - $fixedAsset->accumulated_depriciation, 0, ',', '.') }}</p>
-                        @if ($errors->has('amount'))
-                        <div class="row gx-3">
-                            <div class="col-sm-6 col-12">
-                                <div class="alert alert-danger">
-                                    {{ $errors->first('amount') }}
-                                </div>
-                            </div>
-                        </div>
-                        @endif
+                        <!--<p><strong>Biaya Perolehan:</strong> {{ number_format($fixedAsset->acquisition_cost, 0, ',', '.') }}</p>-->
+                        <!--<p><strong>Akumulasi Penyusutan:</strong> {{ number_format($fixedAsset->accumulated_depriciation, 0, ',', '.') }}</p>-->
+                        <!--<p class="mb-4"><strong>Nilai Sisa:</strong> {{ number_format($fixedAsset->acquisition_cost - $fixedAsset->accumulated_depriciation, 0, ',', '.') }}</p>-->
+                        <!--@if ($errors->has('amount'))-->
+                        <!--<div class="row gx-3">-->
+                        <!--    <div class="col-sm-6 col-12">-->
+                        <!--        <div class="alert alert-danger">-->
+                        <!--            {{ $errors->first('amount') }}-->
+                        <!--        </div>-->
+                        <!--    </div>-->
+                        <!--</div>-->
+                        <!--@endif-->
                         <form action="{{ route('school-fixed-assets.depreciate', [$school, $fixedAsset]) }}" method="POST">
                         @csrf
                             <div class="create-invoice-wrapper">
@@ -50,9 +50,9 @@
                                     <div class="col-sm-6 col-12">
                                         <!-- Row start -->
                                         @if($fixedAsset->depreciations->isEmpty())
-                                            <div class="row gx-3">
+                                            <!-- <div class="row gx-3">
                                                 <div class="col-sm-12 col-12">
-                                                    <!-- Form group start -->
+                                                    <!-- Form group start --
                                                     <div class="mb-3">
                                                         <label for="account_id" class="form-label">Akun Biaya Penyusutan</label>
                                                         <select class="form-select @error('account_id') is-invalid @enderror" id="account_id" name="account_id">
@@ -67,9 +67,9 @@
                                                             <div class="invalid-feedback">{{ $message }}</div>
                                                         @enderror
                                                     </div>
-                                                    <!-- Form group end -->
+                                                    <!-- Form group end --
                                                 </div>
-                                            </div>
+                                            </div> -->
                                         @endif
                                         <div class="row gx-3">
                                             <div class="col-sm-12 col-12">
@@ -85,12 +85,23 @@
                                             </div>
                                         </div>
                                         <div class="row gx-3">
-                                            <div class="col-sm-12 col-12">
+                                            <div class="col-sm-7 col-12">
                                                 <!-- Form group start -->
                                                 <div class="mb-3">
                                                     <label for="date" id="labelDate" class="form-label">Tanggal Penyusutan</label>
                                                     <input type="date" class="form-control @error('date') is-invalid @enderror" id="date" name="date" value="{{ old('date', now()->format('Y-m-d')) }}">
                                                     @error('date')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <!-- Form group end -->
+                                            </div>
+                                            <div class="col-sm-5 col-12">
+                                                <!-- Form group start -->
+                                                <div class="mb-3">
+                                                    <label for="depreciation_percentage" class="form-label">Persentase Penyusutan (%)</label>
+                                                    <input type="number" step="0.01" min="0" max="100" class="form-control @error('depreciation_percentage') is-invalid @enderror" id="depreciation_percentage" name="depreciation_percentage" value="{{ old('depreciation_percentage', $fixedAsset->depreciation_percentage) }}">
+                                                    @error('depreciation_percentage')
                                                         <div class="invalid-feedback">{{ $message }}</div>
                                                     @enderror
                                                 </div>

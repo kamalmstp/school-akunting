@@ -7,6 +7,7 @@ use App\Models\School;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
@@ -175,6 +176,8 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id . '|nullable',
             'phone' => 'required|max:13',
+            'address' => 'nullable|string',
+            'logo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ], [
             'name.required' => 'Nama pengguna wajib diisi',
             'email.required' => 'Email pengguna wajib diisi',
@@ -182,6 +185,8 @@ class UserController extends Controller
             'email.unique' => 'Email pengguna sudah digunakan',
             'phone.required' => 'Telepon wajib diisi',
             'phone.max' => 'Telepon pengguna maksimal 13 angka',
+            'logo.image' => 'Logo sekolah harus berupa gambar',
+            'logo.max' => 'Logo sekolah maksimal 2 MB',
         ]);
 
         $user->update([
@@ -189,6 +194,37 @@ class UserController extends Controller
             'email' => $request->email,
             'phone' => $request->phone,
         ]);
+
+        if ($request->school_id) {
+            $school = School::find($request->school_id);
+            if ($request->hasFile('logo')) {
+                // Hapus logo lama jika ada
+                if ($school->logo && file_exists(public_path($school->logo))) {
+                    unlink(public_path($school->logo));
+                }
+
+                $logoFile = $request->file('logo');
+
+                // Buat nama file random dengan ekstensi asli
+                $filename = Str::random(40) . '.' . $logoFile->getClientOriginalExtension();
+
+                // Simpan ke folder public/images/schools
+                $logoFile->move(public_path('images/schools'), $filename);
+
+                // Simpan path ke DB
+                $logoPath = 'images/schools/' . $filename;
+            } else {
+                $logoPath = $school->logo;
+            }
+
+            $school->update([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'address' => $request->address,
+                'logo' => $logoPath,
+            ]);
+        }
 
         return back()->with('success', 'Profil berhasil diperbarui.');
     }

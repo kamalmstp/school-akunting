@@ -10,7 +10,7 @@
 				<i class="bi bi-pie-chart lh-1"></i>
 				<a href="{{ auth()->user()->role == 'SuperAdmin' ? route('dashboard') : route('dashboard.index', auth()->user()->school_id) }}" class="text-decoration-none">Dashboard</a>
 			</li>
-			<li class="breadcrumb-item" aria-current="page">Kelola Jurusan - Tambah</li>
+			<li class="breadcrumb-item" aria-current="page">Kelola Kelas - Tambah</li>
 		</ol>
 		<!-- Breadcrumb end -->
 	</div>
@@ -25,7 +25,7 @@
 				<div class="card mb-3">
 					<div class="card-header">
 						<div class="d-flex justify-content-between align-items-center">
-							<h5 class="card-title">Tambah Jurusan @if(auth()->user()->role == 'SchoolAdmin') - {{ $school->name }} @endif</h5>
+							<h5 class="card-title">Tambah Kelas @if(auth()->user()->role == 'SchoolAdmin') - {{ $school->name }} @endif</h5>
 						</div>
 					</div>
 					<div class="card-body">
@@ -36,17 +36,20 @@
                                 <div class="row gx-3">
                                     <div class="col-sm-6 col-12">
                                         <!-- Row start -->
-                                         @if(auth()->user()->role == 'SuperAdmin')
+                                        @if(auth()->user()->role == 'SuperAdmin')
                                             <div class="row gx-3">
                                                 <div class="col-sm-12 col-12">
                                                     <div class="mb-3">
                                                         <label for="school_id" class="form-label">Sekolah</label>
-                                                        <select name="school_id" class="form-select" id="school_id">
+                                                        <select name="school_id" class="form-select @error('school_id') is-invalid @enderror" id="school_id">
                                                             <option value="">Pilih Sekolah</option>
                                                             @foreach(\App\Models\School::pluck('name', 'id') as $key => $schoolName)
-                                                                <option value="{{ $key }}">{{ $schoolName }}</option>
+                                                                <option value="{{ $key }}" {{ old('school_id') == $key ? 'selected' : '' }}>{{ $schoolName }}</option>
                                                             @endforeach
                                                         </select>
+                                                        @error('school_id')
+                                                            <div class="invalid-feedback">{{ $message }}</div>
+                                                        @enderror
                                                     </div>
                                                 </div>
                                             </div>
@@ -55,7 +58,7 @@
                                             <div class="col-sm-12 col-12">
                                                 <!-- Form group start -->
                                                 <div class="mb-3">
-                                                    <label for="name" class="form-label">Nama Jurusan</label>
+                                                    <label for="name" class="form-label">Nama Kelas</label>
                                                     <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ old('name') }}">
                                                     @error('name')
                                                         <div class="invalid-feedback">{{ $message }}</div>
