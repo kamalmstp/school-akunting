@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 class StudentReceivables extends Model
 {
-    protected $fillable = ['student_id', 'account_id', 'school_id', 'amount', 'paid_amount', 'due_date', 'total_discount', 'total_payable', 'status', 'period', 'deleted_at'];
+    protected $fillable = ['student_id', 'account_id', 'school_id', 'amount', 'paid_amount', 'due_date', 'total_discount', 'infaq', 'total_payable', 'status', 'period', 'deleted_at'];
 
     protected static function boot()
     {

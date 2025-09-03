@@ -179,6 +179,9 @@ class StudentReceivableController extends Controller
         $discounts = [];
         $totalPotongan = 0;
 
+        //Infaq
+        $infaq = 0.04166667; //rumus sudah dihitung dan disesuaikan
+
         foreach ($labels as $i => $label) {
             $label = trim($label);
             $percent = isset($percents[$i]) ? (int)$percents[$i] : 0;
@@ -195,6 +198,8 @@ class StudentReceivableController extends Controller
         }
 
         $totalBayar = max($amount - $totalPotongan, 0);
+        $totalInfaq = max($totalBayar * $infaq, 0);
+        $totalBayarInfaq = max($totalBayar + $totalInfaq, 0);
 
         // Save student receivable
         $receivable = StudentReceivables::create([
@@ -206,7 +211,8 @@ class StudentReceivableController extends Controller
             'due_date' => $request->due_date,
             'status' => 'Unpaid',
             'total_discount' => $totalPotongan,
-            'total_payable' => $totalBayar,
+            'infaq' => $totalInfaq,
+            'total_payable' => $totalBayarInfaq,
         ]);
 
         // Save related discounts
