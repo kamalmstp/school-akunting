@@ -154,14 +154,15 @@ class StudentReceivableController extends Controller
             'account_id' => 'required',
             'income_account_id' => 'required',
             'amount' => 'required',
-            'due_date' => 'nullable|date',
+            'due_date' => 'required|date',
         ];
 
         $messages = [
             'student_id.required' => 'Pilih salah satu siswa',
             'account_id.required' => 'Pilih akun piutang',
             'income_account_id.required' => 'Pilih akun pendapatan',
-            'amount.required' => 'Jumlah wajib diisi'
+            'amount.required' => 'Jumlah wajib diisi',
+            'due_date.required' => 'Tanggal jatuh tempo wajib diisi'
         ];
 
         if (auth()->user()->role == 'SuperAdmin') {
