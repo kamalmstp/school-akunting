@@ -37,6 +37,7 @@ class TransactionController extends Controller
         $singleAccount = Account::find($account);
         $referenceStudent = 'App\Models\StudentReceivables';
         $referenceTeacher = 'App\Models\TeacherReceivable';
+        $referenceNull = NULL;
         if (auth()->user()->role != 'SchoolAdmin') {
             // SuperAdmin: Semua transaksi
             $schools = School::pluck('name', 'id');
@@ -73,16 +74,18 @@ class TransactionController extends Controller
                 $q->where('account_id', $account);
             })
             ->when($startDate, function ($q) use ($startDate, $endDate) {
-                $q->whereBetween('date', [Carbon::parse($startDate)->format('Y-m-d'), Carbon::parse($endDate)->format('Y-m-d')]);
+                $q->whereBetween('date', [
+                    Carbon::parse($startDate)->format('Y-m-d'),
+                    Carbon::parse($endDate)->format('Y-m-d')
+                ]);
             })
-            ->when($referenceStudent, function ($q) use ($referenceStudent) {
-                $q->where('reference_type', '!=', $referenceStudent);
-            })
-            ->when($referenceTeacher, function ($q) use ($referenceTeacher) {
-                $q->where('reference_type', '!=', $referenceTeacher);
+            ->where(function ($q) use ($referenceStudent, $referenceTeacher) {
+                $q->whereNull('reference_type')
+                ->orWhereNotIn('reference_type', [$referenceStudent, $referenceTeacher]);
             })
             ->orderBy('date', 'desc')
-            ->paginate(10)->withQueryString();
+            ->paginate(10)
+            ->withQueryString();
 
             // $transDesc = Transaction::where('school_id', $school->id)->pluck('description');
             // $transIds = [];
