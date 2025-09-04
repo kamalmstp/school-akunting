@@ -1035,12 +1035,12 @@ class ReportController extends Controller
                 SUM(CASE WHEN a.name LIKE '%ppdb%' THEN t.credit ELSE 0 END) as ppdb,
                 SUM(CASE WHEN a.name LIKE '%dpp%' THEN t.credit ELSE 0 END) as dpp,
                 SUM(CASE WHEN a.name LIKE '%spp%' THEN t.credit ELSE 0 END) as spp,
-                SUM(CASE WHEN (a.name LIKE '%uks%' OR a.name LIKE '%biaya%' OR a.name LIKE '%beli%' OR a.account_type = 'Aset Tetap') THEN t.credit ELSE 0 END) as uks,
+                SUM(CASE WHEN (a.name LIKE '%uks%' OR a.name LIKE '%biaya%' OR a.name LIKE '%beli%') THEN t.credit ELSE 0 END) as uks,
                 SUM(CASE WHEN a.name LIKE '%uis%' THEN t.credit ELSE 0 END) as uis,
                 SUM(CASE WHEN a.name LIKE '%uig%' THEN t.credit ELSE 0 END) as uig,
                 SUM(CASE WHEN a.name LIKE '%uik%' THEN t.credit ELSE 0 END) as uik,
                 SUM(CASE WHEN a.name LIKE '%unit usaha%' THEN t.credit ELSE 0 END) as unit_usaha,
-                SUM(CASE WHEN a.name LIKE '%pemerintah%' THEN t.credit ELSE 0 END) as pemerintah,
+                SUM(CASE WHEN (a.name LIKE '%pemerintah%' OR a.account_type = 'Aset Tetap') THEN t.credit ELSE 0 END) as pemerintah,
                 SUM(CASE WHEN a.name LIKE '%swasta%' THEN t.credit ELSE 0 END) as swasta,
                 SUM(
                     CASE 
