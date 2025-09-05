@@ -131,7 +131,7 @@
 								<thead>
 									<tr>
 										<th scope="col">No</th>
-										<th scope="col">Sekolah</th>
+										@if (auth()->user()->role != 'SchoolAdmin') <th scope="col">Sekolah</th> @endif
                                         <th scope="col">Siswa</th>
                                         <th scope="col">Akun</th>
                                         <th scope="col" class="text-end">Jumlah</th>
@@ -145,7 +145,7 @@
 									@forelse($receivables as $index => $receivable)
                                         <tr>
 											<td>{{ $receivables->currentPage() * 10 - (9 - $index) }}</td>
-                                            <td>{{ $receivable->school->name }}</td>
+                                            @if (auth()->user()->role != 'SchoolAdmin')<td>{{ $receivable->school->name }}</td>@endif
                                             <td>
 												<a href="javascript:void;" class="text-decoration-none" data-bs-toggle="collapse" data-bs-target="#details{{ $receivable->id }}">
 													{{ $receivable->student->name }} ({{ $receivable->student->student_id_number }})
@@ -164,6 +164,8 @@
                                                 <td class="text-center">
                                                     @if($receivable->status !== 'Paid')
                                                         <a href="{{ route('school-student-receivables.pay', [$receivable->school, $receivable]) }}" class="btn btn-sm btn-success">Bayar</a>
+													@else
+														<a href="{{ route('school-student-receivables.receipt-all', [$receivable->school, $receivable]) }}" class="btn btn-sm btn-primary">Kwitansi</a>
                                                     @endif
                                                     <a href="{{ route('school-student-receivables.edit', [$receivable->school, $receivable]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
                                                     <form action="{{ route('school-student-receivables.destroy', [$receivable->school, $receivable]) }}" method="POST" style="display:inline;">

@@ -237,6 +237,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/schools/{school}/student-receivables/{student_receivable}/pay', [StudentReceivableController::class, 'pay']);        
         Route::get('/schools/{school}/student-receivables/receivable/{student_receivable_detail}/pay', [StudentReceivableController::class, 'editPayForm'])->name('school-student-receivables.edit-pay');
         Route::get('/schools/{school}/student-receivables/receivable/{student_receivable_detail}/receipt', [StudentReceivableController::class, 'receipt'])->name('school-student-receivables.receipt');
+        Route::get('/schools/{school}/student-receivables/{student_receivable}/receipt-all', [StudentReceivableController::class, 'receiptAll'])->name('school-student-receivables.receipt-all');
         Route::post('/schools/{school}/student-receivables/receivable/{student_receivable_detail}/pay', [StudentReceivableController::class, 'editPay']);
 
         Route::get('/schools/{school}/teacher-receivables/{teacher_receivable}', [TeacherReceivableController::class, 'show'])->name('school-teacher-receivables.show');

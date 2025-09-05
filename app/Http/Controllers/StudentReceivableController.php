@@ -762,4 +762,48 @@ class StudentReceivableController extends Controller
         $pdf = PDF::loadView('student-receivables.receipt', $data);
         return $pdf->download('kwitansi.pdf');
     }
+
+    public function receiptAll(School $school, StudentReceivables $student_receivable)
+    {
+        $user = auth()->user();
+        if ($user->role === 'SchoolAdmin' && $user->school_id !== $school->id) {
+            abort(403, 'Unauthorized access to this school.');
+        }
+
+        // Data piutang utama
+        $receivable = $student_receivable;
+        $student = Student::findOrFail($receivable->student_id);
+
+        // Ambil semua detail pembayaran
+        $details = $receivable->student_receivable_details()->orderBy('id', 'asc')->get();
+
+        // Total jumlah pembayaran
+        $totalAmount = $details->sum('amount');
+
+        // Nomor invoice
+        $year = \Carbon\Carbon::now();
+        $idFormatted = str_pad($receivable->id, 4, '0', STR_PAD_LEFT);
+        $invoiceNo = 'INV/' . $year->format('Y') . '/' . $idFormatted;
+
+        // Konversi terbilang
+        $terbilang = new \App\Services\TerbilangService();
+
+        $data = [
+            'invoice_no'   => $invoiceNo,
+            'date'         => $year->format('d/m/Y'),
+            'from'         => $student->name,
+            'amount'       => $totalAmount,
+            'amount_words' => trim($terbilang->convert($totalAmount)) . ' Rupiah',
+            'details'      => $details,
+            'company'      => [
+                'name'  => $school->name,
+                'telp'  => $school->phone,
+                'email' => $school->email,
+                'logo'  => $school->logo
+            ]
+        ];
+
+        $pdf = \PDF::loadView('student-receivables.receipt-all', $data);
+        return $pdf->download('kwitansi.pdf');
+    }
 }
