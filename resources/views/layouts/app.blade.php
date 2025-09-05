@@ -392,6 +392,9 @@
                                         <li>
                                             <a href="{{ route('school-employee-receivables.index', auth()->user()->school_id) }}" class="p-third">Piutang Karyawan</a>
                                         </li>
+										<li>
+                                            <a href="{{ route('school-student-receipts.filter', auth()->user()->school_id) }}" class="p-fourth">Cetak Kwitansi Siswa</a>
+                                        </li>
                                     </ul>
                                 </li>
 								<li class="treeview alumni">
@@ -605,6 +608,11 @@
 					$('.receivable').addClass('active current-page');
 					$('.receivable > ul').addClass('menu-open');
 					$('.p-third').addClass('active-sub');
+				}
+				if (url.includes('student-receipts')) {
+					$('.receivable').addClass('active current-page');
+					$('.receivable > ul').addClass('menu-open');
+					$('.p-fourth').addClass('active-sub');
 				}
 				if (url.includes('student-alumni')) {
 					$('.alumni').addClass('active current-page');

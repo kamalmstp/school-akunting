@@ -18,6 +18,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\SchoolMajorController;
 use App\Http\Controllers\FundManagementController;
 use App\Http\Controllers\SettingController;
+use App\Http\Controllers\ReceiptController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 
@@ -259,6 +260,11 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/schools/{school}/employee-receivables/receivable/{employee_receivable_detail}/pay', [EmployeeReceivableController::class, 'editPayForm'])->name('school-employee-receivables.edit-pay');
         Route::get('/schools/{school}/employee-receivables/receivable/{employee_receivable_detail}/receipt', [EmployeeReceivableController::class, 'receipt'])->name('school-employee-receivables.receipt');
         Route::post('/schools/{school}/employee-receivables/receivable/{employee_receivable_detail}/pay', [EmployeeReceivableController::class, 'editPay']);
+
+        Route::get('/schools/{school}/student-receipts/filter', [ReceiptController::class, 'filterForm'])->name('school-student-receipts.filter');
+        Route::get('/schools/{school}/student-receipts/{student}', [ReceiptController::class, 'previewByStudent'])->name('school-student-receipts.previewByStudent');
+        Route::get('/schools/{school}/student-receipts/{student}/print/{date}', [ReceiptController::class, 'printByStudentAndDate'])->name('school-student-receipts.printByStudentAndDate');
+        Route::post('/schools/{school}/student-receipts/print', [ReceiptController::class, 'printByDate'])->name('school-student-receipts.print');
 
         Route::get('/schools/{school}/majors/{school_major}', [SchoolMajorController::class, 'show'])->name('school-school-majors.show');
         Route::get('/schools/{school}/majors/{school_major}/edit', [SchoolMajorController::class, 'edit'])->name('school-school-majors.edit');
