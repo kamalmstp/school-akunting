@@ -68,16 +68,16 @@ class ReceiptController extends Controller
             'school_id'   => $school->id,
             'student_id'  => $student->id,
             'invoice_no'  => $invoiceNo,
-            'amount'      => $total,
             'date'        => $dateObj,
             'token'       => $uniqueCode,
             'total_amount' => $total,
         ]);
 
         $verifyUrl = route('receipts.verify', ['code' => $receipt->token]);
+        $pathQrCode = 'images/qrcode/'.$uniqueCode.'.svg';
 
-        $qrCode = base64_encode(QrCode::format('png')->size(200)->generate($verifyUrl));
-        //$qrCode = QrCode::size(200)->generate($verifyUrl);
+        //$qrCode = base64_encode(QrCode::format('png')->size(200)->generate($verifyUrl));
+        $qrCode = QrCode::size(100)->generate($verifyUrl, public_path($pathQrCode));
 
         $data = [
             'invoice_no'   => $invoiceNo,
@@ -92,30 +92,11 @@ class ReceiptController extends Controller
                 'email' => $school->email,
                 'logo'  => $school->logo,
             ],
-            'qrCode'       => $qrCode,
             'verifyUrl'    => $verifyUrl,
+            'qrCode'       => $pathQrCode,
         ];
 
         $pdf = \PDF::loadView('receipts.print-by-date', $data);
         return $pdf->download("kwitansi-{$student->id}-{$date}.pdf");
-    }
-
-    public function verify($code)
-    {
-        $receipt = Receipt::with(['student', 'school'])
-            ->where('token', $code)
-            ->first();
-
-        if (!$receipt) {
-            return view('receipts.verify', [
-                'status' => 'error',
-                'message' => 'Kwitansi tidak ditemukan atau kode salah.'
-            ]);
-        }
-
-        return view('receipts.verify', [
-            'status' => 'success',
-            'receipt' => $receipt,
-        ]);
     }
 }

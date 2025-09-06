@@ -9,9 +9,11 @@ use App\Models\StudentReceivableDetail;
 use App\Models\Account;
 use App\Models\Transaction;
 use App\Models\FundManagement;
+use App\Models\Receipt;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use PDF;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class StudentReceivableController extends Controller
 {
@@ -744,6 +746,22 @@ class StudentReceivableController extends Controller
 
         $terbilang = new \App\Services\TerbilangService();
 
+        $uniqueCode = now()->timestamp . $students->id;
+
+        $receipt = Receipt::create([
+            'school_id'   => $school->id,
+            'student_id'  => $students->id,
+            'invoice_no'  => $invoiceNo,
+            'date'        => $receivable_detail->period,
+            'token'       => $uniqueCode,
+            'total_amount' => $receivable_detail->amount,
+        ]);
+
+        $verifyUrl = route('receipts.verify', ['code' => $receipt->token]);
+        $pathQrCode = 'images/qrcode/'.$uniqueCode.'.svg';
+
+        $qrCode = QrCode::size(100)->generate($verifyUrl, public_path($pathQrCode));
+
         $data = [
             'invoice_no' => $invoiceNo,
             'date' => $year->format('M d, Y'),
@@ -756,7 +774,9 @@ class StudentReceivableController extends Controller
                 'telp' => $school->phone,
                 'email' => $school->email,
                 'logo' => $school->logo
-            ]
+            ],
+            'verifyUrl'    => $verifyUrl,
+            'qrCode'       => $pathQrCode,
         ];
 
         $pdf = PDF::loadView('student-receivables.receipt', $data);
@@ -770,23 +790,34 @@ class StudentReceivableController extends Controller
             abort(403, 'Unauthorized access to this school.');
         }
 
-        // Data piutang utama
         $receivable = $student_receivable;
         $student = Student::findOrFail($receivable->student_id);
 
-        // Ambil semua detail pembayaran
         $details = $receivable->student_receivable_details()->orderBy('id', 'asc')->get();
 
-        // Total jumlah pembayaran
         $totalAmount = $details->sum('amount');
 
-        // Nomor invoice
         $year = \Carbon\Carbon::now();
         $idFormatted = str_pad($receivable->id, 4, '0', STR_PAD_LEFT);
         $invoiceNo = 'INV/' . $year->format('Y') . '/' . $idFormatted;
 
-        // Konversi terbilang
         $terbilang = new \App\Services\TerbilangService();
+
+        $uniqueCode = now()->timestamp . $student->id;
+
+        $receipt = Receipt::create([
+            'school_id'   => $school->id,
+            'student_id'  => $student->id,
+            'invoice_no'  => $invoiceNo,
+            'date'        => $year,
+            'token'       => $uniqueCode,
+            'total_amount' => $totalAmount,
+        ]);
+
+        $verifyUrl = route('receipts.verify', ['code' => $receipt->token]);
+        $pathQrCode = 'images/qrcode/'.$uniqueCode.'.svg';
+
+        $qrCode = QrCode::size(100)->generate($verifyUrl, public_path($pathQrCode));
 
         $data = [
             'invoice_no'   => $invoiceNo,
@@ -800,7 +831,9 @@ class StudentReceivableController extends Controller
                 'telp'  => $school->phone,
                 'email' => $school->email,
                 'logo'  => $school->logo
-            ]
+            ],
+            'verifyUrl'    => $verifyUrl,
+            'qrCode'       => $pathQrCode,
         ];
 
         $pdf = \PDF::loadView('student-receivables.receipt-all', $data);

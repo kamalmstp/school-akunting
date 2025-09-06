@@ -118,6 +118,15 @@
 			</td>
 			<td class="text-right" style="width: 150px;">{{ $date }}</td>
 		</tr>
+		<tr>
+            <td></td>
+            <td></td>
+            <td class="text-right">
+                <div style="text-align: center; margin-top: 20px;">
+                    <img src="{{ public_path($qrCode) }}" style="width: 50%" alt="">
+                </div>
+            </td>
+        </tr>
 	</table>
 </body>
 </html>
