@@ -141,6 +141,7 @@ return [
          * @link http://www.php.net/image
          */
         'pdf_backend' => 'CPDF',
+        'image_backend' => 'gd',
 
         /**
          * html target media view which should be rendered into pdf.

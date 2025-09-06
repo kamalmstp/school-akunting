@@ -9,8 +9,10 @@ use App\Models\StudentReceivableDetail;
 use App\Models\Account;
 use App\Models\Transaction;
 use App\Models\FundManagement;
+use App\Models\Receipt;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 use PDF;
 
 class ReceiptController extends Controller
@@ -55,69 +57,65 @@ class ReceiptController extends Controller
 
         $terbilang = new \App\Services\TerbilangService();
         $total = $receivables->sum('amount');
-
         $dateObj = \Carbon\Carbon::parse($date);
+
         $idFormatted = str_pad($student->id, 4, '0', STR_PAD_LEFT);
         $invoiceNo = 'INV/' . $dateObj->format('Y') . '/' . $idFormatted;
+
+        $uniqueCode = now()->timestamp . $student->id;
+
+        $receipt = Receipt::create([
+            'school_id'   => $school->id,
+            'student_id'  => $student->id,
+            'invoice_no'  => $invoiceNo,
+            'amount'      => $total,
+            'date'        => $dateObj,
+            'token'       => $uniqueCode,
+            'total_amount' => $total,
+        ]);
+
+        $verifyUrl = route('receipts.verify', ['code' => $receipt->token]);
+
+        $qrCode = base64_encode(QrCode::format('png')->size(200)->generate($verifyUrl));
+        //$qrCode = QrCode::size(200)->generate($verifyUrl);
 
         $data = [
             'invoice_no'   => $invoiceNo,
             'date'         => $dateObj->format('M d, Y'),
             'from'         => $student->name,
             'amount'       => $total,
-            'amount_words' => trim($terbilang->convert($total)).' Rupiah',
+            'amount_words' => trim($terbilang->convert($total)) . ' Rupiah',
             'receivables'  => $receivables,
             'company'      => [
                 'name'  => $school->name,
                 'telp'  => $school->phone,
                 'email' => $school->email,
-                'logo'  => $school->logo
-            ]
+                'logo'  => $school->logo,
+            ],
+            'qrCode'       => $qrCode,
+            'verifyUrl'    => $verifyUrl,
         ];
 
         $pdf = \PDF::loadView('receipts.print-by-date', $data);
         return $pdf->download("kwitansi-{$student->id}-{$date}.pdf");
     }
 
-    public function printByDate(Request $request, School $school)
+    public function verify($code)
     {
-        $studentId = $request->student_id;
-        $date = $request->date;
+        $receipt = Receipt::with(['student', 'school'])
+            ->where('token', $code)
+            ->first();
 
-        // ambil data dari student_receivables
-        $receivables = StudentReceivables::where('student_id', $studentId)
-            ->where('school_id', $school->id)
-            ->whereDate('created_at', $date)
-            ->get();
-
-        if ($receivables->isEmpty()) {
-            return back()->with('error', 'Tidak ada tagihan pada tanggal tersebut.');
+        if (!$receipt) {
+            return view('receipts.verify', [
+                'status' => 'error',
+                'message' => 'Kwitansi tidak ditemukan atau kode salah.'
+            ]);
         }
 
-        $student = Student::find($studentId);
-        $terbilang = new \App\Services\TerbilangService();
-
-        $total = $receivables->sum('amount');
-        $year = \Carbon\Carbon::parse($date);
-        $idFormatted = str_pad($studentId, 4, '0', STR_PAD_LEFT);
-        $invoiceNo = 'INV/' . $year->format('Y') . '/' . $idFormatted;
-
-        $data = [
-            'invoice_no'   => $invoiceNo,
-            'date'         => $year->format('M d, Y'),
-            'from'         => $student->name,
-            'amount'       => $total,
-            'amount_words' => trim($terbilang->convert($total)) . ' Rupiah',
-            'receivables'  => $receivables, // loop di blade
-            'company'      => [
-                'name'  => $school->name,
-                'telp'  => $school->phone,
-                'email' => $school->email,
-                'logo'  => $school->logo
-            ]
-        ];
-
-        $pdf = \PDF::loadView('receipts.print-by-date', $data);
-        return $pdf->download('kwitansi.pdf');
+        return view('receipts.verify', [
+            'status' => 'success',
+            'receipt' => $receipt,
+        ]);
     }
 }

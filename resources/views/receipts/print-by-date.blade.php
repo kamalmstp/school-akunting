@@ -122,6 +122,13 @@
                 </div>
             </td>
             <td class="text-right" style="width: 150px;">{{ $date }}</td>
+            <td class="text-right">
+                <div style="text-align: center; margin-top: 20px;">
+                    <p>Scan QR Code untuk verifikasi kwitansi:</p>
+                    <img src="data:image/png;base64,{{ $qrCode }}" width="120" alt="QR Code">
+                    <p><small>Atau kunjungi: {{ $verifyUrl }}</small></p>
+                </div>
+            </td>
         </tr>
     </table>
 </body>

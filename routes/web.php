@@ -265,6 +265,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/schools/{school}/student-receipts/{student}', [ReceiptController::class, 'previewByStudent'])->name('school-student-receipts.previewByStudent');
         Route::get('/schools/{school}/student-receipts/{student}/print/{date}', [ReceiptController::class, 'printByStudentAndDate'])->name('school-student-receipts.printByStudentAndDate');
         Route::post('/schools/{school}/student-receipts/print', [ReceiptController::class, 'printByDate'])->name('school-student-receipts.print');
+        Route::get('/receipts/verify/{code}', [ReceiptController::class, 'verify'])->name('receipts.verify');
 
         Route::get('/schools/{school}/majors/{school_major}', [SchoolMajorController::class, 'show'])->name('school-school-majors.show');
         Route::get('/schools/{school}/majors/{school_major}/edit', [SchoolMajorController::class, 'edit'])->name('school-school-majors.edit');
