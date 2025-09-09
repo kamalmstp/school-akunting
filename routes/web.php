@@ -20,6 +20,8 @@ use App\Http\Controllers\FundManagementController;
 use App\Http\Controllers\SettingController;
 use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\VerifyController;
+use App\Http\Controllers\FinancialPeriodController;
+use App\Http\Controllers\InitialBalanceController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 
@@ -303,5 +305,15 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/schools/{school}/payments/{schedule}/edit', [SettingController::class, 'edit'])->name('school-schedules.edit');
         Route::put('/schools/{school}/payments/{schedule}', [SettingController::class, 'update'])->name('school-schedules.update');
         Route::delete('/schools/{school}/payments/{schedule}', [SettingController::class, 'destroy'])->name('school-schedules.destroy');
+
+        Route::prefix('schools/{school}')->name('school-')->group(function () {   
+            Route::resource('financial-periods', FinancialPeriodController::class);
+            Route::prefix('financial-periods/{financialPeriod}')->name('initial-balances.')->group(function () {
+                Route::get('initial-balances', [InitialBalanceController::class, 'index'])->name('index');
+                Route::get('initial-balances/edit', [InitialBalanceController::class, 'edit'])->name('edit');
+                Route::put('initial-balances', [InitialBalanceController::class, 'update'])->name('update');
+            });
+            Route::post('financial-periods/{financialPeriod}/copy-balances', [FinancialPeriodController::class, 'copyBalances'])->name('financial-periods.copy-balances');
+        });
     });
 });

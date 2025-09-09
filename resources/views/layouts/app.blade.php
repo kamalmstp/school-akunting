@@ -365,6 +365,10 @@
 										<li>
                                             <a href="{{ route('school-fund-managements.index', auth()->user()->school_id) }}" class="m-fifth">Kelola Dana</a>
                                         </li>
+
+										<li>
+                                            <a href="{{ route('school-financial-periods.index', auth()->user()->school_id) }}" class="m-sixth">Kelola Tahun Ajaran</a>
+                                        </li>
 										<!-- <li>
                                             <a href="{{ route('school-schedules.index', auth()->user()->school_id) }}" class="m-sixth">Kelola Pembayaran</a>
                                         </li> -->
@@ -588,6 +592,11 @@
 					$('.master').addClass('active current-page');
 					$('.master > ul').addClass('menu-open');
 					$('.m-fifth').addClass('active-sub');
+				}
+				if (url.includes('financial')) {
+					$('.master').addClass('active current-page');
+					$('.master > ul').addClass('menu-open');
+					$('.m-sixth').addClass('active-sub');
 				}
 				if (url.includes('payments')) {
 					$('.master').addClass('active current-page');

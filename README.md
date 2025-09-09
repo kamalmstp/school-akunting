@@ -43,3 +43,7 @@ PASSWORD=password123
 EMAIL=admin@example.com
 PASSWORD=password123
 ```
+
+Tambahakan:
+- folder images/qrcode
+- penambahan dependency baru (composer & )
