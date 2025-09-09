@@ -48,6 +48,11 @@ class Account extends Model
         return $this->hasMany(FixAsset::class);
     }
 
+    public function initialBalances()
+    {
+        return $this->hasMany(InitialBalance::class);
+    }
+
     public function depreciations()
     {
         return $this->hasMany(Depreciation::class);

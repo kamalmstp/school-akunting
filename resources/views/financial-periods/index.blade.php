@@ -70,12 +70,16 @@
                                         </td>
                                         @if(auth()->user()->role != 'AdminMonitor')
                                             <td>
+                                                <a href="{{ route('school-initial-balances.index', [$school, $period]) }}" class="btn btn-sm btn-info" title="Lihat Saldo Awal">
+                                                    <i class="bi bi-wallet2"></i> Saldo Awal
+                                                </a>
+
                                                 <a href="{{ route('school-financial-periods.edit', [$school, $period]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
                                                 
                                                 @if(!$period->is_active)
                                                     <form action="{{ route('school-financial-periods.copy-balances', [$school, $period]) }}" method="POST" style="display:inline;">
                                                         @csrf
-                                                        <button type="submit" class="btn btn-sm btn-info" onclick="return confirm('Yakin ingin menyalin saldo dari periode sebelumnya?')">Salin Saldo Awal</button>
+                                                        <button type="submit" class="btn btn-sm btn-warning" onclick="return confirm('Yakin ingin menyalin saldo dari periode sebelumnya?')">Salin Saldo Awal</button>
                                                     </form>
                                                 @endif
 
