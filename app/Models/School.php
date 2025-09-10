@@ -47,4 +47,9 @@ class School extends Model
     {
         return $this->hasMany(FixAsset::class);
     }
+
+    public function cashManagements()
+    {
+        return $this->hasMany(CashManagement::class);
+    }
 }

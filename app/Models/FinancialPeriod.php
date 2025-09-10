@@ -32,4 +32,9 @@ class FinancialPeriod extends Model
     {
         return $this->hasMany(InitialBalance::class);
     }
+
+    public function cashManagements()
+    {
+        return $this->hasMany(CashManagement::class);
+    }
 }
