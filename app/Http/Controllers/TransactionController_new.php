@@ -103,8 +103,11 @@ class TransactionController extends Controller
 
     public function getAccountParent(Request $request)
     {
+        $user = auth()->user();
+
         $accounts = Account::where('account_type', $request->accountType)
             ->whereNotNull('parent_id')
+            ->where('school_id', '=', $user->school_id)
             ->get();
         return response()->json($accounts, 200);
     }

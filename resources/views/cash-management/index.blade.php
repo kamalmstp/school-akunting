@@ -27,7 +27,7 @@
 							<h5 class="card-title">Daftar Dana</h5>
 							@if(auth()->user()->role != 'AdminMonitor')
 							<div>
-                                <a href="{{ auth()->user()->role == 'SuperAdmin' ? route('fund-managements.create') : route('school-fund-managements.create', $school) }}" class="btn btn-primary" title="Tambah Dana">
+                                <a href="{{ auth()->user()->role == 'SuperAdmin' ? route('cash-managements.create') : route('school-cash-managements.create', $school) }}" class="btn btn-primary" title="Tambah Dana">
 									<span class="d-lg-block d-none">Tambah Dana</span>
 									<span class="d-sm-block d-lg-none">
 										<i class="bi bi-plus"></i>
@@ -55,21 +55,21 @@
 										<th>No</th>
                                         @if(auth()->user()->role == 'SuperAdmin')<th>Sekolah</th>@endif
                                         <th>Nama</th>
-                                        <th>Jumlah</th>
+                                        <th>Saldo</th>
                                         @if(auth()->user()->role != 'AdminMonitor')<th></th>@endif
 									</tr>
 								</thead>
 								<tbody>
-									@forelse($funds as $index => $fund_management)
+									@forelse($cashes as $index => $cash)
                                         <tr>
-											<td>{{ $funds->currentPage() * 10 - (9 - $index) }}</td>
-                                            @if(auth()->user()->role == 'SuperAdmin')<td>{{ $fund_management->school->name }}</td>@endif
-                                            <td>{{ $fund_management->name }}</td>
-                                            <td>Rp{{ number_format($fund_management->amount, 0, ',', '.') }}{{ $fund_management->account_id ? ' ('.$fund_management->account->code.' - '.$fund_management->account->name.')':'' }}</td>
+											<td>{{ $loop->iteration }}</td>
+                                            @if(auth()->user()->role == 'SuperAdmin')<td>{{ $cash->school->name }}</td>@endif
+                                            <td>{{ $cash->name }}</td>
+                                            <td>Rp{{ number_format($cash->balance, 0, ',', '.') }}{{ $cash->account_id ? ' ('.$cash->account->code.' - '.$cash->account->name.')':'' }}</td>
 											@if(auth()->user()->role != 'AdminMonitor')
 												<td>
-													<a href="{{ route('school-fund-managements.edit', [$fund_management->school, $fund_management]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
-													<form action="{{ route('school-fund-managements.destroy', [$fund_management->school, $fund_management]) }}" method="POST" style="display:inline;">
+													<a href="{{ route('school-cash-managements.edit', [$cash->school, $cash]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+													<form action="{{ route('school-cash-managements.destroy', [$cash->school, $cash]) }}" method="POST" style="display:inline;">
 														@csrf
 														@method('DELETE')
 														<button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus siswa ini?')">Hapus</button>
@@ -85,9 +85,7 @@
                                 </tbody>
 							</table>
 						</div>
-						<div class="d-flex justify-content-end mt-2">
-							{{ $funds->links() }}
-						</div>
+
 					</div>
 				</div>
 			</div>

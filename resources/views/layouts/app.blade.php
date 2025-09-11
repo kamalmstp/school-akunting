@@ -362,8 +362,12 @@
                                         <li>
                                             <a href="{{ route('school-students.index', auth()->user()->school_id) }}" class="m-fourth">Kelola Siswa</a>
                                         </li>
-										<li>
+										<!-- <li>
                                             <a href="{{ route('school-fund-managements.index', auth()->user()->school_id) }}" class="m-fifth">Kelola Dana</a>
+                                        </li> -->
+
+										<li>
+                                            <a href="{{ route('school-cash-managements.index', auth()->user()->school_id) }}" class="m-fifth">Kelola Dana</a>
                                         </li>
 
 										<li>
@@ -432,24 +436,24 @@
                                         <span class="menu-text">Laporan</span>
                                     </a>
                                     <ul class="treeview-menu">
-										<li>
+										<!-- <li>
 											<a href="{{ route('school-reports.beginning-balance', auth()->user()->school_id) }}" class="rp-first">Saldo Awal</a>
-										</li>
+										</li> -->
 										<li>
 											<a href="{{ route('school-reports.general-journal', auth()->user()->school_id) }}" class="rp-second">Jurnal Umum</a>
 										</li>
 										<li>
 											<a href="{{ route('school-reports.ledger', auth()->user()->school_id) }}" class="rp-third">Buku Besar</a>
 										</li>
-										<li>
+										<!-- <li>
 											<a href="{{ route('school-reports.trial-balance-before', auth()->user()->school_id) }}" class="rp-fourth">Neraca Saldo Awal</a>
-										</li>
+										</li> -->
 										<!--<li>-->
 										<!--	<a href="{{ route('school-reports.adjusting-entries', auth()->user()->school_id) }}" class="rp-fifth">Jurnal Penyesuaian</a>-->
 										<!--</li>-->
-										<li>
+										<!-- <li>
 											<a href="{{ route('school-reports.trial-balance-after', auth()->user()->school_id) }}" class="rp-sixth">Neraca Saldo Akhir</a>
-										</li>
+										</li> -->
 										<li>
 											<a href="{{ route('school-reports.financial-statements', auth()->user()->school_id) }}" class="rp-seventh">Laporan Keuangan</a>
 										</li>
@@ -588,7 +592,7 @@
 					$('.master > ul').addClass('menu-open');
 					$('.m-fourth').addClass('active-sub');
 				}
-				if (url.includes('fund')) {
+				if (url.includes('cash')) {
 					$('.master').addClass('active current-page');
 					$('.master > ul').addClass('menu-open');
 					$('.m-fifth').addClass('active-sub');

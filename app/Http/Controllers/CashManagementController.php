@@ -10,6 +10,12 @@ use Illuminate\Http\Request;
 
 class CashManagementController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('auth');
+        $this->middleware('school.access');
+    }
+
     /**
      * Tampilkan daftar kas.
      */
@@ -27,7 +33,10 @@ class CashManagementController extends Controller
      */
     public function create(School $school)
     {
-        $accounts = Account::where('school_id', $school->id)->get();
+        $accounts = Account::where('school_id', $school->id)
+                    ->where('account_type', 'Aset Lancar')
+                    ->where('code', 'like', '1-11%')
+                    ->get();
 
         $periods = FinancialPeriod::where('school_id', $school->id)
             ->where('is_active', true)
@@ -41,14 +50,17 @@ class CashManagementController extends Controller
      */
     public function store(Request $request, School $school)
     {
+        $user = auth()->user();
+        if ($user->role === 'SchoolAdmin' && $user->school_id !== $school->id) {
+            abort(403, 'Unauthorized access to this school.');
+        }
+
         $request->validate([
             'name'                => 'required|string|max:100',
             'account_id'          => 'required|exists:accounts,id',
-            'financial_period_id' => 'required|exists:financial_periods,id',
         ]);
 
-        $period = FinancialPeriod::where('id', $request->financial_period_id)
-            ->where('school_id', $school->id)
+        $period = FinancialPeriod::where('school_id', $school->id)
             ->where('is_active', true)
             ->firstOrFail();
 
@@ -59,58 +71,63 @@ class CashManagementController extends Controller
             'financial_period_id' => $period->id,
         ]);
 
-        return redirect()->route('school-cash.index', $school)
-            ->with('success', 'Kas baru berhasil ditambahkan.');
+        $route = back();
+        if (auth()->user()->role == 'SchoolAdmin') {
+            $route = redirect()->route('school-cash-managements.index', $school);
+        }
+
+        return $route->with('success', 'Kas berhasil ditambahkan.');
     }
 
     /**
      * Form edit kas.
      */
-    public function edit(School $school, CashManagement $cash)
+    public function edit(School $school, CashManagement $cash_management)
     {
-        $accounts = Account::where('school_id', $school->id)->get();
+        $accounts = Account::where('school_id', $school->id)
+                    ->where('account_type', 'Aset Lancar')
+                    ->where('code', 'like', '1-11%')
+                    ->get();
 
         $periods = FinancialPeriod::where('school_id', $school->id)
             ->where('is_active', true)
             ->get();
 
-        return view('cash-management.edit', compact('school', 'cash', 'accounts', 'periods'));
+        return view('cash-management.edit', compact('school', 'cash_management', 'accounts', 'periods'));
     }
 
     /**
      * Update data kas.
      */
-    public function update(Request $request, School $school, CashManagement $cash)
+    public function update(Request $request, School $school, CashManagement $cash_management)
     {
         $request->validate([
             'name'                => 'required|string|max:100',
             'account_id'          => 'required|exists:accounts,id',
-            'financial_period_id' => 'required|exists:financial_periods,id',
         ]);
 
-        $period = FinancialPeriod::where('id', $request->financial_period_id)
-            ->where('school_id', $school->id)
+        $period = FinancialPeriod::where('school_id', $school->id)
             ->where('is_active', true)
             ->firstOrFail();
 
-        $cash->update([
+        $cash_management->update([
             'account_id'          => $request->account_id,
             'name'                => $request->name,
             'financial_period_id' => $period->id,
         ]);
 
-        return redirect()->route('school-cash.index', $school)
+        return redirect()->route('school-cash-managements.index', $school)
             ->with('success', 'Kas berhasil diperbarui.');
     }
 
     /**
      * Hapus kas.
      */
-    public function destroy(School $school, CashManagement $cash)
+    public function destroy(School $school, CashManagement $cash_management)
     {
-        $cash->delete();
+        $cash_management->delete();
 
-        return redirect()->route('school-cash.index', $school)
+        return redirect()->route('school-cash-managements.index', $school)
             ->with('success', 'Kas berhasil dihapus.');
     }
 }

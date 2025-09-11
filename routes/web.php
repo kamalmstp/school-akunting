@@ -22,6 +22,7 @@ use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\VerifyController;
 use App\Http\Controllers\FinancialPeriodController;
 use App\Http\Controllers\InitialBalanceController;
+use App\Http\Controllers\CashManagementController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 
@@ -280,6 +281,8 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/schools/{school}/funds/{fund_management}/edit', [FundManagementController::class, 'edit'])->name('school-fund-managements.edit');
         Route::put('/schools/{school}/funds/{fund_management}', [FundManagementController::class, 'update'])->name('school-fund-managements.update');
         Route::delete('/schools/{school}/funds/{fund_management}', [FundManagementController::class, 'destroy'])->name('school-fund-managements.destroy');
+
+        
         
         Route::get('/schools/{school}/students/{student}/edit', [StudentController::class, 'edit'])->name('school-students.edit');
         Route::put('/schools/{school}/students/{student}', [StudentController::class, 'update'])->name('school-students.update');
@@ -306,7 +309,8 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/schools/{school}/payments/{schedule}', [SettingController::class, 'update'])->name('school-schedules.update');
         Route::delete('/schools/{school}/payments/{schedule}', [SettingController::class, 'destroy'])->name('school-schedules.destroy');
 
-        Route::prefix('schools/{school}')->name('school-')->group(function () {   
+        Route::prefix('schools/{school}')->name('school-')->group(function () {
+            Route::resource('cash-managements', CashManagementController::class);
             Route::resource('financial-periods', FinancialPeriodController::class);
             Route::prefix('financial-periods/{financialPeriod}')->name('initial-balances.')->group(function () {
                 Route::get('initial-balances', [InitialBalanceController::class, 'index'])->name('index');

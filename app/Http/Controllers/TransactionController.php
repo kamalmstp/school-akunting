@@ -6,6 +6,7 @@ use App\Models\School;
 use App\Models\Transaction;
 use App\Models\Account;
 use App\Models\FundManagement;
+use App\Models\CashManagement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
@@ -131,7 +132,9 @@ class TransactionController extends Controller
         }
 
         $accounts = Account::where('school_id', $school->id)->get();
-        return view('transactions.create', compact('school', 'accounts'));
+        $cashManagements = CashManagement::where('school_id', $school->id ?? $user->school_id)
+                            ->with('account')->get();
+        return view('transactions.create', compact('school', 'accounts', 'cashManagements'));
     }
 
     /**
@@ -140,71 +143,109 @@ class TransactionController extends Controller
     public function store(Request $request, School $school)
     {
         $user = auth()->user();
+
         if ($user->role === 'SchoolAdmin' && $user->school_id !== $school->id) {
             abort(403, 'Unauthorized access to this school.');
         }
 
         $rules = [
-            'account_id.*' => 'required',
-            'doc_number' => 'required',
-            'date' => 'required|date',
-            'description' => 'required|string',
+            'doc_number'   => 'required|string',
+            'date'         => 'required|date',
+            'description'  => 'required|string',
+            'transaction_type' => 'required|in:income,expense',
+            'account_id'   => 'required|exists:accounts,id',
+            'cash_management_id' => 'required|exists:cash_management,id',
+            'amount'       => 'required'
         ];
 
         $messages = [
-            'account_id.*.required' => 'Pilih akun',
-            'doc_number.required' => 'Nomor Dokumen wajib diisi',
-            'date.required' => 'Tanggal transaksi wajib diisi'
+            'doc_number.required'   => 'Nomor Dokumen wajib diisi',
+            'date.required'         => 'Tanggal transaksi wajib diisi',
+            'description.required'  => 'Deskripsi wajib diisi',
+            'transaction_type.required' => 'Pilih jenis transaksi',
+            'account_id.required'   => 'Pilih akun',
+            'cash_management_id.required' => 'Pilih sumber/tujuan kas',
+            'amount.required'       => 'Nominal wajib diisi',
         ];
 
-        if (auth()->user()->role == 'SuperAdmin' && !isset($request->school_id)) {
-            $rules['school_id'] = 'required';
+        if ($user->role == 'SuperAdmin' && !$request->has('school_id')) {
+            $rules['school_id'] = 'required|exists:schools,id';
             $messages['school_id.required'] = 'Pilih sekolah';
         }
 
         $request->validate($rules, $messages);
 
-        $debit = [];
-        $credit = [];
-        foreach ($request->debit as $index => $value) {
-            $debit[] = $value ? (float)str_replace('.', '', $value) : 0;
-            $credit[] = $request->credit[$index] ? (float)str_replace('.', '', $request->credit[$index]) : 0;
-        }
-        $totalDebit = array_sum($debit);
-        $totalCredit = array_sum($credit);
+        $schoolId = $user->role == 'SuperAdmin' ? $request->school_id : $school->id;
 
-        if ($totalDebit != $totalCredit && is_null($request->type)) {
-            return back()->withErrors(['balance' => 'Pastikan pemasukan dan pengeluaran seimbang']);
+        $cash_account_id = CashManagement::find($request->cash_management_id)->account_id;
+
+        $amount = (float) str_replace('.', '', $request->amount);
+
+        if ($amount <= 0) {
+            return back()->withErrors(['amount' => 'Nominal tidak boleh 0'])->withInput();
         }
 
-        foreach ($request->account_id as $index => $account) {
-            $total_debit = (float)str_replace('.', '', $request->debit[$index]) ?? 0;
-            $total_credit = (float)str_replace('.', '', $request->credit[$index]) ?? 0;
+        if ($request->transaction_type === 'income') {
+            // 1. Debit ke Kas
             Transaction::create([
-                'school_id' => auth()->user()->role == 'SuperAdmin' ? $request->school_id : $school->id,
-                'account_id' => $account,
-                'fund_management_id' => $request->fund_management_id[$index],
-                'doc_number' => $request->doc_number,
-                'date' => $request->date,
-                'description' => $request->description,
-                'debit' => $total_debit,
-                'credit' => $total_credit,
-                'type' => $request->type == 'true' ? 'adjustment' : 'general'
+                'school_id'         => $schoolId,
+                'cash_management_id'=> $request->cash_management_id,
+                'account_id'        => $cash_account_id,
+                'doc_number'        => $request->doc_number,
+                'date'              => $request->date,
+                'description'       => $request->description,
+                'debit'             => $amount,
+                'credit'            => 0,
+                'type'              => 'general',
             ]);
-            FundManagement::where([
-                ['school_id', '=', auth()->user()->role == 'SuperAdmin' ? $request->school_id : $school->id],
-                ['id', '=', $request->fund_management_id[$index]]
-            ])->update(['amount' => DB::raw('amount - '.$total_credit),'updated_at' => now()]);
+
+            // 2. Kredit ke Akun
+            Transaction::create([
+                'school_id'         => $schoolId,
+                'cash_management_id'=> $request->cash_management_id,
+                'account_id'        => $request->account_id,
+                'doc_number'        => $request->doc_number,
+                'date'              => $request->date,
+                'description'       => $request->description,
+                'debit'             => 0,
+                'credit'            => $amount,
+                'type'              => 'general',
+            ]);
+
+        } elseif ($request->transaction_type === 'expense') {
+            // 1. Debit ke Akun
+            Transaction::create([
+                'school_id'         => $schoolId,
+                'cash_management_id'=> $request->cash_management_id,
+                'account_id'        => $request->account_id,
+                'doc_number'        => $request->doc_number,
+                'date'              => $request->date,
+                'description'       => $request->description,
+                'debit'             => $amount,
+                'credit'            => 0,
+                'type'              => 'general',
+            ]);
+
+            // 2. Kredit ke Kas
+            Transaction::create([
+                'school_id'         => $schoolId,
+                'cash_management_id'=> $request->cash_management_id,
+                'account_id'        => $cash_account_id,
+                'doc_number'        => $request->doc_number,
+                'date'              => $request->date,
+                'description'       => $request->description,
+                'debit'             => 0,
+                'credit'            => $amount,
+                'type'              => 'general',
+            ]);
         }
 
-        $route = back();
-        if (auth()->user()->role == 'SuperAdmin') {
-            $route = redirect()->route('transactions.index');
-        } else if (auth()->user()->role == 'SchoolAdmin') {
-            $route = redirect()->route('school-transactions.index', $school);
+        // Redirect sesuai role
+        if ($user->role == 'SuperAdmin') {
+            return redirect()->route('transactions.index')->with('success', 'Transaksi berhasil ditambahkan.');
         }
 
-        return $route->with('success', 'Transaksi berhasil ditambahkan.');
+        return redirect()->route('school-transactions.index', $school)->with('success', 'Transaksi berhasil ditambahkan.');
     }
 
     /**

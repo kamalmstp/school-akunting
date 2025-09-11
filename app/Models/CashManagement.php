@@ -4,12 +4,16 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Support\Facades\DB;
 
 class CashManagement extends Model
 {
     use HasFactory;
 
     protected $fillable = ['school_id', 'account_id', 'financial_period_id', 'name', 'amount'];
+
+    protected $appends = ['balance'];
 
     public function school()
     {
@@ -24,5 +28,22 @@ class CashManagement extends Model
     public function financialPeriod()
     {
         return $this->belongsTo(FinancialPeriod::class);
+    }
+
+    protected function balance(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $totalDebit = DB::table('transactions')
+                    ->where('account_id', $this->account_id)
+                    ->sum('debit');
+
+                $totalCredit = DB::table('transactions')
+                    ->where('account_id', $this->account_id)
+                    ->sum('credit');
+
+                return $totalDebit - $totalCredit;
+            }
+        );
     }
 }
