@@ -56,7 +56,7 @@ class TransactionController extends Controller
                 ->whereHas('account', function($q) use ($accountType) {
                     $q->when($accountType, fn($q) => $q->where('account_type', $accountType));
                 })
-                ->orderBy('date', 'desc')
+                ->orderBy('created_at', 'desc')
                 ->paginate(10)->withQueryString();
 
             return view('transactions.index', compact('transactions', 'schools', 'school', 'account', 'startDate', 'endDate', 'accountType', 'singleAccount', 'schoolId'));
