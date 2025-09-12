@@ -57,7 +57,7 @@ class TransactionController extends Controller
                 ->whereHas('account', function($q) use ($accountType) {
                     $q->when($accountType, fn($q) => $q->where('account_type', $accountType));
                 })
-                ->orderBy('date', 'desc')
+                ->orderBy('updated_at', 'desc')
                 ->paginate(10)->withQueryString();
 
             return view('transactions.index', compact('transactions', 'schools', 'school', 'account', 'startDate', 'endDate', 'accountType', 'singleAccount', 'schoolId'));
@@ -84,7 +84,7 @@ class TransactionController extends Controller
                 $q->whereNull('reference_type')
                 ->orWhereNotIn('reference_type', [$referenceStudent, $referenceTeacher]);
             })
-            ->orderBy('date', 'desc')
+            ->orderBy('updated_at', 'desc')
             ->paginate(10)
             ->withQueryString();
 
