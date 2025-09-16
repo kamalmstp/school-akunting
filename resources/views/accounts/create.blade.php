@@ -1,3 +1,4 @@
+
 @extends('layouts.app')
 
 @section('content')
@@ -73,6 +74,22 @@
                                         <div class="row gx-3">
                                             <div class="col-sm-12 col-12">
                                                 <div class="mb-3">
+                                                    <label for="parent_id" class="form-label">Akun Induk</label>
+                                                    <select class="form-select @error('parent_id') is-invalid @enderror" id="parent_id" name="parent_id">
+                                                        <option value="">Tidak Ada</option>
+                                                        @foreach($accounts as $parent)
+                                                            <option value="{{ $parent->id }}" {{ old('parent_id') == $parent->id ? 'selected' : '' }}>{{ $parent->name }} ({{ $parent->code }})</option>
+                                                        @endforeach
+                                                    </select>
+                                                    @error('parent_id')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row gx-3">
+                                            <div class="col-sm-12 col-12">
+                                                <div class="mb-3">
                                                     <label for="code" class="form-label">Kode Akun</label>
                                                     <input type="text" class="form-control @error('code') is-invalid @enderror" id="code" name="code" value="{{ old('code') }}">
                                                     <small id="code_hint" class="form-text text-muted"></small>
@@ -107,22 +124,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="row gx-3">
-                                            <div class="col-sm-12 col-12">
-                                                <div class="mb-3">
-                                                    <label for="parent_id" class="form-label">Akun Induk</label>
-                                                    <select class="form-select @error('parent_id') is-invalid @enderror" id="parent_id" name="parent_id">
-                                                        <option value="">Tidak Ada</option>
-                                                        @foreach($accounts as $parent)
-                                                            <option value="{{ $parent->id }}" {{ old('parent_id') == $parent->id ? 'selected' : '' }}>{{ $parent->name }} ({{ $parent->code }})</option>
-                                                        @endforeach
-                                                    </select>
-                                                    @error('parent_id')
-                                                        <div class="invalid-feedback">{{ $message }}</div>
-                                                    @enderror
-                                                </div>
-                                            </div>
-                                        </div>
+                                        
                                     </div>
                                 </div>
                             </div>
@@ -322,4 +324,3 @@ $(function() {
 });
 </script>
 @endsection
-

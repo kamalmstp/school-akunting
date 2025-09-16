@@ -88,7 +88,7 @@ class AccountController extends Controller
         }
 
         $rules = [
-            'code' => 'required|string|max:20|unique:accounts',
+            'code' => 'required|string|max:20',
             'name' => 'required|string|max:255',
             'account_type' => 'required|in:Aset Lancar,Aset Tetap,Kewajiban,Aset Neto,Pendapatan,Biaya,Investasi',
             'normal_balance' => 'required|in:Debit,Kredit',
@@ -104,7 +104,6 @@ class AccountController extends Controller
         $messages = [
             'code.required' => 'Kode akun wajib diisi',
             'code.max' => 'Kode akun maksimal 20 digit',
-            'code.unique' => 'Kode akun sudah digunakan',
             'code.regex' => $codeRules[$request->account_type]['message'] ?? 'Format kode akun tidak valid.',
             'name.required' => 'Nama akun wajib diisi',
             'account_type.required' => 'Pilih salah satu tipe akun',
@@ -176,7 +175,7 @@ class AccountController extends Controller
         }
 
         $rules = [
-            'code' => 'required|string|max:20|unique:accounts,code,' . $account->id,
+            'code' => 'required|string|max:20|',
             'name' => 'required|string|max:255',
             'account_type' => 'required|in:Aset Lancar,Aset Tetap,Kewajiban,Aset Neto,Pendapatan,Biaya,Investasi',
             'normal_balance' => 'required|in:Debit,Kredit',
@@ -192,7 +191,6 @@ class AccountController extends Controller
         $messages = [
             'code.required' => 'Kode akun wajib diisi',
             'code.max' => 'Kode akun maksimal 20 digit',
-            'code.unique' => 'Kode akun sudah digunakan',
             'code.regex' => $codeRules[$request->account_type]['message'] ?? 'Format kode akun tidak valid.',
             'name.required' => 'Nama akun wajib diisi',
             'account_type.required' => 'Pilih salah satu tipe akun',
