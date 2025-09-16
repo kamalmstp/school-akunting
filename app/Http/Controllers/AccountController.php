@@ -21,43 +21,45 @@ class AccountController extends Controller
     /**
      * Display a listing of accounts.
      */
-    public function index(Request $request, School $school)
+    public function index(Request $request, School $school = null)
     {
         $user = auth()->user();
         $account = $request->get('account');
         $type = $request->get('type');
 
-        if ($user->school_id !== $school->id) {
-            abort(403, 'Unauthorized access to this school.');
+        // akses admin sekolah
+        if ($user->role === 'SchoolAdmin') {
+            if ($school && $user->school_id !== $school->id) {
+                abort(403, 'Unauthorized access to this school.');
+            }
+
+            $schoolId = $school ? $school->id : $user->school_id;
+
+            $accounts = Account::with('parent', 'school')
+                ->where('school_id', $schoolId)
+                ->when($account, fn($q) => $q->where('account_type', $account))
+                ->when($type, fn($q) => $q->where('normal_balance', $type))
+                ->paginate(10)
+                ->withQueryString();
+
+            return view('accounts.index', compact('accounts', 'school', 'account', 'type'));
         }
 
-        if (auth()->user()->role != 'SchoolAdmin') {
-            $schoolId = $request->get('school');
-            $accounts = Account::with('parent','school')
-                ->when($schoolId, function($q) use ($schoolId) {
-                    $q->where('school_id', $schoolId);
-                })
-                ->when($account, function ($q) use ($account) {
-                    $q->where('account_type', $account);
-                })
-                ->when($type, function ($q) use ($type) {
-                    $q->where('normal_balance', $type);
-                })
-                ->paginate(10)->withQueryString();
-            return view('accounts.index', compact('accounts', 'school', 'account', 'type', 'schoolId'));
-        }
+        // Bukan admin sekolah
+        $schoolId = $request->get('school');
 
-        $accounts = Account::with('parent','school')
-            ->where('school_id', $school->id)
-            ->when($account, function ($q) use ($account) {
-                $q->where('account_type', $account);
-            })
-            ->when($type, function ($q) use ($type) {
-                $q->where('normal_balance', $type);
-            })
-            ->paginate(10)->withQueryString();
-        return view('accounts.index', compact('accounts', 'school', 'account', 'type'));
+        $accounts = Account::with('parent', 'school')
+            ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
+            ->when($account, fn($q) => $q->where('account_type', $account))
+            ->when($type, fn($q) => $q->where('normal_balance', $type))
+            ->paginate(10)
+            ->withQueryString();
+
+
+
+        return view('accounts.index', compact('accounts', 'school', 'account', 'type', 'schoolId'));
     }
+
 
     /**
      * Show the form for creating a new account.
