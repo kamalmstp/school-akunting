@@ -145,49 +145,181 @@
 	<!-- App body ends -->
 
     <script>
-        const codeHints = {
-            'Aset Lancar': 'Contoh: 1-110001 atau 1-110001-1',
-            'Aset Tetap': 'Contoh: 1-210001 atau 1-210001-1',
-            'Kewajiban': 'Contoh: 2-110001 atau 2-110001-1',
-            'Aset Neto': 'Contoh: 3-110001 atau 3-110001-1',
-            'Pendapatan': 'Contoh: 4-110001 atau 4-110001-1',
-            'Biaya': 'Contoh: 5-110001 atau 5-110001-1',
-            'Investasi': 'Contoh: 7-110001 atau 7-110001-1',
-        };
+    const codeHints = {
+        'Aset Lancar': 'Contoh: 1-110001 atau 1-110001-1',
+        'Aset Tetap': 'Contoh: 1-210001 atau 1-210001-1',
+        'Kewajiban': 'Contoh: 2-110001 atau 2-110001-1',
+        'Aset Neto': 'Contoh: 3-110001 atau 3-110001-1',
+        'Pendapatan': 'Contoh: 4-110001 atau 4-110001-1',
+        'Biaya': 'Contoh: 5-110001 atau 5-110001-1',
+        'Investasi': 'Contoh: 7-110001 atau 7-110001-1',
+    };
 
-        const accountTypeSelect = document.getElementById('account_type');
-        const codeInput = document.getElementById('code');
-        const codeHint = document.getElementById('code_hint');
-        const parentSelect = document.getElementById('parent_id');
+    // kirim data account dari backend
+    const allAccounts = @json($accounts);
 
-        function updateCodeHint() {
-            const accountType = accountTypeSelect.value;
-            const parentId = parentSelect.value;
-            if (parentId) {
-                const parentOption = parentSelect.options[parentSelect.selectedIndex];
-                const parentCode = parentOption.text.match(/\((\S+)\)/)[1];
-                codeHint.textContent = `Kode harus dimulai dengan ${parentCode} (contoh: ${parentCode}-1)`;
-            } else if (accountType && codeHints[accountType]) {
-                codeHint.textContent = codeHints[accountType];
-            } else {
-                codeHint.textContent = '';
+    const accountTypeSelect = document.getElementById('account_type');
+    const codeInput = document.getElementById('code');
+    const codeHint = document.getElementById('code_hint');
+    const parentSelect = document.getElementById('parent_id');
+
+    function updateCodeHint() {
+    const accountType = accountTypeSelect.value;
+    const parentId = parentSelect.value;
+
+    if (parentId) {
+        const parentOption = parentSelect.options[parentSelect.selectedIndex];
+        const parentCode = parentOption.text.match(/\((\S+)\)/)[1];
+        codeHint.textContent = `Kode harus dimulai dengan ${parentCode} (contoh: ${parentCode}-1)`;
+    } else if (accountType) {
+        // cek apakah ada .data atau langsung array
+        const accountsArray = allAccounts.data ?? allAccounts;
+
+        const filtered = Array.isArray(accountsArray)
+            ? accountsArray.filter(acc => acc.account_type === accountType)
+            : [];
+
+        if (filtered.length > 0) {
+            const lastCode = filtered
+                .map(acc => acc.code)
+                .sort()
+                .pop();
+
+            codeHint.textContent = `Kode terakhir: ${lastCode}. Lanjutkan dengan nomor berikutnya`;
+        } else if (codeHints[accountType]) {
+            codeHint.textContent = codeHints[accountType];
+        } else {
+            codeHint.textContent = '';
+        }
+    } else {
+        codeHint.textContent = '';
+    }
+}
+
+
+    accountTypeSelect.addEventListener('change', updateCodeHint);
+    parentSelect.addEventListener('change', updateCodeHint);
+    updateCodeHint();
+</script>
+@endsection
+
+@section('js')
+<script>
+$(function() {
+    $('#account_type').select2();
+    $('#normal_balance').select2();
+    $('#parent_id').select2();
+    @if(auth()->user()->role == 'SuperAdmin')
+        $('#school_id').select2();
+    @endif
+
+    const codeHints = {
+        'Aset Lancar': 'Contoh: 1-110001 atau 1-110001-1',
+        'Aset Tetap': 'Contoh: 1-210001 atau 1-210001-1',
+        'Kewajiban': 'Contoh: 2-110001 atau 2-110001-1',
+        'Aset Neto': 'Contoh: 3-110001 atau 3-110001-1',
+        'Pendapatan': 'Contoh: 4-110001 atau 4-110001-1',
+        'Biaya': 'Contoh: 5-110001 atau 5-110001-1',
+        'Investasi': 'Contoh: 7-110001 atau 7-110001-1',
+    };
+    const allAccountsRaw = @json($accounts->toArray());
+
+    function normalizeAccounts(raw) {
+        if (!raw) return [];
+        if (raw.data && Array.isArray(raw.data)) return raw.data;
+        if (Array.isArray(raw)) return raw;
+        if (typeof raw === 'object') {
+            return Object.values(raw).filter(v => typeof v === 'object' && (v.code || v.account_type || (v.attributes && (v.attributes.code || v.attributes.account_type))));
+        }
+        return [];
+    }
+
+    const accountsArray = normalizeAccounts(allAccountsRaw);
+
+    function getProp(obj, key) {
+        if (!obj) return undefined;
+        if (obj[key] !== undefined) return obj[key];
+        if (obj.attributes && obj.attributes[key] !== undefined) return obj.attributes[key];
+        if (obj.data && obj.data[key] !== undefined) return obj.data[key];
+        return undefined;
+    }
+
+    function codeKey(s) {
+        if (typeof s !== 'string') return s;
+        return s.split('-').map(part => {
+            const n = parseInt(part, 10);
+            return isNaN(n) ? part : String(n).padStart(12, '0');
+        }).join('-');
+    }
+
+    function getLastCodeForType(type) {
+        const filtered = accountsArray.filter(acc => {
+            const accType = getProp(acc, 'account_type') || getProp(acc, 'type') || getProp(acc, 'accountType');
+            return accType === type;
+        });
+
+        if (!filtered.length) return null;
+
+        const codes = filtered.map(acc => getProp(acc, 'code') || getProp(acc, 'kode') || '').filter(Boolean);
+
+        if (!codes.length) return null;
+
+        codes.sort((a, b) => {
+            const ka = codeKey(a);
+            const kb = codeKey(b);
+            if (ka < kb) return -1;
+            if (ka > kb) return 1;
+            return 0;
+        });
+
+        return codes[codes.length - 1];
+    }
+
+    const $accountType = $('#account_type');
+    const $parent = $('#parent_id');
+    const $codeInput = $('#code');
+    const $codeHint = $('#code_hint');
+
+    function updateCodeHint() {
+        const accountType = $accountType.val();
+        const parentId = $parent.val();
+
+        if (parentId) {
+            const parentText = $parent.find('option:selected').text() || '';
+            const m = parentText.match(/\((\S+)\)/);
+            if (m && m[1]) {
+                const parentCode = m[1];
+                $codeHint.text(`Kode harus dimulai dengan ${parentCode} (contoh: ${parentCode}-1)`);
+                $codeInput.val(parentCode + '-');
+                return;
             }
         }
 
-        accountTypeSelect.addEventListener('change', updateCodeHint);
-        parentSelect.addEventListener('change', updateCodeHint);
-        updateCodeHint();
-    </script>
+        if (!accountType) {
+            $codeHint.text('');
+            return;
+        }
+
+        const lastCode = getLastCodeForType(accountType);
+
+        if (lastCode) {
+            $codeHint.text(`Kode terakhir: ${lastCode}. Lanjutkan dengan nomor berikutnya.`);
+            $codeInput.val(lastCode + '-');
+        } else if (codeHints[accountType]) {
+            $codeHint.text(codeHints[accountType]);
+            $codeInput.val('');
+        } else {
+            $codeHint.text('');
+            $codeInput.val('');
+        }
+    }
+
+    $accountType.on('change select2:select', updateCodeHint);
+    $parent.on('change select2:select', updateCodeHint);
+
+    setTimeout(updateCodeHint, 80);
+
+});
+</script>
 @endsection
-@section('js')
-	<script>
-		$(document).ready(function() {
-			$('#account_type').select2();
-			$('#normal_balance').select2();
-            $('#parent_id').select2();
-            if(@json(auth()->user()->role == 'SuperAdmin')) {
-                $('#school_id').select2();
-            }
-		})
-	</script>
-@endsection
+
