@@ -79,12 +79,18 @@
                                         <label for="left_select" id="left_label" class="form-label"></label>
                                         <select name="left_id" id="left_select" class="form-select select2"></select>
                                     </div>
+                                    @error('account_id')
+                                        <div class="text-danger small">{{ $message }}</div>
+                                    @enderror
                                 </div>
                                 <div class="col-md-6">
                                     <div class="mb-3">
                                         <label for="right_select" id="right_label" class="form-label"></label>
                                         <select name="right_id" id="right_select" class="form-select select2"></select>
                                     </div>
+                                    @error('cash_management_id')
+                                        <div class="text-danger small">{{ $message }}</div>
+                                    @enderror
                                 </div>
                             </div>
 

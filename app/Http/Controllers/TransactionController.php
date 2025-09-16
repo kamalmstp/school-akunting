@@ -163,8 +163,8 @@ class TransactionController extends Controller
             'date.required'         => 'Tanggal transaksi wajib diisi',
             'description.required'  => 'Deskripsi wajib diisi',
             'transaction_type.required' => 'Pilih jenis transaksi',
-            'account_id.required'   => 'Pilih akun',
-            'cash_management_id.required' => 'Pilih sumber/tujuan kas',
+            'account_id.required'   => 'Akun dan Kas Wajib Di isi',
+            'cash_management_id.required' => 'Akun dan Kas Wajib Di isi',
             'amount.required'       => 'Nominal wajib diisi',
         ];
 
