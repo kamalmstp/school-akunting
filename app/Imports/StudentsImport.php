@@ -22,35 +22,28 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation
      */
     public function model(array $row)
     {
-        // Cari siswa berdasarkan NIS dan school_id
-        $student = Student::where('student_id_number', $row['nis'])
-            ->where('school_id', $this->schoolId)
-            ->first();
 
-        $data = [
-            'school_id' => $this->schoolId,
-            'student_id_number' => $row['nis'],
-            'national_student_number' => $row['nisn'],
-            'year' => $row['tahun'],
-            'parent_name' => $row['nama_orang_tua'],
-            'parent_phone' => $row['telepon_orang_tua'],
-            'parent_mail' => $row['email_orang_tua'],
-            'parent_job' => $row['pekerjaan_orang_tua'],
-            'name' => $row['nama'],
-            'class' => $row['kelas'],
-            'phone' => $row['telepon'],
-            'address' => $row['alamat'],
-            'is_active' => $row['status_aktif'] == 1,
-        ];
-
-        if ($student) {
-            // Update jika siswa sudah ada
-            $student->update($data);
-            return null; // Kembalikan null agar tidak membuat record baru
-        }
-
-        // Buat siswa baru jika tidak ada
-        return new Student($data);
+        // cari data berdasarkan school_id dan student_id_number, jika ada maka lakukan update data
+        // jika tidak ditemukan otomatis tambahkan data array 1 + array 2
+        return Student::updateOrCreate(
+            [
+                'school_id' => $this->schoolId,
+                'student_id_number' => $row['nis'],
+            ],
+            [
+                'national_student_number' => $row['nisn'],
+                'year' => $row['tahun'],
+                'parent_name' => $row['nama_orang_tua'],
+                'parent_phone' => $row['telepon_orang_tua'],
+                'parent_mail' => $row['email_orang_tua'],
+                'parent_job' => $row['pekerjaan_orang_tua'],
+                'name' => $row['nama'],
+                'class' => $row['kelas'],
+                'phone' => $row['telepon'],
+                'address' => $row['alamat'],
+                'is_active' => $row['status_aktif'] == 1,
+            ]
+        );
     }
 
     /**
