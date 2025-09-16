@@ -12,6 +12,10 @@ Install the dependencies:
 $ composer install
 ```
 
+```bash
+$ npm install
+```
+
 Import the SQL File to MySQL, you can find a file inside database directory
 
 Change .env.example to .env and add Database Credential:
