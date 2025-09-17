@@ -129,6 +129,11 @@ class AccountController extends Controller
             }
         }
 
+        $existingAccount = Account::where('code', $request->code)->first();
+        if ($existingAccount) {
+            return redirect()->back()->withErrors(['code' => 'Kode akun ini sudah digunakan.'])->withInput();
+        }
+
         Account::create([
             'school_id' => auth()->user()->role == 'SuperAdmin' ? $request->school_id : $school->id,
             'code' => $request->code,
