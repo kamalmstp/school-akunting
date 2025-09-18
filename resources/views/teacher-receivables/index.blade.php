@@ -32,7 +32,7 @@
 											<select name="school" class="form-select" id="schoolFilter">
 												<option value="">Pilih Sekolah</option>
 												@foreach($schools as $key => $schoolName)
-													<option value="{{ $key }}" {{ $school == $key ? 'selected' : '' }}>{{ $schoolName }}</option>
+													<option value="{{ $key }}" {{ $schoolId == $key ? 'selected' : '' }}>{{ $schoolName }}</option>
 												@endforeach
 											</select>
 										</div>

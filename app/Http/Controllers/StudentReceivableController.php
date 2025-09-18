@@ -26,63 +26,62 @@ class StudentReceivableController extends Controller
     /**
      * Display a listing of the student receivables.
      */
-    public function index(Request $request, School $school)
-    {
-        $user = auth()->user();
-        $account = $request->get('account');
-        $dueDate = is_null($request->get('date')) ? '' : $request->get('date');
-        $status = $request->get('status');
-        $studentId = $request->get('student_id');
-        if (auth()->user()->role != 'SchoolAdmin') {
-            // SuperAdmin: Semua piutang
-            $schools = School::pluck('name', 'id');
-            $school = $request->get('school');
-            $receivables = StudentReceivables::with(['school', 'student', 'account', 'student_receivable_details'])
-                ->when($school, function ($q) use ($school) {
-                    $q->where('school_id', $school);
-                })
-                ->when($studentId, function ($q) use ($studentId) {
-                    $q->where('student_id', $studentId);
-                })
-                ->when($account, function ($q) use ($account) {
-                    $q->where('account_id', $account);
-                })
-                ->when($dueDate, function ($q) use ($dueDate) {
-                    $q->where('due_date', Carbon::parse($dueDate)->format('Y-m-d'));
-                })
-                ->when($status, function ($q) use ($status) {
-                    $q->where('status', $status);
-                })
-                ->orderBy('updated_at', 'desc')
-                ->paginate(10)->withQueryString();
-            
-            return view('student-receivables.index', compact('receivables', 'schools', 'school', 'account', 'dueDate', 'status', 'studentId'));
-        }
+    public function index(Request $request, School $school = null)
+{
+    $user      = auth()->user();
+    $account   = $request->get('account');
+    $rawDate   = $request->get('date');
+    $dueDate   = $rawDate ? Carbon::parse($rawDate)->format('Y-m-d') : null;
+    $status    = $request->get('status');
+    $studentId = $request->get('student_id');
 
-        // SchoolAdmin atau SuperAdmin dengan sekolah tertentu
-        $school = $school ?? $user->school;
-        if (!$school || ($user->role === 'SchoolAdmin' && $user->school_id !== $school->id)) {
-            abort(403, 'Unauthorized access to this school.');
-        }
+    if ($user->role !== 'SchoolAdmin') {
+        $schools   = School::pluck('name', 'id');
+        $schoolId  = $request->get('school');
+        $schoolVar = $schoolId ? School::find($schoolId) : null;
 
-        $receivables = StudentReceivables::where('school_id', $school->id)
-            ->with(['student', 'account', 'student_receivable_details'])
-            ->when($studentId, function ($q) use ($studentId) {
-                    $q->where('student_id', $studentId);
-                })
-            ->when($account, function ($q) use ($account) {
-                $q->where('account_id', $account);
-            })
-            ->when($dueDate, function ($q) use ($dueDate) {
-                $q->where('due_date', Carbon::parse($dueDate)->format('Y-m-d'));
-            })
-            ->when($status, function ($q) use ($status) {
-                $q->where('status', $status);
-            })
-            ->orderBy('updated_at', 'desc')
-            ->paginate(10)->withQueryString();
-        return view('student-receivables.index', compact('receivables', 'school', 'account', 'dueDate', 'status', 'studentId'));
+        $receivables = StudentReceivables::with(['school', 'student', 'account', 'student_receivable_details'])
+            ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
+            ->when($studentId, fn($q) => $q->where('student_id', $studentId))
+            ->when($account, fn($q) => $q->where('account_id', $account))
+            ->when($dueDate, fn($q) => $q->whereDate('due_date', $dueDate))
+            ->when($status, fn($q) => $q->where('status', $status))
+            ->orderByDesc('updated_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('student-receivables.index', [
+            'receivables' => $receivables,
+            'schools'     => $schools,
+            'school'      => $schoolVar,
+            'schoolId'    => $schoolId,
+            'account'     => $account,
+            'dueDate'     => $dueDate,
+            'status'      => $status,
+            'studentId'   => $studentId,
+        ]);
     }
+
+    $school = $school ?? $user->school;
+    if (!$school || ($user->role === 'SchoolAdmin' && $user->school_id !== $school->id)) {
+        abort(403, 'Unauthorized access to this school.');
+    }
+
+    $receivables = StudentReceivables::with(['student', 'account', 'student_receivable_details'])
+        ->where('school_id', $school->id)
+        ->when($studentId, fn($q) => $q->where('student_id', $studentId))
+        ->when($account, fn($q) => $q->where('account_id', $account))
+        ->when($dueDate, fn($q) => $q->whereDate('due_date', $dueDate))
+        ->when($status, fn($q) => $q->where('status', $status))
+        ->orderByDesc('updated_at')
+        ->paginate(10)
+        ->withQueryString();
+
+    return view('student-receivables.index', compact(
+        'receivables', 'school', 'account', 'dueDate', 'status', 'studentId'
+    ));
+}
+
 
     public function getStudent(Request $request)
     {
