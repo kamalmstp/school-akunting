@@ -182,7 +182,7 @@ class StudentReceivableController extends Controller
         $totalPotongan = 0;
 
         //Infaq
-        $infaq = 0.04166667; //rumus sudah dihitung dan disesuaikan
+        $infaq = 0.04166667;
 
         foreach ($labels as $i => $label) {
             $label = trim($label);
@@ -200,7 +200,8 @@ class StudentReceivableController extends Controller
         }
 
         $totalBayar = max($amount - $totalPotongan, 0);
-        $totalInfaq = max($totalBayar * $infaq, 0);
+        $totalInfaqAwal = max($totalBayar * $infaq, 0);
+        $totalInfaq = ceil($totalInfaqAwal / 1000) * 1000;
         $totalBayarInfaq = max($totalBayar + $totalInfaq, 0);
 
         //Cek SPP atau bukan
@@ -208,7 +209,7 @@ class StudentReceivableController extends Controller
         $piutangInfaq = Account::where('code', '=', '1-120002')->where('school_id', '=', $schoolId)->first();
         $pendapatanInfaq = Account::where('code', '=', '4-120002')->where('school_id', '=', $schoolId)->first();
 
-        if ($akun == '1-120001-3') { //jika jenis pembayaran SPP
+        if ($akun == '1-120001-3') {
             $receivableInfaq = StudentReceivables::create([
                 'school_id' => $schoolId,
                 'student_id' => $request->student_id,
@@ -243,7 +244,7 @@ class StudentReceivableController extends Controller
         $description = Account::find($request->account_id)->name . ' siswa: ' . Student::find($request->student_id)->name;
         $descriptionInfaq = 'Piutang Internal siswa: ' . Student::find($request->student_id)->name;
         // Catat transaksi piutang (Debit pada akun piutang)
-        if ($akun == '1-120001-3') { //jika jenis pembayaran SPP
+        if ($akun == '1-120001-3') {
             Transaction::create([
                 'school_id' => $schoolId,
                 'account_id' => $piutangInfaq->id,
@@ -272,7 +273,7 @@ class StudentReceivableController extends Controller
             'account_id' => $request->account_id,
             'date' => now(),
             'description' => $description,
-            'debit' => $totalBayar, // only total bayar
+            'debit' => $totalBayar,
             'credit' => 0,
             'reference_id' => $receivable->id,
             'reference_type' => StudentReceivables::class,

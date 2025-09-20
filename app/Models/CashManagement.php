@@ -38,7 +38,7 @@ class CashManagement extends Model
                 if (!$activeFinancialPeriod) {
                     return 0;
                 }
-                
+
                 $initialBalance = InitialBalance::where('account_id', $this->account_id)
                                                 ->where('school_id', $this->school_id)
                                                 ->where('financial_period_id', $activeFinancialPeriod->id)
@@ -50,7 +50,6 @@ class CashManagement extends Model
                                 ->where('school_id', $this->school_id)
                                 ->whereBetween('date', [$activeFinancialPeriod->start_date, $activeFinancialPeriod->end_date])
                                 ->sum('debit');
-
                 $totalCredit = DB::table('transactions')
                                 ->where('account_id', $this->account_id)
                                 ->where('school_id', $this->school_id)
