@@ -44,7 +44,7 @@
                                         <input type="date" class="form-control" id="start_date" name="start_date"
                                                 min="{{ $activePeriod->start_date }}"
                                                 max="{{ $activePeriod->end_date }}"
-                                                value="{{ old('start_date', $activePeriod->start_date) }}">
+                                                value="{{ $startDate }}">
                                     </div>
                                 </div>
                                 <div class="col-xl-4 col-md-6 col-12">
@@ -53,7 +53,7 @@
                                         <input type="date" class="form-control" id="end_date" name="end_date"
                                                 min="{{ $activePeriod->start_date }}"
                                                 max="{{ $activePeriod->end_date }}"
-                                                value="{{ old('end_date', $activePeriod->end_date) }}">
+                                                value="{{ $endDate }}">
                                     </div>
                                 </div>
                             </div>

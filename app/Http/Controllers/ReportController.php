@@ -464,25 +464,48 @@ class ReportController extends Controller
         Log::info('Accessing Ledger', ['request' => $request->all()]);
         $user = auth()->user();
         $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? collect([$school]) : collect([$user->school]);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
 
-        $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
-        $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
+        $activePeriod = null;
+        if ($school) {
+            $activePeriod = FinancialPeriod::where('school_id', $school->id)
+                ->where('is_active', true)
+                ->first();
+        }
+
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        if (!$startDate && $activePeriod) {
+            $startDate = $activePeriod->start_date->toDateString();
+        }
+        if (!$endDate && $activePeriod) {
+            $endDate = $activePeriod->end_date->toDateString();
+        }
+
         $account = $request->get('account');
         $accountType = $request->get('account_type');
         $singleAccount = Account::find($account);
         $schoolIds = $schools->pluck('id');
 
+        $initialBalances = collect();
+        if ($activePeriod) {
+            $initialBalances = InitialBalance::where('school_id', $school->id)
+                ->where('financial_period_id', $activePeriod->id)
+                ->get()
+                ->keyBy('account_id');
+        }
+
         $paymentDetails = StudentReceivables::whereIn('school_id', $schoolIds)
             ->with(['student', 'student_receivable_details' => fn($q) => $q->orderBy('created_at')])
             ->get()
             ->keyBy('id');
-        
+
         $paymentTeacherDetails = TeacherReceivable::whereIn('school_id', $schoolIds)
             ->with(['teacher', 'teacher_receivable_details' => fn($q) => $q->orderBy('created_at')])
             ->get()
             ->keyBy('id');
-        
+
         $paymentEmployeeDetails = EmployeeReceivable::whereIn('school_id', $schoolIds)
             ->with(['employee', 'employee_receivable_details' => fn($q) => $q->orderBy('created_at')])
             ->get()
@@ -505,14 +528,19 @@ class ReportController extends Controller
                 CAST(COALESCE(SUBSTRING_INDEX(code, '-', 3), '0') AS INTEGER)
             ")
             ->get()
-            ->map(function ($account) use ($startDate, $schoolIds, $paymentDetails, $paymentTeacherDetails, $paymentEmployeeDetails) {
-                $openingBalance = Transaction::where('account_id', $account->id)
-                    ->where('date', '<', $startDate)
+            ->map(function ($account) use ($startDate, $schoolIds, $paymentDetails, $paymentTeacherDetails, $paymentEmployeeDetails, $activePeriod, $initialBalances) {
+                
+                $initialAmount = optional($initialBalances->get($account->id))->amount ?? 0;
+                
+                $transactionsBeforeReportStart = Transaction::where('account_id', $account->id)
                     ->whereIn('school_id', $schoolIds)
-                    ->sum('debit') - Transaction::where('account_id', $account->id)
-                    ->where('date', '<', $startDate)
-                    ->whereIn('school_id', $schoolIds)
-                    ->sum('credit');
+                    ->whereBetween('date', [
+                        $activePeriod->start_date->toDateString(),
+                        Carbon::parse($startDate)->subDay()->toDateString()
+                    ])
+                    ->sum(DB::raw('debit - credit'));
+
+                $openingBalance = $initialAmount + $transactionsBeforeReportStart;
                 $openingBalance = $account->normal_balance === 'Debit' ? $openingBalance : -$openingBalance;
 
                 $transactions = $account->transactions->map(function ($transaction) use ($account, $paymentDetails, $paymentTeacherDetails, $paymentEmployeeDetails) {
