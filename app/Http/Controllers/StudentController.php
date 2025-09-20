@@ -23,42 +23,35 @@ class StudentController extends Controller
     /**
      * Display a listing of students.
      */
-    public function index(Request $request, School $school)
-    {
-        $user = auth()->user();
-        $studentNumber = $request->get('nis');
-        $studentName = $request->get('name');
+   public function index(Request $request, School $school)
+{
+    $user = auth()->user();
 
-        if ($user->school_id !== $school->id) {
-            abort(403, 'Unauthorized access to this school.');
-        }
-
-        if (auth()->user()->role != 'SchoolAdmin') {
-            $schoolId = $request->get('school');
-            $students = Student::with('school')
-                ->when($schoolId, function($q) use ($schoolId) {
-                    $q->where('school_id', $schoolId);
-                })
-                ->when($studentNumber, function ($q) use ($studentNumber) {
-                    $q->where('student_id_number', 'like', $studentNumber . '%');
-                })
-                ->when($studentName, function ($q) use ($studentName) {
-                    $q->where('name', 'like', '%' . $studentName . '%');
-                })
-                ->paginate(10)->withQueryString();
-            return view('students.index', compact('students', 'school', 'studentNumber', 'studentName', 'schoolId'));
-        }
-
-        $students = Student::where('school_id', $school->id)
-            ->when($studentNumber, function ($q) use ($studentNumber) {
-                $q->where('student_id_number', 'like', $studentNumber . '%');
-            })
-            ->when($studentName, function ($q) use ($studentName) {
-                $q->where('name', 'like', '%' . $studentName . '%');
-            })
-            ->paginate(10)->withQueryString();
-        return view('students.index', compact('students', 'school', 'studentNumber', 'studentName'));
+    if ($user->school_id !== $school->id) {
+        abort(403, 'Unauthorized access to this school.');
     }
+
+    $studentNumber = $request->get('nis');
+    $studentName   = $request->get('name');
+    $schoolId      = $request->get('school');
+
+    $query = Student::query();
+
+    if ($user->role !== 'SchoolAdmin') {
+        $query->with('school')
+              ->when($schoolId, fn($q) => $q->where('school_id', $schoolId));
+    } else {
+        $query->where('school_id', $school->id);
+    }
+
+    $students = $query->when($studentNumber, fn($q) => $q->where('student_id_number', 'like', $studentNumber.'%'))
+                      ->when($studentName, fn($q) => $q->where('name', 'like', '%'.$studentName.'%'))
+                      ->paginate(10)
+                      ->withQueryString();
+
+    return view('students.index', compact('students', 'school', 'studentNumber', 'studentName', 'schoolId'));
+}
+
 
     /**
      * Show the form for creating a new student.

@@ -18,35 +18,32 @@ class SchoolMajorController extends Controller
      * Display a listing of the school majors.
      */
     public function index(Request $request, School $school)
-    {
-        $user = auth()->user();
-        $name = $request->get('name');
+{
+    $user = auth()->user();
 
-        if ($user->school_id !== $school->id) {
-            abort(403, 'Unauthorized access to this school.');
-        }
-
-        if (auth()->user()->role != 'SchoolAdmin') {
-            $schoolId = $request->get('school');
-            $majors = SchoolMajor::when($name, function ($q) use ($name) {
-                    $q->where('name', 'like', '%' . $name . '%');
-                })
-                ->when($schoolId, function ($q) use ($schoolId) {
-                    $q->where('school_id', $schoolId);
-                })
-                ->paginate(10)->withQueryString();
-            return view('school-majors.index', compact('majors', 'name', 'schoolId','school','schoolId'));
-        }
-
-        $schoolId = $school->id;
-        $majors = SchoolMajor::where('school_id', $schoolId)
-                ->when($name, function ($q) use ($name) {
-                    $q->where('name', 'like', '%' . $name . '%');
-                })
-                ->paginate(10)->withQueryString();
-
-        return view('school-majors.index', compact('majors', 'name', 'schoolId','school'));
+    if ($user->school_id !== $school->id) {
+        abort(403, 'Unauthorized access to this school.');
     }
+
+    $name     = $request->get('name');
+    $schoolId = $request->get('school');
+
+    $query = SchoolMajor::query();
+
+    if ($user->role !== 'SchoolAdmin') {
+        $query->when($schoolId, fn($q) => $q->where('school_id', $schoolId));
+    } else {
+        $schoolId = $school->id;
+        $query->where('school_id', $schoolId);
+    }
+
+    $majors = $query->when($name, fn($q) => $q->where('name', 'like', '%'.$name.'%'))
+                    ->paginate(10)
+                    ->withQueryString();
+
+    return view('school-majors.index', compact('majors', 'name', 'schoolId', 'school'));
+}
+
 
     /**
      * Show the form for creating a new school major.

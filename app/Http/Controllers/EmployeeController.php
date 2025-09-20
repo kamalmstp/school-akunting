@@ -25,39 +25,32 @@ class EmployeeController extends Controller
     public function index(Request $request, School $school)
     {
         $user = auth()->user();
-        $employeeNumber = $request->get('nik');
-        $employeeName = $request->get('name');
 
         if ($user->school_id !== $school->id) {
             abort(403, 'Unauthorized access to this school.');
         }
 
-        if (auth()->user()->role != 'SchoolAdmin') {
-            $schoolId = $request->get('school');
-            $employees = Employee::with('school')
-                ->when($schoolId, function($q) use ($schoolId) {
-                    $q->where('school_id', $schoolId);
-                })
-                ->when($employeeNumber, function ($q) use ($employeeNumber) {
-                    $q->where('employee_id_number', 'like', $employeeNumber . '%');
-                })
-                ->when($employeeName, function ($q) use ($employeeName) {
-                    $q->where('name', 'like', '%' . $employeeName . '%');
-                })
-                ->paginate(10)->withQueryString();
-            return view('employees.index', compact('employees', 'school', 'employeeNumber', 'employeeName', 'schoolId'));
+        $employeeNumber = $request->get('nik');
+        $employeeName   = $request->get('name');
+        $schoolId       = $request->get('school');
+
+        $query = Employee::query();
+
+        if ($user->role !== 'SchoolAdmin') {
+            $query->with('school')
+                ->when($schoolId, fn($q) => $q->where('school_id', $schoolId));
+        } else {
+            $query->where('school_id', $school->id);
         }
 
-        $employees = Employee::where('school_id', $school->id)
-            ->when($employeeNumber, function ($q) use ($employeeNumber) {
-                $q->where('employee_id_number', 'like', $employeeNumber . '%');
-            })
-            ->when($employeeName, function ($q) use ($employeeName) {
-                $q->where('name', 'like', '%' . $employeeName . '%');
-            })
-            ->paginate(10)->withQueryString();
-        return view('employees.index', compact('employees', 'school', 'employeeNumber', 'employeeName'));
+        $query->when($employeeNumber, fn($q) => $q->where('employee_id_number', 'like', $employeeNumber . '%'))
+            ->when($employeeName, fn($q) => $q->where('name', 'like', '%' . $employeeName . '%'));
+
+        $employees = $query->paginate(10)->withQueryString();
+
+        return view('employees.index', compact('employees', 'school', 'employeeNumber', 'employeeName', 'schoolId'));
     }
+
 
     /**
      * Show the form for creating a new employee.

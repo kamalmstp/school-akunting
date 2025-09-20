@@ -25,39 +25,35 @@ class TeacherController extends Controller
     public function index(Request $request, School $school)
     {
         $user = auth()->user();
-        $teacherNumber = $request->get('nik');
-        $teacherName = $request->get('name');
 
         if ($user->school_id !== $school->id) {
             abort(403, 'Unauthorized access to this school.');
         }
 
-        if (auth()->user()->role != 'SchoolAdmin') {
-            $schoolId = $request->get('school');
-            $teachers = Teacher::with('school')
-                ->when($schoolId, function($q) use ($schoolId) {
-                    $q->where('school_id', $schoolId);
-                })
-                ->when($teacherNumber, function ($q) use ($teacherNumber) {
-                    $q->where('teacher_id_number', 'like', $teacherNumber . '%');
-                })
-                ->when($teacherName, function ($q) use ($teacherName) {
-                    $q->where('name', 'like', '%' . $teacherName . '%');
-                })
-                ->paginate(10)->withQueryString();
-            return view('teachers.index', compact('teachers', 'school', 'teacherNumber', 'teacherName', 'schoolId'));
+        $teacherNumber = $request->get('nik');
+        $teacherName   = $request->get('name');
+        $schoolId      = $request->get('school');
+
+        $query = Teacher::query();
+
+        // hak akses role
+        if ($user->role !== 'SchoolAdmin') {
+            $query->with('school')
+                ->when($schoolId, fn($q) => $q->where('school_id', $schoolId));
+        } else {
+            $query->where('school_id', $school->id);
         }
 
-        $teachers = Teacher::where('school_id', $school->id)
-            ->when($teacherNumber, function ($q) use ($teacherNumber) {
-                $q->where('teacher_id_number', 'like', $teacherNumber . '%');
-            })
-            ->when($teacherName, function ($q) use ($teacherName) {
-                $q->where('name', 'like', '%' . $teacherName . '%');
-            })
-            ->paginate(10)->withQueryString();
-        return view('teachers.index', compact('teachers', 'school', 'teacherNumber', 'teacherName'));
+        // tambahan filter
+        $query->when($teacherNumber, fn($q) => $q->where('teacher_id_number', 'like', $teacherNumber . '%'))
+            ->when($teacherName, fn($q) => $q->where('name', 'like', '%' . $teacherName . '%'));
+
+        // pagination
+        $teachers = $query->paginate(10)->withQueryString();
+
+        return view('teachers.index', compact('teachers', 'school', 'teacherNumber', 'teacherName', 'schoolId'));
     }
+
 
     /**
      * Show the form for creating a new teacher.
