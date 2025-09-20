@@ -21,6 +21,7 @@
         <div class="row gx-3">
             <div class="col-xl-12">
                 <div class="card">
+
                     <div class="card-body">
                         <!-- Row start -->
                         <form method="GET" class="mb-4">
@@ -40,13 +41,19 @@
                                 <div class="col-xl-4 col-md-6 col-12">
                                     <div class="mb-3">
                                         <label for="start_date" class="form-label">Tanggal Mulai</label>
-                                        <input type="date" class="form-control" id="start_date" name="start_date" value="{{ $startDate }}">
+                                        <input type="date" class="form-control" id="start_date" name="start_date"
+                                                min="{{ $activePeriod->start_date }}"
+                                                max="{{ $activePeriod->end_date }}"
+                                                value="{{ old('start_date', $activePeriod->start_date) }}">
                                     </div>
                                 </div>
                                 <div class="col-xl-4 col-md-6 col-12">
                                     <div class="mb-3">
                                         <label for="end_date" class="form-label">Tanggal Akhir</label>
-                                        <input type="date" class="form-control" id="end_date" name="end_date" value="{{ $endDate }}">
+                                        <input type="date" class="form-control" id="end_date" name="end_date"
+                                                min="{{ $activePeriod->start_date }}"
+                                                max="{{ $activePeriod->end_date }}"
+                                                value="{{ old('end_date', $activePeriod->end_date) }}">
                                     </div>
                                 </div>
                             </div>
@@ -80,6 +87,7 @@
                                             <thead>
                                                 <tr>
                                                     <th scope="col">Tanggal</th>
+                                                    <th scope="col">No Dokumen</th>
                                                     <th scope="col">Akun</th>
                                                     <th scope="col">Deskripsi</th>
                                                     <th scope="col" class="text-end">Pemasukan</th>
@@ -90,6 +98,7 @@
                                                 @foreach($schoolTransactions as $transaction)
                                                     <tr>
                                                         <td>{{ \Carbon\Carbon::parse($transaction->date)->format('d-m-Y') }}</td>
+                                                        <td>{{ $transaction->doc_number }}</td>
                                                         <td>{{ $transaction->account->code }} - {{ $transaction->account->name }}</td>
                                                         <td>{{ $transaction->description ?? '-' }}</td>
                                                         <td class="text-end">{{ number_format($transaction->debit, 0, ',', '.') }}</td>

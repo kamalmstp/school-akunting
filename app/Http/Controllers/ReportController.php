@@ -295,15 +295,32 @@ class ReportController extends Controller
         Log::info('Accessing General Journal', ['request' => $request->all()]);
         $user = auth()->user();
         $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? collect([$school]) : collect([$user->school]);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
 
-        $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
-        $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
+        // Dapatkan periode keuangan aktif untuk sekolah yang sedang login/dipilih
+        $activePeriod = null;
+        if ($school) {
+            $activePeriod = FinancialPeriod::where('school_id', $school->id)
+                ->where('is_active', true)
+                ->first();
+        }
+
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        // Gunakan periode aktif sebagai default jika tidak ada input tanggal
+        if (!$startDate && $activePeriod) {
+            $startDate = $activePeriod->start_date->toDateString();
+        }
+        if (!$endDate && $activePeriod) {
+            $endDate = $activePeriod->end_date->toDateString();
+        }
+
         $schoolIds = $schools->pluck('id');
 
         $transactions = Transaction::whereIn('school_id', $schoolIds)
-            ->whereBetween('date', [$startDate, $endDate])
-            ->where('reference_type', '!=', 'App\Models\Depreciation')
+            ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
             ->with(['school', 'account'])
             ->orderBy('date')
             ->orderBy('id')
@@ -314,7 +331,7 @@ class ReportController extends Controller
             return $this->exportGeneralJournal($transactions, $school, $startDate, $endDate);
         }
 
-        return view('reports.general-journal', compact('school', 'schools', 'transactions', 'startDate', 'endDate'));
+        return view('reports.general-journal', compact('school', 'schools', 'transactions', 'startDate', 'endDate', 'activePeriod'));
     }
 
     /**

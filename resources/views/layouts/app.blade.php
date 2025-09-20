@@ -362,16 +362,12 @@
                                         <li>
                                             <a href="{{ route('school-students.index', auth()->user()->school_id) }}" class="m-fourth">Kelola Siswa</a>
                                         </li>
-										<!-- <li>
-                                            <a href="{{ route('school-fund-managements.index', auth()->user()->school_id) }}" class="m-fifth">Kelola Dana</a>
-                                        </li> -->
-
 										<li>
                                             <a href="{{ route('school-cash-managements.index', auth()->user()->school_id) }}" class="m-fifth">Kelola Dana</a>
                                         </li>
 
 										<li>
-                                            <a href="{{ route('school-financial-periods.index', auth()->user()->school_id) }}" class="m-sixth">Kelola Tahun Ajaran</a>
+                                            <a href="{{ route('school-financial-periods.index', auth()->user()->school_id) }}" class="m-sixth">Kelola Periode</a>
                                         </li>
 										<!-- <li>
                                             <a href="{{ route('school-schedules.index', auth()->user()->school_id) }}" class="m-sixth">Kelola Pembayaran</a>
@@ -592,21 +588,17 @@
 					$('.master > ul').addClass('menu-open');
 					$('.m-fourth').addClass('active-sub');
 				}
-				if (url.includes('cash')) {
+				if (url.includes('cash-managements')) {
 					$('.master').addClass('active current-page');
 					$('.master > ul').addClass('menu-open');
 					$('.m-fifth').addClass('active-sub');
 				}
-				if (url.includes('financial')) {
+				if (url.includes('financial-periods')) {
 					$('.master').addClass('active current-page');
 					$('.master > ul').addClass('menu-open');
 					$('.m-sixth').addClass('active-sub');
 				}
-				if (url.includes('payments')) {
-					$('.master').addClass('active current-page');
-					$('.master > ul').addClass('menu-open');
-					$('.m-sixth').addClass('active-sub');
-				}
+				
 				if (url.includes('student-receivables')) {
 					$('.receivable').addClass('active current-page');
 					$('.receivable > ul').addClass('menu-open');
