@@ -37,4 +37,11 @@ class FinancialPeriod extends Model
     {
         return $this->hasMany(CashManagement::class);
     }
+
+    public static function getActive(int $schoolId): ?self
+    {
+        return static::where('school_id', $schoolId)
+                     ->where('is_active', true)
+                     ->first();
+    }
 }

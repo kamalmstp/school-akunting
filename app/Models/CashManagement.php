@@ -34,15 +34,30 @@ class CashManagement extends Model
     {
         return Attribute::make(
             get: function () {
+                $activeFinancialPeriod = FinancialPeriod::getActive($this->school_id);
+                if (!$activeFinancialPeriod) {
+                    return 0;
+                }
+                
+                $initialBalance = InitialBalance::where('account_id', $this->account_id)
+                                                ->where('school_id', $this->school_id)
+                                                ->where('financial_period_id', $activeFinancialPeriod->id)
+                                                ->first();
+                $initialAmount = $initialBalance ? $initialBalance->amount : 0;
+                
                 $totalDebit = DB::table('transactions')
-                    ->where('account_id', $this->account_id)
-                    ->sum('debit');
+                                ->where('account_id', $this->account_id)
+                                ->where('school_id', $this->school_id)
+                                ->whereBetween('date', [$activeFinancialPeriod->start_date, $activeFinancialPeriod->end_date])
+                                ->sum('debit');
 
                 $totalCredit = DB::table('transactions')
-                    ->where('account_id', $this->account_id)
-                    ->sum('credit');
+                                ->where('account_id', $this->account_id)
+                                ->where('school_id', $this->school_id)
+                                ->whereBetween('date', [$activeFinancialPeriod->start_date, $activeFinancialPeriod->end_date])
+                                ->sum('credit');
 
-                return $totalDebit - $totalCredit;
+                return $initialAmount + $totalDebit - $totalCredit;
             }
         );
     }
