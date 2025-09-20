@@ -96,8 +96,11 @@
 
                             <div class="mb-3">
                                 <label for="amount" id="amount_label" class="form-label"></label>
-                                <input type="text" class="form-control" id="amount" name="amount" value="{{ old('amount') }}">
+                                <input type="text" class="form-control @error('amount') is-invalid @enderror" id="amount" name="amount" value="{{ old('amount') }}">
                             </div>
+                            @error('amount')
+                                <div class="text-danger small">{{ $message }}</div>
+                            @enderror
                         </div>
 
                         <div class="text-start">

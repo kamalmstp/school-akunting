@@ -131,7 +131,7 @@ class AccountController extends Controller
 
         $existingAccount = Account::where('code', $request->code)->first();
         if ($existingAccount) {
-            return redirect()->back()->withErrors(['code' => 'Kode akun ini sudah digunakan.'])->withInput();
+            return redirect()->back()->withErrors(['code' => 'Kode akun ('.$request->code.') sudah digunakan.'])->withInput();
         }
 
         Account::create([

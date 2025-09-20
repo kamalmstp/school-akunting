@@ -177,7 +177,7 @@ class TransactionController extends Controller
 
         $schoolId = $user->role == 'SuperAdmin' ? $request->school_id : $school->id;
 
-        $cash_account_id = CashManagement::find($request->cash_management_id)->account_id;
+        $cash_account = CashManagement::find($request->cash_management_id);
 
         $amount = (float) str_replace('.', '', $request->amount);
 
@@ -190,7 +190,7 @@ class TransactionController extends Controller
             Transaction::create([
                 'school_id'         => $schoolId,
                 'cash_management_id'=> $request->cash_management_id,
-                'account_id'        => $cash_account_id,
+                'account_id'        => $cash_account->account_id,
                 'doc_number'        => $request->doc_number,
                 'date'              => $request->date,
                 'description'       => $request->description,
@@ -213,31 +213,36 @@ class TransactionController extends Controller
             ]);
 
         } elseif ($request->transaction_type === 'expense') {
-            // 1. Debit ke Akun
-            Transaction::create([
-                'school_id'         => $schoolId,
-                'cash_management_id'=> $request->cash_management_id,
-                'account_id'        => $request->account_id,
-                'doc_number'        => $request->doc_number,
-                'date'              => $request->date,
-                'description'       => $request->description,
-                'debit'             => $amount,
-                'credit'            => 0,
-                'type'              => 'general',
-            ]);
 
-            // 2. Kredit ke Kas
-            Transaction::create([
-                'school_id'         => $schoolId,
-                'cash_management_id'=> $request->cash_management_id,
-                'account_id'        => $cash_account_id,
-                'doc_number'        => $request->doc_number,
-                'date'              => $request->date,
-                'description'       => $request->description,
-                'debit'             => 0,
-                'credit'            => $amount,
-                'type'              => 'general',
-            ]);
+            if ($cash_account->balance >= $amount) {
+                // 1. Debit ke Akun
+                Transaction::create([
+                    'school_id'         => $schoolId,
+                    'cash_management_id'=> $request->cash_management_id,
+                    'account_id'        => $request->account_id,
+                    'doc_number'        => $request->doc_number,
+                    'date'              => $request->date,
+                    'description'       => $request->description,
+                    'debit'             => $amount,
+                    'credit'            => 0,
+                    'type'              => 'general',
+                ]);
+
+                // 2. Kredit ke Kas
+                Transaction::create([
+                    'school_id'         => $schoolId,
+                    'cash_management_id'=> $request->cash_management_id,
+                    'account_id'        => $cash_account->account_id,
+                    'doc_number'        => $request->doc_number,
+                    'date'              => $request->date,
+                    'description'       => $request->description,
+                    'debit'             => 0,
+                    'credit'            => $amount,
+                    'type'              => 'general',
+                ]);
+            } else {
+                return back()->withErrors(['amount' => 'Saldo pada akun yang dipilih tidak cukup'])->withInput();
+            }
         }
 
         // Redirect sesuai role
