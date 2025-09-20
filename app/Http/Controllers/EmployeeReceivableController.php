@@ -8,6 +8,7 @@ use App\Models\EmployeeReceivable;
 use App\Models\EmployeeReceivableDetail;
 use App\Models\Account;
 use App\Models\Transaction;
+use App\Models\FinancialPeriod;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -22,62 +23,80 @@ class EmployeeReceivableController extends Controller
     /**
      * Display a listing of the employee receivables.
      */
-    public function index(Request $request, School $school)
+    public function index(Request $request, School $school = null)
     {
-        $user = auth()->user();
-        $account = $request->get('account');
-        $dueDate = is_null($request->get('date')) ? '' : $request->get('date');
-        $status = $request->get('status');
+        $user       = auth()->user();
+        $account    = $request->get('account');
+        $dueDate    = $request->get('date') ? Carbon::parse($request->get('date'))->format('Y-m-d') : null;
+        $status     = $request->get('status');
         $employeeId = $request->get('employee_id');
-        if (auth()->user()->role != 'SchoolAdmin') {
-            // SuperAdmin: Semua piutang
-            $schools = School::pluck('name', 'id');
-            $school = $request->get('school');
+
+        if ($user->role !== 'SchoolAdmin') {
+            $schools   = School::pluck('name', 'id');
+            $schoolId  = $request->get('school');
+            $schoolVar = $schoolId ? School::find($schoolId) : null;
+
+            // Dapatkan periode aktif berdasarkan sekolah yang dipilih
+            $activePeriod = null;
+            if ($schoolVar) {
+                 $activePeriod = FinancialPeriod::where('school_id', $schoolVar->id)
+                    ->where('is_active', true)
+                    ->first();
+            }
+
             $receivables = EmployeeReceivable::with(['school', 'employee', 'account'])
-                ->when($school, function ($q) use ($school) {
-                    $q->where('school_id', $school);
-                })
-                ->when($employeeId, function ($q) use ($employeeId) {
-                    $q->where('employee_id', $employeeId);
-                })
-                ->when($account, function ($q) use ($account) {
-                    $q->where('account_id', $account);
-                })
-                ->when($dueDate, function ($q) use ($dueDate) {
-                    $q->where('due_date', Carbon::parse($dueDate)->format('Y-m-d'));
-                })
-                ->when($status, function ($q) use ($status) {
-                    $q->where('status', $status);
-                })
-                ->orderBy('updated_at', 'desc')
-                ->paginate(10)->withQueryString();
-            
-            return view('employee-receivables.index', compact('receivables', 'schools', 'school', 'account', 'dueDate', 'status', 'employeeId'));
+                ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
+                ->when($employeeId, fn($q) => $q->where('employee_id', $employeeId))
+                ->when($account, fn($q) => $q->where('account_id', $account))
+                ->when($dueDate, fn($q) => $q->where('due_date', $dueDate))
+                ->when($status, fn($q) => $q->where('status', $status))
+                ->when($activePeriod, fn($q) => $q->whereBetween('created_at', [
+                    $activePeriod->start_date->format('Y-m-d'),
+                    $activePeriod->end_date->format('Y-m-d')
+                ]))
+                ->orderByDesc('updated_at')
+                ->paginate(10)
+                ->withQueryString();
+
+            return view('employee-receivables.index', [
+                'receivables' => $receivables,
+                'schools'     => $schools,
+                'school'      => $schoolVar,
+                'schoolId'    => $schoolId,
+                'account'     => $account,
+                'dueDate'     => $dueDate,
+                'status'      => $status,
+                'employeeId'  => $employeeId,
+            ]);
         }
 
-        // SchoolAdmin atau SuperAdmin dengan sekolah tertentu
         $school = $school ?? $user->school;
         if (!$school || ($user->role === 'SchoolAdmin' && $user->school_id !== $school->id)) {
             abort(403, 'Unauthorized access to this school.');
         }
 
+        // Dapatkan periode aktif untuk sekolah yang sedang login
+        $activePeriod = FinancialPeriod::where('school_id', $school->id)
+            ->where('is_active', true)
+            ->first();
+
         $receivables = EmployeeReceivable::where('school_id', $school->id)
             ->with(['employee', 'account'])
-            ->when($employeeId, function ($q) use ($employeeId) {
-                    $q->where('employee_id', $employeeId);
-                })
-            ->when($account, function ($q) use ($account) {
-                $q->where('account_id', $account);
-            })
-            ->when($dueDate, function ($q) use ($dueDate) {
-                $q->where('due_date', Carbon::parse($dueDate)->format('Y-m-d'));
-            })
-            ->when($status, function ($q) use ($status) {
-                $q->where('status', $status);
-            })
-            ->orderBy('updated_at', 'desc')
-            ->paginate(10)->withQueryString();
-        return view('employee-receivables.index', compact('receivables', 'school', 'account', 'dueDate', 'status', 'employeeId'));
+            ->when($employeeId, fn($q) => $q->where('employee_id', $employeeId))
+            ->when($account, fn($q) => $q->where('account_id', $account))
+            ->when($dueDate, fn($q) => $q->where('due_date', $dueDate))
+            ->when($status, fn($q) => $q->where('status', $status))
+            ->when($activePeriod, fn($q) => $q->whereBetween('created_at', [
+                $activePeriod->start_date->format('Y-m-d'),
+                $activePeriod->end_date->format('Y-m-d')
+            ]))
+            ->orderByDesc('updated_at')
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('employee-receivables.index', compact(
+            'receivables', 'school', 'account', 'dueDate', 'status', 'employeeId'
+        ));
     }
 
     public function getEmployee(Request $request)

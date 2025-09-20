@@ -8,6 +8,7 @@ use App\Models\TeacherReceivable;
 use App\Models\TeacherReceivableDetail;
 use App\Models\Account;
 use App\Models\Transaction;
+use App\Models\FinancialPeriod;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -23,67 +24,89 @@ class TeacherReceivableController extends Controller
      * Display a listing of the teacher receivables.
      */
     public function index(Request $request, School $school = null)
-{
-    $user     = auth()->user();
-    $account  = $request->get('account');
-    $dueDate  = $request->get('date') ? Carbon::parse($request->get('date'))->format('Y-m-d') : null;
-    $status   = $request->get('status');
-    $teacherId = $request->get('teacher_id');
+    {
+        $user     = auth()->user();
+        $account  = $request->get('account');
+        $dueDate  = $request->get('date') ? Carbon::parse($request->get('date'))->format('Y-m-d') : null;
+        $status   = $request->get('status');
+        $teacherId = $request->get('teacher_id');
 
-    // SuperAdmin: bisa lihat semua sekolah
-    if ($user->role !== 'SchoolAdmin') {
-        $schools  = School::pluck('name', 'id');
-        $schoolId = $request->get('school');
+        // SuperAdmin: bisa lihat semua sekolah
+        if ($user->role !== 'SchoolAdmin') {
+            $schools  = School::pluck('name', 'id');
+            $schoolId = $request->get('school');
+            $schoolVar = $schoolId ? School::find($schoolId) : null;
 
-        $receivables = TeacherReceivable::with(['school', 'teacher', 'account'])
-            ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
+            // Dapatkan periode aktif berdasarkan sekolah yang dipilih
+            $activePeriod = null;
+            if ($schoolVar) {
+                 $activePeriod = FinancialPeriod::where('school_id', $schoolVar->id)
+                    ->where('is_active', true)
+                    ->first();
+            }
+
+            $receivables = TeacherReceivable::with(['school', 'teacher', 'account'])
+                ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
+                ->when($teacherId, fn($q) => $q->where('teacher_id', $teacherId))
+                ->when($account, fn($q) => $q->where('account_id', $account))
+                ->when($dueDate, fn($q) => $q->where('due_date', $dueDate))
+                ->when($status, fn($q) => $q->where('status', $status))
+                ->when($activePeriod, fn($q) => $q->whereBetween('created_at', [
+                    $activePeriod->start_date->format('Y-m-d'),
+                    $activePeriod->end_date->format('Y-m-d')
+                ]))
+                ->orderByDesc('updated_at')
+                ->paginate(10)
+                ->withQueryString();
+
+            return view('teacher-receivables.index', [
+                'receivables' => $receivables,
+                'schools'     => $schools,
+                'schoolId'    => $schoolId,
+                'school'      => $school,
+                'account'     => $account,
+                'dueDate'     => $dueDate,
+                'status'      => $status,
+                'teacherId'   => $teacherId,
+            ]);
+        }
+
+        $school   = $school ?? $user->school;
+        $schoolId = $school->id;
+
+        if ($user->school_id !== $schoolId) {
+            abort(403, 'Unauthorized access to this school.');
+        }
+
+        // Dapatkan periode aktif untuk sekolah yang sedang login
+        $activePeriod = FinancialPeriod::where('school_id', $school->id)
+            ->where('is_active', true)
+            ->first();
+
+        $receivables = TeacherReceivable::where('school_id', $schoolId)
+            ->with(['teacher', 'account'])
             ->when($teacherId, fn($q) => $q->where('teacher_id', $teacherId))
             ->when($account, fn($q) => $q->where('account_id', $account))
             ->when($dueDate, fn($q) => $q->where('due_date', $dueDate))
             ->when($status, fn($q) => $q->where('status', $status))
+            ->when($activePeriod, fn($q) => $q->whereBetween('created_at', [
+                $activePeriod->start_date->format('Y-m-d'),
+                $activePeriod->end_date->format('Y-m-d')
+            ]))
             ->orderByDesc('updated_at')
             ->paginate(10)
             ->withQueryString();
 
         return view('teacher-receivables.index', [
             'receivables' => $receivables,
-            'schools'     => $schools,
-            'schoolId'    => $schoolId,
             'school'      => $school,
+            'schoolId'    => $schoolId,
             'account'     => $account,
             'dueDate'     => $dueDate,
             'status'      => $status,
             'teacherId'   => $teacherId,
         ]);
     }
-
-    $school   = $school ?? $user->school;
-    $schoolId = $school->id;
-
-    if ($user->school_id !== $schoolId) {
-        abort(403, 'Unauthorized access to this school.');
-    }
-
-    $receivables = TeacherReceivable::where('school_id', $schoolId)
-        ->with(['teacher', 'account'])
-        ->when($teacherId, fn($q) => $q->where('teacher_id', $teacherId))
-        ->when($account, fn($q) => $q->where('account_id', $account))
-        ->when($dueDate, fn($q) => $q->where('due_date', $dueDate))
-        ->when($status, fn($q) => $q->where('status', $status))
-        ->orderByDesc('updated_at')
-        ->paginate(10)
-        ->withQueryString();
-
-    return view('teacher-receivables.index', [
-        'receivables' => $receivables,
-        'school'      => $school,
-        'schoolId'    => $schoolId,
-        'account'     => $account,
-        'dueDate'     => $dueDate,
-        'status'      => $status,
-        'teacherId'   => $teacherId,
-    ]);
-}
 
 
     public function getTeacher(Request $request)

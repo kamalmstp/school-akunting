@@ -7,6 +7,7 @@ use App\Models\FixAsset;
 use App\Models\Account;
 use App\Models\Depreciation;
 use App\Models\Transaction;
+use App\Models\FinancialPeriod;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -25,21 +26,44 @@ class FixedAssetController extends Controller
     {
         $user = auth()->user();
         $account = $request->get('account');
-        $acqDate = is_null($request->get('date')) ? '' : $request->get('date');
+        $startDate = is_null($request->get('start_date')) ? '' : $request->get('start_date');
+        $endDate = is_null($request->get('end_date')) ? '' : $request->get('end_date');
         $assetName = $request->get('name');
+        
+        $activePeriod = FinancialPeriod::where('school_id', $school->id)
+            ->where('is_active', true)
+            ->first();
+
         if (auth()->user()->role != 'SchoolAdmin') {
             // SuperAdmin: Semua aset tetap
             $schools = School::pluck('name', 'id');
-            $school = $request->get('school');
+            $schoolId = $request->get('school');
+            $school = School::find($schoolId);
+
+            if ($school) {
+                $activePeriod = FinancialPeriod::where('school_id', $school->id)
+                    ->where('is_active', true)
+                    ->first();
+            }
+
+            // Set tanggal default dari periode aktif jika belum ada di request
+            if (!$startDate && !$endDate && $activePeriod) {
+                $startDate = $activePeriod->start_date->format('Y-m-d');
+                $endDate = $activePeriod->end_date->format('Y-m-d');
+            }
+
             $fixedAssets = FixAsset::with(['school', 'account'])
-                ->when($school, function ($q) use ($school) {
-                    $q->where('school_id', $school);
+                ->when($schoolId, function ($q) use ($schoolId) {
+                    $q->where('school_id', $schoolId);
                 })
                 ->when($account, function ($q) use ($account) {
                     $q->where('account_id', $account);
                 })
-                ->when($acqDate, function ($q) use ($acqDate) {
-                    $q->where('acquisition_date', Carbon::parse($acqDate)->format('Y-m-d'));
+                ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
+                    $q->whereBetween('acquisition_date', [
+                        Carbon::parse($startDate)->format('Y-m-d'),
+                        Carbon::parse($endDate)->format('Y-m-d')
+                    ]);
                 })
                 ->when($assetName, function ($q) use ($assetName) {
                     $q->where('name', 'like', '%' . $assetName . '%');
@@ -47,13 +71,19 @@ class FixedAssetController extends Controller
                 ->orderBy('updated_at', 'desc')
                 ->paginate(10)->withQueryString();
             
-            return view('fixed-assets.index', compact('fixedAssets', 'schools', 'school', 'account', 'acqDate', 'assetName'));
+            return view('fixed-assets.index', compact('fixedAssets', 'schools', 'school', 'account', 'startDate', 'endDate', 'assetName'));
         }
 
-        // SchoolAdmin atau SuperAdmin dengan sekolah tertentu
+        // SchoolAdmin
         $school = $school ?? $user->school;
         if (!$school || ($user->role === 'SchoolAdmin' && $user->school_id !== $school->id)) {
             abort(403, 'Unauthorized access to this school.');
+        }
+
+        // Set tanggal default dari periode aktif jika belum ada di request
+        if (!$startDate && !$endDate && $activePeriod) {
+            $startDate = $activePeriod->start_date->format('Y-m-d');
+            $endDate = $activePeriod->end_date->format('Y-m-d');
         }
 
         $fixedAssets = FixAsset::where('school_id', $school->id)
@@ -61,8 +91,11 @@ class FixedAssetController extends Controller
             ->when($account, function ($q) use ($account) {
                 $q->where('account_id', $account);
             })
-            ->when($acqDate, function ($q) use ($acqDate) {
-                $q->where('acquisition_date', Carbon::parse($acqDate)->format('Y-m-d'));
+            ->when($startDate && $endDate, function ($q) use ($startDate, $endDate) {
+                $q->whereBetween('acquisition_date', [
+                    Carbon::parse($startDate)->format('Y-m-d'),
+                    Carbon::parse($endDate)->format('Y-m-d')
+                ]);
             })
             ->when($assetName, function ($q) use ($assetName) {
                 $q->where('name', 'like', '%' . $assetName . '%');
@@ -70,7 +103,7 @@ class FixedAssetController extends Controller
             ->orderBy('updated_at', 'desc')
             ->paginate(10)->withQueryString();
 
-        return view('fixed-assets.index', compact('fixedAssets', 'school', 'account', 'acqDate', 'assetName'));
+        return view('fixed-assets.index', compact('fixedAssets', 'school', 'account', 'startDate', 'endDate', 'assetName'));
     }
 
     /**
