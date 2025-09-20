@@ -42,7 +42,7 @@ class FixedAssetController extends Controller
                     ->first();
             }
 
-            $fixedAssets = FixedAsset::with(['school', 'account'])
+            $fixedAssets = FixAsset::with(['school', 'account'])
                 ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
                 ->when($account, fn($q) => $q->where('account_id', $account))
                 ->when($acqDate, fn($q) => $q->where('acquisition_date', $acqDate))
@@ -76,7 +76,7 @@ class FixedAssetController extends Controller
             ->where('is_active', true)
             ->first();
 
-        $fixedAssets = FixedAsset::where('school_id', $school->id)
+        $fixedAssets = FixAsset::where('school_id', $school->id)
             ->with('account')
             ->when($account, fn($q) => $q->where('account_id', $account))
             ->when($acqDate, fn($q) => $q->where('acquisition_date', $acqDate))
