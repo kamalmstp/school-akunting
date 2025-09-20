@@ -34,8 +34,8 @@
                                     <div class="mb-3">
                                         <label for="accountFilter" class="form-label">Jenis Kas</label>
                                         <select name="account" class="form-select" id="accountFilter">
-                                            <option value="masuk"{{ $account == 'masuk' ? ' selected' : '' }}>Masuk</option>
-                                            <option value="keluar"{{ $account == 'keluar' ? ' selected' : '' }}>Keluar</option>
+                                            <option value="masuk"{{ $accountType == 'masuk' ? ' selected' : '' }}>Masuk</option>
+                                            <option value="keluar"{{ $accountType == 'keluar' ? ' selected' : '' }}>Keluar</option>
                                         </select>
                                     </div>
                                 </div>
@@ -72,7 +72,7 @@
             <div class="col-xl-12">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="card-title">Laporan Kas {{ @ucwords($account) }} {{ $school->name }} ({{ \Carbon\Carbon::parse($startDate)->format('d-m-Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('d-m-Y') }})</h5>
+                        <h5 class="card-title">Laporan Kas {{ @ucwords($accountType) }} {{ $school->name }} ({{ \Carbon\Carbon::parse($startDate)->format('d-m-Y') }} - {{ \Carbon\Carbon::parse($endDate)->format('d-m-Y') }})</h5>
                     </div>
                     <div class="card-body">
                         <!-- Row start -->
