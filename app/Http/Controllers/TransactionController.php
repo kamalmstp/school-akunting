@@ -6,6 +6,7 @@ use App\Models\School;
 use App\Models\Transaction;
 use App\Models\Account;
 use App\Models\FundManagement;
+use App\Models\FinancialPeriod;
 use App\Models\CashManagement;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +30,6 @@ class TransactionController extends Controller
      */
     public function index(Request $request, School $school)
     {
-        // now()->format('YmdHi')
         $user = auth()->user();
         $account = $request->get('account');
         $startDate = is_null($request->get('start_date')) ? '' : $request->get('start_date');
@@ -39,11 +39,23 @@ class TransactionController extends Controller
         $referenceStudent = 'App\Models\StudentReceivables';
         $referenceTeacher = 'App\Models\TeacherReceivable';
         $referenceNull = NULL;
+        
+        // Cari periode keuangan yang aktif
+        $activePeriod = FinancialPeriod::where('school_id', $school->id)
+            ->where('is_active', true)
+            ->first();
+
         if (auth()->user()->role != 'SchoolAdmin') {
-            // SuperAdmin: Semua transaksi
             $schools = School::pluck('name', 'id');
             $schoolId = $request->get('school_id');
             $school = School::find($schoolId);
+            
+            // Set tanggal default dari periode aktif jika belum ada di request
+            if (!$startDate && !$endDate && $activePeriod) {
+                $startDate = $activePeriod->start_date->format('Y-m-d');
+                $endDate = $activePeriod->end_date->format('Y-m-d');
+            }
+
             $transactions = Transaction::with(['school', 'account'])
                 ->when($schoolId, function ($q) use ($schoolId) {
                     $q->where('school_id', $schoolId);
@@ -63,10 +75,15 @@ class TransactionController extends Controller
             return view('transactions.index', compact('transactions', 'schools', 'school', 'account', 'startDate', 'endDate', 'accountType', 'singleAccount', 'schoolId'));
         }
 
-        // SchoolAdmin atau SuperAdmin dengan sekolah tertentu
+        // SchoolAdmin
         $school = $school ?? $user->school;
         if (!$school || ($user->role === 'SchoolAdmin' && $user->school_id !== $school->id)) {
             abort(403, 'Unauthorized access to this school.');
+        }
+
+        if (!$startDate && !$endDate && $activePeriod) {
+            $startDate = $activePeriod->start_date->format('Y-m-d');
+            $endDate = $activePeriod->end_date->format('Y-m-d');
         }
 
         $transactions = Transaction::where('school_id', $school->id)
@@ -87,17 +104,6 @@ class TransactionController extends Controller
             ->orderBy('updated_at', 'desc')
             ->paginate(10)
             ->withQueryString();
-
-            // $transDesc = Transaction::where('school_id', $school->id)->pluck('description');
-            // $transIds = [];
-            // foreach ($transDesc->duplicates()->unique()->all() as $value) {
-            //     $sameTrans = Transaction::where('description', $value);
-            //     $totalDebit = $sameTrans->sum('debit');
-            //     $totalCredit = $sameTrans->sum('credit');
-            //     if ($totalDebit != $totalCredit) {
-            //         $transIds[] = $sameTrans->pluck('id');
-            //     }
-            // }
 
         return view('transactions.index', compact('transactions', 'school', 'account', 'startDate', 'endDate', 'accountType', 'singleAccount'));
     }

@@ -47,7 +47,9 @@ class FinancialPeriodController extends Controller
 
         DB::beginTransaction();
         try {
-            if ($request->is_active) {
+            $isActive = $request->has('is_active');
+
+            if ($isActive) {
                 FinancialPeriod::where('school_id', $school->id)->update(['is_active' => false]);
             }
 
@@ -56,7 +58,7 @@ class FinancialPeriodController extends Controller
                 'name' => $request->name,
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
-                'is_active' => $request->is_active ?? false,
+                'is_active' => $isActive,
             ]);
 
             DB::commit();
