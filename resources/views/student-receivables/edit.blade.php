@@ -113,10 +113,10 @@
                                             </div>
                                         </div>
 
-                                        <div class="mb-3" id="show_pembayaran" style="display:none">
+                                        <!-- <div class="mb-3" id="show_pembayaran" style="display:none">
                                             <label for="persen_bayar" class="form-label">Pembayaran (%)</label>
                                             <input type="number" step="1" min="0" max="100" class="form-control" id="persen_bayar" name="persen_bayar" value="0">
-                                        </div>
+                                        </div> -->
 
                                         <div class="mb-3">
                                             <label class="form-label">Potongan</label>
