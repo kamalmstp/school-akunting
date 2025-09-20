@@ -828,7 +828,14 @@ class ReportController extends Controller
         $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
         $schoolIds = $school ? [$school->id] : $schools->pluck('id');
 
-        $date = Carbon::parse($request->input('date', now()->endOfMonth()))->toDateString();
+        $activePeriod = null;
+        if ($school) {
+            $activePeriod = FinancialPeriod::where('school_id', $school->id)
+                ->where('is_active', true)
+                ->first();
+        }
+
+        $date = Carbon::parse($request->input('date', optional($activePeriod)->end_date ?? now()))->toDateString();
 
         $profitLoss = $this->calculateProfitLoss($schoolIds, $date);
         $balanceSheet = $this->calculateBalanceSheet($schoolIds, $date);
@@ -1055,145 +1062,90 @@ class ReportController extends Controller
         $school = $this->resolveSchool($user, $school);
         $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
 
-        $account = $request->account;
-        $startDate = $request->input('start_date', now()->startOfMonth()->toDateString());
-        $endDate = $request->input('end_date', now()->endOfMonth()->toDateString());
-        $items = $this->calculateItems($school->id, $account, $startDate, $endDate);
+        $activePeriod = FinancialPeriod::where('school_id', $school->id)->where('is_active', true)->first();
+        $startDate = $request->input('start_date', optional($activePeriod)->start_date ?? now()->startOfMonth());
+        $endDate = $request->input('end_date', optional($activePeriod)->end_date ?? now()->endOfMonth());
 
-        if ($request->has('export') && $request->export === 'excel') {
-            return $this->exportCashReports($items, $school, $account, $startDate, $endDate);
-        }
+        $accountType = $request->input('account');
+        $isMasuk = $accountType === 'masuk';
 
-        return view('reports.cash-reports', compact('items', 'school', 'schools', 'account', 'startDate', 'endDate'));
-    }
-
-    /**
-     * Calculate Laba Rugi
-     */
-    protected function calculateItems($schoolId, $account, $startDate, $endDate)
-    {
-        $dbcr = ($account == 'keluar' ? 'debit' : 'credit');
-
-        $results = DB::table('transactions as t')
-            ->selectRaw("
-                a.code,
-                t.date,
-                t.description,
-                t.doc_number,
-                SUM(CASE WHEN a.name LIKE '%ppdb%' THEN t.credit ELSE 0 END) as ppdb,
-                SUM(CASE WHEN a.name LIKE '%dpp%' THEN t.credit ELSE 0 END) as dpp,
-                SUM(CASE WHEN a.name LIKE '%spp%' THEN t.credit ELSE 0 END) as spp,
-                SUM(CASE WHEN (a.name LIKE '%uks%' OR a.name LIKE '%biaya%' OR a.name LIKE '%beli%') THEN t.credit ELSE 0 END) as uks,
-                SUM(CASE WHEN a.name LIKE '%uis%' THEN t.credit ELSE 0 END) as uis,
-                SUM(CASE WHEN a.name LIKE '%uig%' THEN t.credit ELSE 0 END) as uig,
-                SUM(CASE WHEN a.name LIKE '%uik%' THEN t.credit ELSE 0 END) as uik,
-                SUM(CASE WHEN a.name LIKE '%unit usaha%' THEN t.credit ELSE 0 END) as unit_usaha,
-                SUM(CASE WHEN (a.name LIKE '%pemerintah%' OR a.account_type = 'Aset Tetap') THEN t.credit ELSE 0 END) as pemerintah,
-                SUM(CASE WHEN a.name LIKE '%swasta%' THEN t.credit ELSE 0 END) as swasta,
-                SUM(
-                    CASE 
-                        WHEN a.name NOT LIKE '%ppdb%'
-                        AND a.name NOT LIKE '%dpp%'
-                        AND a.name NOT LIKE '%spp%'
-                        AND a.name NOT LIKE '%uks%'
-                        AND a.name NOT LIKE '%biaya%'
-                        AND a.name NOT LIKE '%beli%'
-                        AND a.name NOT LIKE '%uis%'
-                        AND a.name NOT LIKE '%uig%'
-                        AND a.name NOT LIKE '%uik%'
-                        AND a.name NOT LIKE '%unit usaha%'
-                        AND a.name NOT LIKE '%pemerintah%'
-                        AND a.name NOT LIKE '%swasta%'
-                        AND a.account_type <> 'Aset Tetap'
-                        THEN t.credit ELSE 0
-                    END
-                ) as lain_lain
-            ")
-            ->join('accounts as a', 'a.id', '=', 't.account_id')
-            ->where('t.school_id', $schoolId)->where('t.deleted_at', NULL)
-            ->where('a.normal_balance', ($account == 'keluar' ? 'debit' : 'kredit'))
-            ->when($account == 'keluar', function ($q) {
-                // $q->where('a.account_type', 'Biaya');
-                $q->where('t.description', 'not like', '%piutang%');
+        $transactions = Transaction::with('account')
+            ->where('school_id', $school->id)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->when($isMasuk, function ($query) {
+                return $query->where('credit', '>', 0);
+            }, function ($query) {
+                return $query->where('debit', '>', 0)
+                             ->where('description', 'not like', '%piutang%');
             })
-            // ->when($account == 'masuk', function ($q) {
-            // })
-            ->whereBetween('t.date', [$startDate, $endDate])
-            ->groupBy(['a.code','t.date','t.description','t.doc_number'])
-            ->orderBy('t.date')->orderBy('t.id')
+            ->orderBy('date')
+            ->orderBy('id')
             ->get();
 
         $items = [
             'data' => [],
             'totals' => [
-                'ppdb'        => 0,
-                'dpp'         => 0,
-                'spp'         => 0,
-                'uks'         => 0,
-                'uis'         => 0,
-                'uig'         => 0,
-                'uik'         => 0,
-                'unit_usaha'  => 0,
-                'pemerintah'  => 0,
-                'swasta'      => 0,
-                'lain_lain'   => 0,
-                'grand_total' => 0
-            ]
+                'ppdb' => 0, 'dpp' => 0, 'spp' => 0, 'uks' => 0, 'uis' => 0, 'uig' => 0, 'uik' => 0,
+                'unit_usaha' => 0, 'pemerintah' => 0, 'swasta' => 0, 'lain_lain' => 0, 'grand_total' => 0,
+            ],
         ];
 
-        $i = 1;
-        foreach ($results as $row) {
+        foreach ($transactions->groupBy(fn($item) => $item->id) as $id => $transactionGroup) {
+            $transaction = $transactionGroup->first();
+            $amount = $isMasuk ? $transaction->credit : $transaction->debit;
+            $category = 'lain_lain';
+
+            if (str_contains($transaction->account->name, 'ppdb')) {
+                $category = 'ppdb';
+            } elseif (str_contains($transaction->account->name, 'dpp')) {
+                $category = 'dpp';
+            } elseif (str_contains($transaction->account->name, 'spp')) {
+                $category = 'spp';
+            } elseif (str_contains($transaction->account->name, 'uks') || str_contains($transaction->account->name, 'biaya') || str_contains($transaction->account->name, 'beli')) {
+                $category = 'uks';
+            } elseif (str_contains($transaction->account->name, 'uis')) {
+                $category = 'uis';
+            } elseif (str_contains($transaction->account->name, 'uig')) {
+                $category = 'uig';
+            } elseif (str_contains($transaction->account->name, 'uik')) {
+                $category = 'uik';
+            } elseif (str_contains($transaction->account->name, 'unit usaha')) {
+                $category = 'unit_usaha';
+            } elseif (str_contains($transaction->account->name, 'pemerintah') || $transaction->account->account_type === 'Aset Tetap') {
+                $category = 'pemerintah';
+            } elseif (str_contains($transaction->account->name, 'swasta')) {
+                $category = 'swasta';
+            }
+
             $item = [
-                'no'           => $i,
-                'code'         => $row->code,
-                'date'         => $row->date,
-                'description'  => $row->description,
-                'doc_number'   => $row->doc_number,
-                'ppdb'         => (float) $row->ppdb,
-                'dpp'          => (float) $row->dpp,
-                'spp'          => (float) $row->spp,
-                'uks'          => (float) $row->uks,
-                'uis'          => (float) $row->uis,
-                'uig'          => (float) $row->uig,
-                'uik'          => (float) $row->uik,
-                'unit_usaha'   => (float) $row->unit_usaha,
-                'pemerintah'   => (float) $row->pemerintah,
-                'swasta'       => (float) $row->swasta,
-                'lain_lain'    => (float) $row->lain_lain,
+                'no' => count($items['data']) + 1,
+                'code' => $transaction->account->code,
+                'date' => $transaction->date,
+                'description' => $transaction->description,
+                'doc_number' => $transaction->doc_number,
+                'ppdb' => $category === 'ppdb' ? $amount : 0,
+                'dpp' => $category === 'dpp' ? $amount : 0,
+                'spp' => $category === 'spp' ? $amount : 0,
+                'uks' => $category === 'uks' ? $amount : 0,
+                'uis' => $category === 'uis' ? $amount : 0,
+                'uig' => $category === 'uig' ? $amount : 0,
+                'uik' => $category === 'uik' ? $amount : 0,
+                'unit_usaha' => $category === 'unit_usaha' ? $amount : 0,
+                'pemerintah' => $category === 'pemerintah' ? $amount : 0,
+                'swasta' => $category === 'swasta' ? $amount : 0,
+                'lain_lain' => $category === 'lain_lain' ? $amount : 0,
             ];
-            $i++;
-
-            // Tambahkan ke $items
             $items['data'][] = $item;
-
-            // Hitung total per kolom
-            $items['totals']['ppdb']       += $item['ppdb'];
-            $items['totals']['dpp']        += $item['dpp'];
-            $items['totals']['spp']        += $item['spp'];
-            $items['totals']['uks']        += $item['uks'];
-            $items['totals']['uis']        += $item['uis'];
-            $items['totals']['uig']        += $item['uig'];
-            $items['totals']['uik']        += $item['uik'];
-            $items['totals']['unit_usaha'] += $item['unit_usaha'];
-            $items['totals']['pemerintah'] += $item['pemerintah'];
-            $items['totals']['swasta']     += $item['swasta'];
-            $items['totals']['lain_lain']  += $item['lain_lain'];
+            $items['totals'][$category] += $amount;
         }
 
-        // Hitung grand total (jumlah semua kategori)
-        $items['totals']['grand_total'] = $items['totals']['ppdb']
-            + $items['totals']['dpp']
-            + $items['totals']['spp']
-            + $items['totals']['uks']
-            + $items['totals']['uis']
-            + $items['totals']['uig']
-            + $items['totals']['uik']
-            + $items['totals']['unit_usaha']
-            + $items['totals']['pemerintah']
-            + $items['totals']['swasta']
-            + $items['totals']['lain_lain'];
+        $items['totals']['grand_total'] = array_sum($items['totals']);
 
-        return $items;
+        if ($request->has('export') && $request->export === 'excel') {
+            return $this->exportCashReports($items, $school, $accountType, $startDate, $endDate);
+        }
+
+        return view('reports.cash-reports', compact('items', 'school', 'schools', 'accountType', 'startDate', 'endDate'));
     }
 
     /**
