@@ -101,7 +101,9 @@ class FinancialPeriodController extends Controller
 
         DB::beginTransaction();
         try {
-            if ($request->is_active) {
+            $isActive = $request->has('is_active');
+
+            if ($isActive) {
                 FinancialPeriod::where('school_id', $school->id)->update(['is_active' => false]);
             }
 
@@ -109,7 +111,7 @@ class FinancialPeriodController extends Controller
                 'name' => $request->name,
                 'start_date' => $request->start_date,
                 'end_date' => $request->end_date,
-                'is_active' => $request->is_active ?? false,
+                'is_active' => $isActive,
             ]);
 
             DB::commit();
@@ -130,7 +132,6 @@ class FinancialPeriodController extends Controller
             abort(403);
         }
         
-        // Cek apakah ada saldo awal atau transaksi yang terhubung
         if ($financialPeriod->initialBalances()->count() > 0) {
             return back()->with('error', 'Tidak bisa menghapus periode yang memiliki saldo awal.');
         }
