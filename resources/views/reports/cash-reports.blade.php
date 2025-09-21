@@ -58,7 +58,7 @@
                                 <div class="col-xl-4 col-md-6 col-12">
                                     <button type="submit" class="btn btn-primary">Tampilkan</button>
                                     <a href="{{ auth()->user()->role != 'SchoolAdmin' ? route('reports.cash-reports') : route('school-reports.cash-reports', $school) }}" class="btn btn-danger">Reset</a>
-                                    <a href="{{ route('cash-reports', array_merge(['school' => $school ? $school->id : request()->query('school_id')], request()->except('school_id'), ['export' => 'excel', 'account' => request('account') ?? 'masuk'])) }}&start_date={{ $startDate }}&end_date={{ $endDate }}" class="btn btn-success" id="exportBtn">Export Excel</a>
+                                    <!-- <a href="{{ route('cash-reports', array_merge(['school' => $school ? $school->id : request()->query('school_id')], request()->except('school_id'), ['export' => 'excel', 'account' => request('account') ?? 'masuk'])) }}&start_date={{ $startDate }}&end_date={{ $endDate }}" class="btn btn-success" id="exportBtn">Export Excel</a> -->
                                 </div>
                             </div>
                         </form>

@@ -588,6 +588,70 @@ class ReportController extends Controller
         return view('reports.ledger', compact('school', 'schools', 'accounts', 'startDate', 'endDate', 'accountType', 'account', 'singleAccount'));
     }
 
+    public function trialBalance(Request $request, School $school = null)
+    {
+        Log::info('Accessing Trial Balance', ['request' => $request->all()]);
+        $user = auth()->user();
+        $school = $this->resolveSchool($user, $school);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+        $schoolId = $school ? $school->id : null;
+
+        $activePeriod = null;
+        if ($schoolId) {
+            $activePeriod = FinancialPeriod::where('school_id', $schoolId)->where('is_active', true)->first();
+        }
+
+        $startDate = $request->input('start_date', optional($activePeriod)->start_date ?? now()->startOfMonth()->toDateString());
+        $endDate = $request->input('end_date', optional($activePeriod)->end_date ?? now()->endOfMonth()->toDateString());
+
+        $initialBalances = InitialBalance::where('school_id', $schoolId)
+            ->where('financial_period_id', optional($activePeriod)->id)
+            ->get()
+            ->keyBy('account_id');
+
+        $transactions = Transaction::where('school_id', $schoolId)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->get()
+            ->groupBy('account_id');
+
+        $trialBalance = collect();
+        $accounts = Account::orderBy('code')->get();
+
+        foreach ($accounts as $account) {
+            $initialBalance = optional($initialBalances->get($account->id))->amount ?? 0;
+            $accountTransactions = $transactions->get($account->id) ?? collect();
+
+            $debit = $accountTransactions->sum('debit');
+            $credit = $accountTransactions->sum('credit');
+
+            $totalDebit = $initialBalance + $debit;
+            $totalCredit = $credit;
+
+            if ($account->normal_balance === 'Kredit') {
+                $totalDebit = $debit;
+                $totalCredit = $initialBalance + $credit;
+            }
+
+            if ($totalDebit > 0 || $totalCredit > 0) {
+                $trialBalance->push([
+                    'code' => $account->code,
+                    'name' => $account->name,
+                    'debit' => $totalDebit,
+                    'credit' => $totalCredit,
+                ]);
+            }
+        }
+
+        $totalDebit = $trialBalance->sum('debit');
+        $totalCredit = $trialBalance->sum('credit');
+
+        if ($request->has('export') && $request->export === 'excel') {
+            return $this->exportTrialBalance($trialBalance, $school, $startDate, $endDate);
+        }
+
+        return view('reports.trial-balance', compact('school', 'schools', 'trialBalance', 'startDate', 'endDate', 'totalDebit', 'totalCredit'));
+    }
+
     /**
      * Neraca Saldo Awal (Belum Disesuaikan)
      */

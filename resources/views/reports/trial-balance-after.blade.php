@@ -41,7 +41,7 @@
                                 <div class="col-xl-4 col-md-6 col-12">
                                     <button type="submit" class="btn btn-primary">Tampilkan</button>
                                     <a href="{{ auth()->user()->role != 'SchoolAdmin' ? route('reports.trial-balance-after') : route('school-reports.trial-balance-after', $school) }}" class="btn btn-danger">Reset</a>
-                                    <a href="{{ route('trial-balance-after', array_merge(['school' => $school ? $school->id : request()->query('school_id')], request()->except('school_id'), ['export' => 'excel'])) }}" class="btn btn-success">Export Excel</a>
+                                    <!-- <a href="{{ route('trial-balance-after', array_merge(['school' => $school ? $school->id : request()->query('school_id')], request()->except('school_id'), ['export' => 'excel'])) }}" class="btn btn-success">Export Excel</a> -->
                                 </div>
                             </div>
                         </form>
