@@ -441,15 +441,15 @@
 										<li>
 											<a href="{{ route('school-reports.ledger', auth()->user()->school_id) }}" class="rp-third">Buku Besar</a>
 										</li>
-										<!-- <li>
+										<li>
 											<a href="{{ route('school-reports.trial-balance-before', auth()->user()->school_id) }}" class="rp-fourth">Neraca Saldo Awal</a>
-										</li> -->
-										<!--<li>-->
-										<!--	<a href="{{ route('school-reports.adjusting-entries', auth()->user()->school_id) }}" class="rp-fifth">Jurnal Penyesuaian</a>-->
-										<!--</li>-->
-										<!-- <li>
+										</li>
+										<li>
+											<a href="{{ route('school-reports.adjusting-entries', auth()->user()->school_id) }}" class="rp-fifth">Jurnal Penyesuaian</a>
+										</li>
+										<li>
 											<a href="{{ route('school-reports.trial-balance-after', auth()->user()->school_id) }}" class="rp-sixth">Neraca Saldo Akhir</a>
-										</li> -->
+										</li>
 										<li>
 											<a href="{{ route('school-reports.financial-statements', auth()->user()->school_id) }}" class="rp-seventh">Laporan Keuangan</a>
 										</li>
