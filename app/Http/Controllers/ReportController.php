@@ -1062,9 +1062,22 @@ class ReportController extends Controller
         $school = $this->resolveSchool($user, $school);
         $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
 
-        $activePeriod = FinancialPeriod::where('school_id', $school->id)->where('is_active', true)->first();
-        $startDate = $request->input('start_date', optional($activePeriod)->start_date ?? now()->startOfMonth());
-        $endDate = $request->input('end_date', optional($activePeriod)->end_date ?? now()->endOfMonth());
+        $activePeriod = null;
+        if ($school) {
+            $activePeriod = FinancialPeriod::where('school_id', $school->id)
+                ->where('is_active', true)
+                ->first();
+        }
+
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        if (!$startDate && $activePeriod) {
+            $startDate = $activePeriod->start_date->toDateString();
+        }
+        if (!$endDate && $activePeriod) {
+            $endDate = $activePeriod->end_date->toDateString();
+        }
 
         $accountType = $request->input('account');
         $isMasuk = $accountType === 'masuk';
