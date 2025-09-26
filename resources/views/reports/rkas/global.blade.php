@@ -78,7 +78,7 @@
                                             <td class="text-end text-danger">Rp {{ number_format($item['expense'], 0, ',', '.') }}</td>
                                             <td class="text-end">Rp {{ number_format($item['balance'], 0, ',', '.') }}</td>
                                             <td class="text-center">
-                                                <a href="{{ route('rkas.detail', ['school' => $school->id, 'source' => $item['name']]) }}" class="btn btn-sm btn-info text-white">Lihat Detail</a>
+                                                <a href="" class="btn btn-sm btn-info text-white">Lihat Detail</a>
                                             </td>
                                         </tr>
                                     @empty
