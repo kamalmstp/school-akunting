@@ -66,7 +66,7 @@ class CashManagement extends Model
                                 ->whereBetween('date', [$activeFinancialPeriod->start_date, $activeFinancialPeriod->end_date])
                                 ->sum('credit');
 
-                return $initialAmount + $totalDebit - $totalCredit;
+                return $initialBalance + $totalDebit - $totalCredit;
             }
         );
     }

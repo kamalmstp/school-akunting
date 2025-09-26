@@ -61,7 +61,6 @@
                                     <tr>
                                         <th>#</th>
                                         <th>Sumber Dana</th>
-                                        <th class="text-end">Saldo Awal</th>
                                         <th class="text-end">Pendapatan</th>
                                         <th class="text-end">Pengeluaran</th>
                                         <th class="text-end">Saldo Akhir</th>
@@ -73,7 +72,6 @@
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
                                             <td>{{ $item['name'] }}</td>
-                                            <td class="text-end">Rp {{ number_format($item['initial_balance'], 0, ',', '.') }}</td>
                                             <td class="text-end text-success">Rp {{ number_format($item['income'], 0, ',', '.') }}</td>
                                             <td class="text-end text-danger">Rp {{ number_format($item['expense'], 0, ',', '.') }}</td>
                                             <td class="text-end">Rp {{ number_format($item['balance'], 0, ',', '.') }}</td>
