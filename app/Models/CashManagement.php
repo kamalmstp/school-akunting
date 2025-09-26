@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Support\Facades\DB;
+use App\Models\InitialBalance;
 
 class CashManagement extends Model
 {
@@ -13,7 +14,7 @@ class CashManagement extends Model
 
     protected $fillable = ['school_id', 'account_id', 'financial_period_id', 'name', 'amount'];
 
-    protected $appends = ['balance'];
+    protected $appends = ['balance', 'initial_balance_amount'];
 
     public function school()
     {
@@ -30,6 +31,19 @@ class CashManagement extends Model
         return $this->belongsTo(FinancialPeriod::class);
     }
 
+    protected function initialBalanceAmount(): Attribute
+    {
+        return Attribute::make(
+            get: function () {
+                $initialBalanceRecord = InitialBalance::where('account_id', $this->account_id)
+                    ->where('financial_period_id', $this->financial_period_id)
+                    ->first();
+
+                return $initialBalanceRecord ? $initialBalanceRecord->amount : 0;
+            }
+        );
+    }
+
     protected function balance(): Attribute
     {
         return Attribute::make(
@@ -39,11 +53,7 @@ class CashManagement extends Model
                     return 0;
                 }
 
-                $initialBalance = InitialBalance::where('account_id', $this->account_id)
-                                                ->where('school_id', $this->school_id)
-                                                ->where('financial_period_id', $activeFinancialPeriod->id)
-                                                ->first();
-                $initialAmount = $initialBalance ? $initialBalance->amount : 0;
+                $initialBalance = $this->initial_balance_amount;
                 
                 $totalDebit = DB::table('transactions')
                                 ->where('account_id', $this->account_id)

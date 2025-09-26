@@ -168,8 +168,8 @@ class RkasController extends Controller
             ->whereBetween('date', [$startDate, $endDate])
             ->get();
 
-        $income = $transactions->sum('credit');
-        $expense = $transactions->sum('debit');
+        $income = $transactions->sum('debit');
+        $expense = $transactions->sum('credit');
 
         $items = $transactions->map(function ($transaction) {
             return [
@@ -179,7 +179,7 @@ class RkasController extends Controller
             ];
         })->toArray();
         
-        $initialBalance = $cashManagement->amount;
+        $initialBalance = $cashManagement->initial_balance_amount;
         $currentBalance = $initialBalance + $income - $expense;
 
         return [
