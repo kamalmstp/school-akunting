@@ -1,28 +1,31 @@
 <?php
 
-use App\Http\Controllers\SchoolController;
-use App\Http\Controllers\StudentController;
-use App\Http\Controllers\TeacherController;
-use App\Http\Controllers\EmployeeController;
-use App\Http\Controllers\TransactionController;
-use App\Http\Controllers\StudentReceivableController;
-use App\Http\Controllers\TeacherReceivableController;
-use App\Http\Controllers\EmployeeReceivableController;
-use App\Http\Controllers\StudentAlumniController;
-use App\Http\Controllers\FixedAssetController;
-use App\Http\Controllers\ReportController;
-use App\Http\Controllers\UserController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\AccountController;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\SchoolMajorController;
-use App\Http\Controllers\FundManagementController;
-use App\Http\Controllers\SettingController;
-use App\Http\Controllers\ReceiptController;
-use App\Http\Controllers\VerifyController;
-use App\Http\Controllers\FinancialPeriodController;
-use App\Http\Controllers\InitialBalanceController;
-use App\Http\Controllers\CashManagementController;
+use App\Http\Controllers\{
+    SchoolController,
+    StudentController,
+    TeacherController,
+    EmployeeController,
+    TransactionController,
+    StudentReceivableController,
+    TeacherReceivableController,
+    EmployeeReceivableController,
+    StudentAlumniController,
+    FixedAssetController,
+    ReportController,
+    UserController,
+    DashboardController,
+    AccountController,
+    AuthController,
+    SchoolMajorController,
+    FundManagementController,
+    SettingController,
+    ReceiptController,
+    VerifyController,
+    FinancialPeriodController,
+    InitialBalanceController,
+    CashManagementController,
+    RkasController
+};
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Artisan;
 
@@ -202,6 +205,13 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/schools/{school}/reports/trial-balance-after', [ReportController::class, 'trialBalanceAfter'])->name('school-reports.trial-balance-after');
         Route::get('/schools/{school}/reports/financial-statements', [ReportController::class, 'financialStatements'])->name('school-reports.financial-statements');
         Route::get('/schools/{school}/reports/cash-reports', [ReportController::class, 'cashReports'])->name('school-reports.cash-reports');
+
+        Route::prefix('schools/{school}')->name('school-')->group(function () {
+            Route::prefix('rkas')->name('rkas.')->group(function () {
+                Route::get('/global', [RkasController::class, 'global'])->name('global');
+                Route::get('/{source}', [RkasController::class, 'detail'])->name('detail');
+            });
+        });
     });
 
     Route::middleware(['role:SuperAdmin,SchoolAdmin,AdminMonitor'])->group(function() {

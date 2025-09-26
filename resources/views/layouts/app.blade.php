@@ -458,6 +458,18 @@
 										</li> -->
                                     </ul>
                                 </li>
+
+								<li class="treeview report">
+                                    <a href="#!">
+                                        <i class="bi bi-journals"></i>
+                                        <span class="menu-text">RKAS</span>
+                                    </a>
+                                    <ul class="treeview-menu">
+										<li>
+											<a href="{{ route('school-rkas.global', auth()->user()->school_id) }}" class="rkas-first">Global</a>
+										</li>
+                                    </ul>
+                                </li>
                             @endif
 							<li class="@if(Route::is('users.profile')) active current-page @endif">
 								<a href="{{ route('users.profile') }}">

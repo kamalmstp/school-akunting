@@ -51,3 +51,37 @@ PASSWORD=password123
 Tambahakan:
 - folder images/qrcode
 - penambahan dependency baru (composer & )
+
+
+Change Akun Bank ke masing masing kas:
+- School = 15
+- Acc Piutang SPP = 484
+- UKS = 485
+
+- Query Student Receivables, deskripsi pembayaran diambil dari sini
+SELECT student_receivables.id, account_id, accounts.code, accounts.name, student_receivables.school_id, students.name, student_receivables.amount, paid_amount, total_discount, due_date, status, student_receivable_details.description, student_receivable_details.amount, student_receivable_details.period
+FROM `student_receivables`
+JOIN student_receivable_details ON student_receivables.id = student_receivable_details.student_receivable_id
+JOIN accounts ON student_receivables.account_id = accounts.id
+JOIN students ON student_receivables.student_id = students.id
+WHERE student_receivables.school_id = 15
+AND student_receivables.account_id = 484
+ORDER BY student_receivables.updated_at DESC
+
+SELECT student_receivables.id, student_receivables.account_id, accounts.code, accounts.name, student_receivables.school_id, students.name, paid_amount, status, student_receivable_details.description
+FROM `student_receivables`
+JOIN student_receivable_details ON student_receivables.id = student_receivable_details.student_receivable_id
+JOIN accounts ON student_receivables.account_id = accounts.id
+JOIN students ON student_receivables.student_id = students.id
+WHERE student_receivables.school_id = 15
+AND accounts.name LIKE 'Piutang SPP'
+ORDER BY student_receivables.updated_at DESC
+
+Query Transaksi (478 = Kas Bank), Filter berdasarkan id reference
+SELECT transactions.id, transactions.school_id, accounts.id, accounts.code, accounts.name, date, description, debit, credit, reference_id
+FROM `transactions`
+JOIN accounts ON transactions.account_id = accounts.id
+WHERE transactions.school_id = 15
+AND transactions.account_id = 478
+ORDER BY transactions.created_at DESC
+
