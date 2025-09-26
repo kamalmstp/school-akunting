@@ -165,7 +165,7 @@ class RkasController extends Controller
     protected function getReportForCashManagement(CashManagement $cashManagement, $startDate, $endDate)
     {
         $transactions = Transaction::where('account_id', $cashManagement->account_id)
-            ->whereBetween('transaction_date', [$startDate, $endDate])
+            ->whereBetween('date', [$startDate, $endDate])
             ->get();
 
         $income = $transactions->sum('credit');
@@ -179,7 +179,6 @@ class RkasController extends Controller
             ];
         })->toArray();
         
-        // Gunakan accessor 'balance' dari model CashManagement
         $initialBalance = $cashManagement->amount;
         $currentBalance = $initialBalance + $income - $expense;
 
