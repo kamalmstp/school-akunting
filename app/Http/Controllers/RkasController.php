@@ -71,7 +71,6 @@ class RkasController extends Controller
             ->where('financial_period_id', $activePeriod->id)
             ->with('account')
             ->get();
-        $cashManagementId = $cashManagements->id;
 
         $rkasData = [];
         $totalIncome = 0;
@@ -86,7 +85,7 @@ class RkasController extends Controller
 
         $balance = $totalIncome - $totalExpense;
 
-        return view('reports.rkas.global', compact('school', 'cashManagementId', 'schools', 'rkasData', 'totalIncome', 'totalExpense', 'balance', 'startDate', 'endDate', 'activePeriod'));
+        return view('reports.rkas.global', compact('school', 'schools', 'rkasData', 'totalIncome', 'totalExpense', 'balance', 'startDate', 'endDate', 'activePeriod'));
     }
 
     /**
@@ -183,6 +182,7 @@ class RkasController extends Controller
         $currentBalance = $initialBalance + $income - $expense;
 
         return [
+            'cashManagementId' => $cashManagement->id,
             'name' => $cashManagement->name,
             'initial_balance' => $initialBalance,
             'income' => $income,
