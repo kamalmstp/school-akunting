@@ -87,7 +87,7 @@ class RkasController extends Controller
             'cashManagements' => $cashManagements, 
         ];
 
-        return view('rkas.global', $data);
+        return view('reports.rkas.global', $data);
     }
     
     public function detail(Request $request, School $school, CashManagement $cashManagement)
@@ -123,7 +123,7 @@ class RkasController extends Controller
             'title' => "Laporan RKAS Detail: {$cashManagement->name} ({$cashManagement->account->name})",
         ];
     
-        return view('rkas.detail', $data);
+        return view('reports.rkas.detail', $data);
     }
     
     protected function getReportForCashManagement(CashManagement $cashManagement, $startDate, $endDate)
