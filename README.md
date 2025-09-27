@@ -85,3 +85,12 @@ WHERE transactions.school_id = 15
 AND transactions.account_id = 478
 ORDER BY transactions.created_at DESC
 
+
+school 14 (change account)
+- 334
++ 1069
+
+UPDATE `transactions`
+SET `account_id` = '1069'
+WHERE school_id = 14
+AND account_id = 334;

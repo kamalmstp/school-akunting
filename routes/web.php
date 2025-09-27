@@ -209,7 +209,7 @@ Route::middleware(['auth'])->group(function () {
         Route::prefix('schools/{school}')->name('school-')->group(function () {
             Route::prefix('rkas')->name('rkas.')->group(function () {
                 Route::get('/global', [RkasController::class, 'global'])->name('global');
-                Route::get('/{source}', [RkasController::class, 'detail'])->name('detail');
+                Route::get('/detail/{cashManagement}', [RkasController::class, 'detail'])->name('detail');
             });
         });
     });
