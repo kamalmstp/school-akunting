@@ -87,7 +87,7 @@
                         </td>
 
                         <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium">
-                            <a href="{{ route('school-.rkas.detail', ['school' => $school->id, 'cashManagement' => $item->id]) }}" 
+                            <a href="{{ route('school-rkas.detail', ['school' => $school->id, 'cashManagement' => $item->id]) }}" 
                                class="text-indigo-600 hover:text-indigo-900 transition duration-150 ease-in-out font-bold">
                                 Detail
                             </a>
