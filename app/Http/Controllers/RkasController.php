@@ -88,58 +88,46 @@ class RkasController extends Controller
         return view('reports.rkas.global', compact('school', 'schools', 'rkasData', 'totalIncome', 'totalExpense', 'balance', 'startDate', 'endDate', 'activePeriod'));
     }
 
-    /**
-     * Menampilkan laporan RKAS untuk sumber dana tertentu.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\School|null  $school
-     * @param  string $source
-     * @return \Illuminate\View\View
-     */
-    public function detail(Request $request, School $school, $source)
+    public function detail(Request $request, School $school, CashManagement $cashManagement)
     {
-        Log::info("Accessing RKAS Report for source: $source");
+        Log::info("Accessing RKAS Detail Report for CashManagement ID: {$cashManagement->id}");
 
-        $user = auth()->user();
-        $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
-        $schoolId = $school ? $school->id : null;
-
-        $activePeriod = $schoolId ? FinancialPeriod::where('school_id', $schoolId)->where('is_active', true)->first() : null;
-
-        if (!$activePeriod) {
-            return view('reports.rkas.detail', [
-                'school' => $school,
-                'schools' => $schools,
-                'reportData' => ['items' => []],
-                'source' => $source,
-                'startDate' => null,
-                'endDate' => null,
-                'message' => 'Tidak ada periode keuangan aktif yang ditemukan.'
-            ]);
+        if ($cashManagement->school_id !== $school->id) {
+            return redirect()->route('school-.rkas.global', $school)->with('error', 'Sumber kas tidak valid untuk sekolah ini.');
         }
 
-        $cashManagement = CashManagement::where('school_id', $schoolId)
-            ->where('financial_period_id', $activePeriod->id)
-            ->where('name', $source)
-            ->with('account')
-            ->firstOrFail();
+        $activePeriod = $this->getActivePeriod($school);
 
-        $startDate = $request->input('start_date', $activePeriod->start_date);
-        $endDate = $request->input('end_date', $activePeriod->end_date);
+        if (!$activePeriod || $cashManagement->financial_period_id !== $activePeriod->id) {
+            return redirect()->route('school-.rkas.global', $school)->with('error', 'Periode keuangan tidak aktif atau tidak cocok.');
+        }
 
-        $reportData = $this->getReportForCashManagement($cashManagement, $startDate, $endDate);
+        $report = $this->getReportForCashManagement(
+            $cashManagement, 
+            $activePeriod->start_date, 
+            $activePeriod->end_date
+        );
+        
+        $title = "Laporan Jurnal Kas: " . $cashManagement->name;
+        $initialBalance = $report['initial_balance'];
+        $transactions = collect($report['items']);
+        $totalDebit = $report['income'];
+        $totalCredit = $report['expense'];
+        $finalBalance = $report['balance'];
 
-        return view('reports.rkas.detail', compact('school', 'schools', 'reportData', 'source', 'startDate', 'endDate'));
+
+        return view('reports.rkas.detail', compact(
+            'school', 
+            'activePeriod',
+            'title',
+            'initialBalance',
+            'transactions',
+            'totalDebit',
+            'totalCredit',
+            'finalBalance'
+        ));
     }
 
-    /**
-     * Resolve the school context based on user role and request.
-     *
-     * @param \App\Models\User $user
-     * @param \App\Models\School|null $school
-     * @return \App\Models\School|null
-     */
     protected function resolveSchool($user, $school)
     {
         if ($user->role === 'SchoolAdmin' && !$school) {
@@ -153,15 +141,7 @@ class RkasController extends Controller
         return School::first();
     }
 
-    /**
-     * Ambil data pendapatan dan pengeluaran untuk satu entri CashManagement.
-     *
-     * @param  \App\Models\CashManagement  $cashManagement
-     * @param  string $startDate
-     * @param  string $endDate
-     * @return array
-     */
-    protected function getReportForCashManagement(CashManagement $cashManagement, $startDate, $endDate)
+    protected function getReportForCashManagement_old(CashManagement $cashManagement, $startDate, $endDate)
     {
         $transactions = Transaction::where('account_id', $cashManagement->account_id)
             ->whereBetween('date', [$startDate, $endDate])
@@ -175,6 +155,39 @@ class RkasController extends Controller
                 'description' => $transaction->description,
                 'type' => $transaction->credit > 0 ? 'Pendapatan' : 'Pengeluaran',
                 'amount' => $transaction->credit > 0 ? $transaction->credit : $transaction->debit,
+            ];
+        })->toArray();
+        
+        $initialBalance = $cashManagement->initial_balance_amount;
+        $currentBalance = $initialBalance + $income - $expense;
+
+        return [
+            'cashManagementId' => $cashManagement->id,
+            'name' => $cashManagement->name,
+            'initial_balance' => $initialBalance,
+            'income' => $income,
+            'expense' => $expense,
+            'balance' => $currentBalance,
+            'items' => $items,
+        ];
+    }
+
+    protected function getReportForCashManagement(CashManagement $cashManagement, $startDate, $endDate)
+    {
+        $transactions = Transaction::where('account_id', $cashManagement->account_id)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->orderBy('date')
+            ->get();
+
+        $income = $transactions->sum('debit');
+        $expense = $transactions->sum('credit');
+
+        $items = $transactions->map(function ($transaction) {
+            return [
+                'date' => $transaction->date,
+                'description' => $transaction->description,
+                'debit' => $transaction->debit,
+                'credit' => $transaction->credit,
             ];
         })->toArray();
         
