@@ -11,7 +11,7 @@
             <a href="{{ auth()->user()->role != 'SchoolAdmin' ? route('dashboard') : route('dashboard.index', auth()->user()->school_id) }}" class="text-decoration-none">Dashboard</a>
         </li>
         <li class="breadcrumb-item">
-            <a href="{{ route('school-.rkas.global', ['school' => $school->id]) }}" class="text-decoration-none">Laporan RKAS</a>
+            <a href="{{ route('school-rkas.global', ['school' => $school->id]) }}" class="text-decoration-none">Laporan RKAS</a>
         </li>
         <li class="breadcrumb-item active" aria-current="page">Detail Kas</li>
     </ol>
