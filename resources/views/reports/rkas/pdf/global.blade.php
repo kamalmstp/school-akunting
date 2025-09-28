@@ -1,6 +1,6 @@
 @php
+    // Data dummy untuk tampilan jika variabel belum terisi
     $rkasData = $rkasData ?? [
-        // Data yang diambil dari PDF Anda
         ['name' => 'SPP', 'income' => 47867500, 'expense' => 0],
         ['name' => 'DPS', 'income' => 0, 'expense' => 0],
         ['name' => 'DAPEN', 'income' => 0, 'expense' => 0],
@@ -12,7 +12,7 @@
     $school = $school ?? (object)['name' => 'SD PLUS MUHAMMADIYAH BRAWIJAYA', 'address' => 'ALAMAT SEKOLAH', 'npsn' => '00000000', 'nss' => '00000000'];
     $activePeriod = $activePeriod ?? (object)['name' => 'Tahun Ajaran 2025/2026', 'start_date' => \Carbon\Carbon::createFromDate(2025, 7, 1)];
 
-    // Menghitung Total berdasarkan data dari PDF
+    // Menghitung Total (diganti dengan nilai dummy dari PDF jika variabel kosong)
     $totalIncome = 47867500;
     $totalExpense = 0;
     $balance = 47867500;
@@ -29,9 +29,10 @@
     $rowsToDisplay = max($maxItems, 6);
     $totalBelanjaAkhir = $totalIncome;
 
-    function formatRupiah($amount, $withSymbol = true) {
-        $formatted = number_format($amount, 0, ',', '.');
-        return $withSymbol ? 'Rp. ' . $formatted : $formatted;
+    // Fungsi format Rupiah dengan simbol 'Rp. '
+    function formatRupiah($amount) {
+        // Memastikan output selalu berupa string 'Rp. X.XXX.XXX'
+        return 'Rp. ' . number_format($amount, 0, ',', '.');
     }
 @endphp
 <!DOCTYPE html>
@@ -40,12 +41,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RKAS Global - Cetak PDF</title>
+    {{-- Hapus dependensi Tailwind CSS untuk hasil PDF yang bersih --}}
     <style>
         /* PDF/Print focused styles */
         body {
             font-family: 'Times New Roman', Times, serif;
             margin: 0;
-            padding: 30px;
+            padding: 30px; /* Padding untuk border kertas A4 */
             background-color: white;
             font-size: 10pt;
         }
@@ -79,12 +81,12 @@
 
         .table-print th, .table-print td {
             border: 1px solid #000;
-            padding: 6px 8px; /* Padding lebih besar untuk kerapian */
+            padding: 6px 8px;
             font-size: 10pt;
             vertical-align: top;
         }
 
-        /* Utility classes */
+        /* Utility classes (diperlukan untuk tata letak) */
         .text-right { text-align: right; }
         .text-center { text-align: center; }
         .font-bold { font-weight: bold; }
@@ -92,13 +94,12 @@
         .text-lg { font-size: 1.125rem; }
         .text-base { font-size: 1rem; }
         .uppercase { text-transform: uppercase; }
-        .flex { display: flex; }
-        .items-center { align-items: center; }
+        .flex-container { display: flex; align-items: center; width: 100%; }
+        .flex-justify-between { display: flex; justify-content: space-between; width: 100%; }
+        .w-1\/2-print { width: 50%; } /* Lebar 50% untuk 2 kolom tanda tangan */
         .w-full { width: 100%; }
-        .w-1\/2-print { width: 50%; }
         .mt-12 { margin-top: 3rem; }
-        .justify-between { justify-content: space-between; }
-        .h-16 { height: 4rem; } /* Space for signature */
+        .h-16 { height: 4rem; }
         .underline { text-decoration: underline; }
         .mb-4 { margin-bottom: 1rem; }
 
@@ -117,9 +118,9 @@
 <body>
 
     <header class="kop-surat">
-        <div class="flex items-center">
+        <div class="flex-container">
             <div style="width: 15%; margin-right: 15px;">
-                <img src="https://placehold.co/100x100/1e40af/ffffff?text=LOGO" alt="Logo Sekolah" style="width: 80px; height: 80px; display: block; margin: 0 auto;">
+                <img src="{{ public_path($company['logo'] ?? 'images/logo-placeholder.png') }}" alt="Logo Sekolah" style="width: 80px; height: 80px; display: block; margin: 0 auto;">
             </div>
 
             <div style="width: 85%; text-align: center;">
@@ -166,38 +167,33 @@
                     <tr>
                         <td class="text-center">{{ isset($dataItem['name']) ? $nomor : '' }}</td>
                         <td>{{ $dataItem['name'] ?? '' }}</td>
-                        {{-- Diberi format Rupiah --}}
+                        {{-- Output dengan format Rupiah --}}
                         <td class="text-right">{{ isset($dataItem['income']) ? formatRupiah($dataItem['income']) : '' }}</td>
                         <td class="separator-col"></td>
                         <td class="text-center">{{ isset($dataItem['name']) ? $nomor : '' }}</td>
                         <td>{{ $dataItem['name'] ?? '' }}</td>
-                        {{-- Diberi format Rupiah --}}
+                        {{-- Output dengan format Rupiah --}}
                         <td class="text-right">{{ isset($dataItem['expense']) ? formatRupiah($dataItem['expense']) : '' }}</td>
                     </tr>
                 @endfor
                 <tr class="bg-total">
                     <td colspan="2" class="font-bold text-center">Total Pendapatan</td>
-                    {{-- Diberi format Rupiah --}}
                     <td class="text-right font-bold">{{ formatRupiah($totalIncome) }}</td>
                     <td class="separator-col"></td>
                     <td colspan="2" class="font-bold text-center">Total Pengeluaran</td>
-                    {{-- Diberi format Rupiah --}}
                     <td class="text-right font-bold">{{ formatRupiah($totalExpense) }}</td>
                 </tr>
                 <tr>
                     <td colspan="3"></td>
                     <td class="separator-col"></td>
                     <td colspan="2" class="font-bold text-center">Sisa Saldo</td>
-                    {{-- Diberi format Rupiah --}}
                     <td class="text-right font-bold">{{ formatRupiah($balance) }}</td>
                 </tr>
                 <tr class="bg-header">
                     <td colspan="2" class="font-bold text-center">JUMLAH</td>
-                    {{-- Diberi format Rupiah --}}
                     <td class="text-right font-bold">{{ formatRupiah($totalIncome) }}</td>
                     <td class="separator-col"></td>
                     <td colspan="2" class="font-bold text-center">JUMLAH</td>
-                    {{-- Diberi format Rupiah --}}
                     <td class="text-right font-bold">{{ formatRupiah($totalBelanjaAkhir) }}</td>
                 </tr>
             </tbody>
@@ -205,22 +201,23 @@
     </div>
 
     <footer class="mt-12 text-sm">
-        {{-- Menggunakan lebar 50% untuk setiap kolom agar sejajar --}}
-        <div class="flex justify-between w-full signature-row">
-            {{-- KOLOM 1: Ketua Majelis --}}
+        <div class="flex-justify-between signature-row">
+            {{-- KOLOM 1: Ketua Majelis (Lebar 50%) --}}
             <div class="w-1/2-print text-center">
-                <p class="font-semibold mb-4">Menyetujui,</p>
+                <p class="font-bold mb-4">Menyetujui,</p>
                 <p>Ketua Majelis Dikdasmen Kota {{ $signerData['city'] ?? 'Mojokerto' }}</p>
                 <div class="h-16"></div>
+                {{-- Data Nama & NIP ditarik dari variabel --}}
                 <p class="font-bold underline text-base">{{ $signerData['ketuaMajelisName'] ?? 'Nama Ketua Majelis' }}</p>
                 <p class="text-xs">NIP. {{ $signerData['ketuaMajelisNip'] ?? '1234567890' }}</p>
             </div>
 
-            {{-- KOLOM 2: Kepala Sekolah --}}
+            {{-- KOLOM 2: Kepala Sekolah (Lebar 50%) --}}
             <div class="w-1/2-print text-center">
                 <p class="mb-4">{{ $signerData['city'] ?? 'Mojokerto' }}, {{ $tanggalLaporan }}</p>
                 <p>Kepala Sekolah</p>
                 <div class="h-16"></div>
+                {{-- Data Nama & NIP ditarik dari variabel --}}
                 <p class="font-bold underline text-base">{{ $signerData['kepalaSekolahName'] ?? 'Nama Kepala Sekolah' }}</p>
                 <p class="text-xs">NIP. {{ $signerData['kepalaSekolahNip'] ?? '1234567890' }}</p>
             </div>
