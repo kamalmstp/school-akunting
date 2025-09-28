@@ -1,12 +1,13 @@
 @php
+// DATA UTAMA DAN FUNGSI
+// Variabel ini diinisialisasi untuk keperluan testing atau default jika tidak ada data dari controller
 $rkasData = $rkasData ?? [
-// Data Contoh: Anda dapat mengganti ini dengan data RKAS Anda
-['name' => 'SPP', 'income' => 47867500, 'expense' => 0],
-['name' => 'DPS', 'income' => 0, 'expense' => 0],
-['name' => 'DAPEN', 'income' => 0, 'expense' => 0],
-['name' => 'BOSNAS', 'income' => 0, 'expense' => 0],
-['name' => 'BOSDA', 'income' => 0, 'expense' => 0],
-['name' => 'KOPERASI', 'income' => 0, 'expense' => 0],
+    ['name' => 'SPP', 'income' => 47867500, 'expense' => 0],
+    ['name' => 'DPS', 'income' => 0, 'expense' => 0],
+    ['name' => 'DAPEN', 'income' => 0, 'expense' => 0],
+    ['name' => 'BOSNAS', 'income' => 0, 'expense' => 0],
+    ['name' => 'BOSDA', 'income' => 0, 'expense' => 0],
+    ['name' => 'KOPERASI', 'income' => 0, 'expense' => 0],
 ];
 
 $school = $school ?? (object)['name' => 'SD PLUS MUHAMMADIYAH BRAWIJAYA', 'address' => 'ALAMAT SEKOLAH', 'npsn' => '00000000', 'nss' => '00000000', 'logo' => 'path/ke/logo/sekolah.png'];
@@ -25,21 +26,21 @@ $signerData = $signerData ?? [
 $tanggalLaporan = optional($activePeriod->start_date)->isoFormat('D MMMM YYYY') ?? \Carbon\Carbon::now()->isoFormat('D MMMM YYYY');
 $maxItems = count($rkasData);
 $rowsToDisplay = max($maxItems, 6);
-$totalBelanjaAkhir = $totalIncome;
+$totalBelanjaAkhir = $totalIncome; // Sesuai dengan format RKAS, total belanja akhir harus sama dengan total pendapatan
 
 // Fungsi format Rupiah dengan simbol 'Rp. '
 function formatRupiah($amount, $withSymbol = true) {
+    // Fungsi PHP untuk format angka
     $formatted = number_format($amount, 0, ',', '.');
     return $withSymbol ? 'Rp. ' . $formatted : $formatted;
 }
 
-// Variabel Logo menggunakan public_path()
-$logoPath = public_path($school->logo);
+// Variabel Logo menggunakan URL placeholder untuk tampilan web (ganti jika menggunakan public_path di server)
+$logoUrl = isset($school->logo) && !empty($school->logo) ? $school->logo : 'https://placehold.co/80x80/1e40af/ffffff?text=LOGO';
 
 @endphp
 
 <!DOCTYPE html>
-
 <html lang="id">
 <head>
 <meta charset="UTF-8">
@@ -50,108 +51,146 @@ $logoPath = public_path($school->logo);
 | 1. GLOBAL & PRINT SETUP
 | -------------------------------------------------------------------*/
 body {
-font-family: 'Times New Roman', Times, serif;
-margin: 0;
-padding: 30px;
-background-color: white;
-font-size: 10pt;
+    font-family: 'Times New Roman', Times, serif;
+    margin: 0;
+    padding: 30px;
+    background-color: #f0f0f0; /* Latar belakang abu-abu untuk tampilan web */
+    font-size: 10pt;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.report-container {
+    width: 210mm; /* Lebar A4 */
+    min-height: 297mm; /* Tinggi A4 */
+    background-color: white;
+    padding: 25mm; /* Margin A4 */
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    margin-top: 15px;
+}
+
+/* Tombol Cetak (Hanya muncul di tampilan web) */
+.print-button {
+    padding: 10px 20px;
+    background-color: #1e40af;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    margin-bottom: 20px;
 }
 
 @media print {
-body {
-margin: 0;
-padding: 0;
-font-size: 10pt;
--webkit-print-color-adjust: exact !important;
-print-color-adjust: exact !important;
-}
+    body {
+        margin: 0;
+        padding: 0;
+        background-color: white;
+        font-size: 10pt;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+    .report-container {
+        box-shadow: none;
+        width: 100%;
+        min-height: auto;
+        padding: 0;
+    }
+    .print-button {
+        display: none; /* Sembunyikan tombol saat mencetak */
+    }
 }
 
 /* -------------------------------------------------------------------
 | 2. KOP SURAT (MENGGUNAKAN GRID UNTUK KESTABILAN SEJAJAR)
-| -------------------------------------------------------------------/
+| -------------------------------------------------------------------*/
 .kop-surat {
-border-bottom: 3px solid #000;
-padding-bottom: 5px;
-margin-bottom: 10px;
-/ GRID untuk memastikan logo dan teks sejajar vertikal dan horizontal /
-display: grid;
-grid-template-columns: 15% 85%; / 15% untuk Logo, 85% untuk Teks /
-align-items: center; / Sejajar vertikal di tengah */
+    border-bottom: 3px solid #000;
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+    display: grid;
+    grid-template-columns: 15% 85%;
+    align-items: center;
 }
 
 .kop-surat .logo-container {
-padding-right: 10px;
+    padding-right: 10px;
 }
 
 .kop-surat .text-container {
-text-align: left; /* Teks rata kiri, sejajar dengan logo */
+    text-align: center; /* Mengubah dari left ke center agar teks Kop di tengah */
 }
 
 .kop-surat p {
-margin: 0;
-line-height: 1.1; /* Kerapatan Teks */
+    margin: 0;
+    line-height: 1.1;
 }
 
 /* -------------------------------------------------------------------
 | 3. TABEL
 | -------------------------------------------------------------------*/
 .table-print {
-border-collapse: collapse;
-width: 100%;
-margin-top: 1.5rem;
+    border-collapse: collapse;
+    width: 100%;
+    margin-top: 1.5rem;
 }
 
 .table-print th, .table-print td {
-border: 1px solid #000;
-padding: 6px 8px;
-font-size: 10pt;
-vertical-align: top;
+    border: 1px solid #000;
+    padding: 6px 8px;
+    font-size: 10pt;
+    vertical-align: top;
 }
 
 .bg-header { background-color: #e5e5e5; }
 .bg-total { background-color: #f3f3f3; }
 
 .separator-col {
-width: 0%;
-border-right: 2px solid #000;
-padding: 0;
+    width: 0%;
+    border-right: 2px solid #000;
+    padding: 0;
 }
 
 /* -------------------------------------------------------------------
 | 4. FOOTER (TANDA TANGAN)
-| -------------------------------------------------------------------/
+| -------------------------------------------------------------------*/
 .signature-footer {
-margin-top: 1.5rem; / Jarak rapat dari tabel */
-display: flex;
-justify-content: space-between;
-width: 100%;
+    margin-top: 2rem;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 0.9rem;
 }
 
 .signature-col {
-width: 50%; /* DUA KOLOM DENGAN LEBAR 50% /
-text-align: center;
-padding: 0 10px; / Sedikit padding agar tidak mepet */
+    width: 50%;
+    text-align: center;
+    padding: 0 10px;
 }
 
 .signature-space {
-height: 4rem; /* Tinggi area tanda tangan */
-}
-
-.signature-text p {
-margin: 0;
-line-height: 1.2;
+    height: 4rem;
 }
 
 .signature-label {
-margin-bottom: 0.5rem;
-font-weight: 600;
+    margin-bottom: 0.5rem;
+    font-weight: normal;
+    margin: 0;
+    line-height: 1.2;
 }
 
 .signature-name {
-margin-top: 1rem;
-font-weight: bold;
-text-decoration: underline;
+    margin-top: 1rem;
+    font-weight: bold;
+    text-decoration: underline;
+    margin-bottom: 0;
+}
+.no-margin {
+    margin: 0;
+    line-height: 1.2;
 }
 
 </style>
@@ -159,108 +198,117 @@ text-decoration: underline;
 </head>
 <body>
 
-<header class="kop-surat">
-<div class="logo-container">
-{{-- LOGO DINAMIS --}}
-<img src="{{ $logoPath }}"
-alt="Logo Sekolah"
-style="width: 80px; height: 80px; display: block; margin: 0 auto;">
-</div>
-<div class="text-container">
-<p class="text-xs font-bold">LAPORAN KEGIATAN DAN ANGGARAN SEKOLAH</p>
-<p style="font-size: 1.125rem; font-weight: bold; text-transform: uppercase;">{{ $school->name ?? 'NAMA SEKOLAH' }}</p>
-<p style="font-size: 1rem;">{{ $activePeriod->name ?? 'TAHUN PELAJARAN' }}</p>
-</div>
-</header>
+<button class="print-button" onclick="window.print()">Cetak PDF</button>
 
-<div>
-<table class="table-print">
-<thead>
-<tr class="bg-header">
-<th colspan="3" style="width: 50%;">PENDAPATAN</th>
-<th class="separator-col"></th>
-<th colspan="3" style="width: 50%;">BELANJA</th>
-</tr>
-<tr class="bg-total">
-<th style="width: 5%;">No</th>
-<th style="width: 30%;">Uraian</th>
-<th style="width: 15%;">Jumlah</th>
-<th class="separator-col"></th>
-<th style="width: 5%;">No</th>
-<th style="width: 30%;">Uraian</th>
-<th style="width: 15%;">Jumlah</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td class="text-center font-bold">I</td>
-<td class="font-bold">PENDAPATAN</td>
-<td></td>
-<td class="separator-col"></td>
-<td class="text-center font-bold">I</td>
-<td class="font-bold">PENGELUARAN</td>
-<td></td>
-</tr>
-@for ($i = 0; $i < $rowsToDisplay; $i++)
-@php
-$dataItem = $rkasData[$i] ?? [];
-$nomor = '1.' . ($i + 1);
-@endphp
-<tr>
-<td style="text-align: center;">{{ isset($dataItem['name']) ? $nomor : '' }}</td>
-<td>{{ $dataItem['name'] ?? '' }}</td>
-<td style="text-align: right;">{{ isset($dataItem['income']) ? formatRupiah($dataItem['income']) : '' }}</td>
-<td class="separator-col"></td>
-<td style="text-align: center;">{{ isset($dataItem['name']) ? $nomor : '' }}</td>
-<td>{{ $dataItem['name'] ?? '' }}</td>
-<td style="text-align: right;">{{ isset($dataItem['expense']) ? formatRupiah($dataItem['expense']) : '' }}</td>
-</tr>
-@endfor
-<tr class="bg-total">
-<td colspan="2" class="font-bold text-center">Total Pendapatan</td>
-<td style="text-align: right; font-weight: bold;">{{ formatRupiah($totalIncome) }}</td>
-<td class="separator-col"></td>
-<td colspan="2" class="font-bold text-center">Total Pengeluaran</td>
-<td style="text-align: right; font-weight: bold;">{{ formatRupiah($totalExpense) }}</td>
-</tr>
-<tr>
-<td colspan="3"></td>
-<td class="separator-col"></td>
-<td colspan="2" class="font-bold text-center">Sisa Saldo</td>
-<td style="text-align: right; font-weight: bold;">{{ formatRupiah($balance) }}</td>
-</tr>
-<tr class="bg-header">
-<td colspan="2" class="font-bold text-center">JUMLAH</td>
-<td style="text-align: right; font-weight: bold;">{{ formatRupiah($totalIncome) }}</td>
-<td class="separator-col"></td>
-<td colspan="2" class="font-bold text-center">JUMLAH</td>
-<td style="text-align: right; font-weight: bold;">{{ formatRupiah($totalBelanjaAkhir) }}</td>
-</tr>
-</tbody>
-</table>
+<div class="report-container">
+
+    <header class="kop-surat">
+        <div class="logo-container">
+            {{-- LOGO DINAMIS --}}
+            <img src="{{ $logoUrl }}"
+                alt="Logo Sekolah"
+                style="width: 80px; height: 80px; display: block; margin: 0 auto;">
+        </div>
+        <div class="text-container">
+            <p style="font-size: 0.8rem; font-weight: bold;">LAPORAN KEGIATAN DAN ANGGARAN SEKOLAH</p>
+            <p style="font-size: 1.2rem; font-weight: bold; text-transform: uppercase;">{{ $school->name ?? 'NAMA SEKOLAH' }}</p>
+            <p style="font-size: 1rem;">{{ $activePeriod->name ?? 'TAHUN PELAJARAN' }}</p>
+        </div>
+    </header>
+
+    <div>
+        <table class="table-print">
+            <thead>
+                <tr class="bg-header">
+                    <th colspan="3" style="width: 50%;">PENDAPATAN</th>
+                    <th class="separator-col"></th>
+                    <th colspan="3" style="width: 50%;">BELANJA</th>
+                </tr>
+                <tr class="bg-total">
+                    <th style="width: 5%;">No</th>
+                    <th style="width: 30%;">Uraian</th>
+                    <th style="width: 15%;">Jumlah</th>
+                    <th class="separator-col"></th>
+                    <th style="width: 5%;">No</th>
+                    <th style="width: 30%;">Uraian</th>
+                    <th style="width: 15%;">Jumlah</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td style="text-align: center; font-weight: bold;">I</td>
+                    <td style="font-weight: bold;">PENDAPATAN</td>
+                    <td></td>
+                    <td class="separator-col"></td>
+                    <td style="text-align: center; font-weight: bold;">I</td>
+                    <td style="font-weight: bold;">PENGELUARAN</td>
+                    <td></td>
+                </tr>
+                {{-- LOOPING DATA RKAS --}}
+                @for ($i = 0; $i < $rowsToDisplay; $i++)
+                    @php
+                        $dataItem = $rkasData[$i] ?? [];
+                        $nomor = '1.' . ($i + 1);
+                    @endphp
+                    <tr>
+                        <td style="text-align: center;">{{ isset($dataItem['name']) ? $nomor : '' }}</td>
+                        <td>{{ $dataItem['name'] ?? '' }}</td>
+                        <td style="text-align: right;">{{ isset($dataItem['income']) ? formatRupiah($dataItem['income']) : '' }}</td>
+                        <td class="separator-col"></td>
+                        <td style="text-align: center;">{{ isset($dataItem['name']) ? $nomor : '' }}</td>
+                        <td>{{ $dataItem['name'] ?? '' }}</td>
+                        <td style="text-align: right;">{{ isset($dataItem['expense']) ? formatRupiah($dataItem['expense']) : '' }}</td>
+                    </tr>
+                @endfor
+            </tbody>
+            <tfoot>
+                <tr class="bg-total">
+                    <td colspan="2" style="font-weight: bold; text-align: center;">Total Pendapatan</td>
+                    <td style="text-align: right; font-weight: bold;">{{ formatRupiah($totalIncome) }}</td>
+                    <td class="separator-col"></td>
+                    <td colspan="2" style="font-weight: bold; text-align: center;">Total Pengeluaran</td>
+                    <td style="text-align: right; font-weight: bold;">{{ formatRupiah($totalExpense) }}</td>
+                </tr>
+                <tr>
+                    <td colspan="3"></td>
+                    <td class="separator-col"></td>
+                    <td colspan="2" style="font-weight: bold; text-align: center;">Sisa Saldo</td>
+                    <td style="text-align: right; font-weight: bold;">{{ formatRupiah($balance) }}</td>
+                </tr>
+                <tr class="bg-header">
+                    <td colspan="2" style="font-weight: bold; text-align: center;">JUMLAH</td>
+                    <td style="text-align: right; font-weight: bold;">{{ formatRupiah($totalIncome) }}</td>
+                    <td class="separator-col"></td>
+                    <td colspan="2" style="font-weight: bold; text-align: center;">JUMLAH</td>
+                    <td style="text-align: right; font-weight: bold;">{{ formatRupiah($totalBelanjaAkhir) }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <footer class="signature-footer">
+
+        {{-- KOLOM 1: Ketua Majelis (KIRI) --}}
+        <div class="signature-col">
+            <p class="signature-label">Menyetujui,</p>
+            <p class="signature-label no-margin">Ketua Majelis Dikdasmen Kota {{ $signerData['city'] ?? 'Mojokerto' }}</p>
+            <div class="signature-space"></div>
+            <p class="signature-name">{{ $signerData['ketuaMajelisName'] ?? 'Nama Ketua Majelis' }}</p>
+            <p class="no-margin" style="font-size: 0.75rem;">NIP. {{ $signerData['ketuaMajelisNip'] ?? '1234567890' }}</p>
+        </div>
+
+        {{-- KOLOM 2: Kepala Sekolah (KANAN) --}}
+        <div class="signature-col">
+            <p class="signature-label no-margin">{{ $signerData['city'] ?? 'Mojokerto' }}, {{ $tanggalLaporan }}</p>
+            <p class="signature-label no-margin">Kepala Sekolah</p>
+            <div class="signature-space"></div>
+            <p class="signature-name">{{ $signerData['kepalaSekolahName'] ?? 'Nama Kepala Sekolah' }}</p>
+            <p class="no-margin" style="font-size: 0.75rem;">NIP. {{ $signerData['kepalaSekolahNip'] ?? '1234567890' }}</p>
+        </div>
+
+    </footer>
+
 </div>
-
-<footer class="signature-footer">
-
-{{-- KOLOM 1: Ketua Majelis (KIRI) --}}
-<div class="signature-col">
-    <p class="signature-label">Menyetujui,</p>
-    <p class="signature-label">Ketua Majelis Dikdasmen Kota {{ $signerData['city'] ?? 'Mojokerto' }}</p>
-    <div class="signature-space"></div>
-    <p class="signature-name">{{ $signerData['ketuaMajelisName'] ?? 'Nama Ketua Majelis' }}</p>
-    <p style="font-size: 0.75rem;">NIP. {{ $signerData['ketuaMajelisNip'] ?? '1234567890' }}</p>
-</div>
-
-{{-- KOLOM 2: Kepala Sekolah (KANAN) --}}
-<div class="signature-col">
-    <p class="signature-label">{{ $signerData['city'] ?? 'Mojokerto' }}, {{ $tanggalLaporan }}</p>
-    <p class="signature-label">Kepala Sekolah</p>
-    <div class="signature-space"></div>
-    <p class="signature-name">{{ $signerData['kepalaSekolahName'] ?? 'Nama Kepala Sekolah' }}</p>
-    <p style="font-size: 0.75rem;">NIP. {{ $signerData['kepalaSekolahNip'] ?? '1234567890' }}</p>
-</div>
-
-</footer>
 
 </body>
 
