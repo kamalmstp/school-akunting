@@ -68,6 +68,10 @@
 
                         <!-- Tabel Detail Transaksi -->
                         <div class="table-responsive">
+                            @php
+                                $runningBalance = $initialBalance;
+                                $i = 1;
+                            @endphp
                             <table id="cashDetailTable" class="table table-bordered table-striped align-middle m-0 w-100">
                                 <thead>
                                     <tr class="table-secondary">
@@ -88,11 +92,6 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @php
-                                        $runningBalance = $initialBalance;
-                                        $i = 1;
-                                    @endphp
-                                    
                                     @forelse ($transactions as $item)
                                         @php
                                             $runningBalance += $item['debit'] - $item['credit'];
