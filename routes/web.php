@@ -210,6 +210,7 @@ Route::middleware(['auth'])->group(function () {
             Route::prefix('rkas')->name('rkas.')->group(function () {
                 Route::get('/global', [RkasController::class, 'global'])->name('global');
                 Route::get('/detail/{cashManagement}', [RkasController::class, 'detail'])->name('detail');
+                Route::get('/global-pdf', [RkasController::class, 'printGlobalPdf'])->name('global-pdf');
             });
         });
     });

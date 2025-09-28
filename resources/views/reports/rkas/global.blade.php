@@ -26,6 +26,12 @@
                 <div class="card-header">
                     <h5 class="card-title">Laporan RKAS Global</h5>
                     <p class="card-text">Periode: {{ optional($activePeriod)->name ?? 'Tidak Ada Periode Aktif' }} ({{ optional($activePeriod)->start_date ? \Carbon\Carbon::parse($activePeriod->start_date)->format('d M Y') : '' }} - {{ optional($activePeriod)->end_date ? \Carbon\Carbon::parse($activePeriod->end_date)->format('d M Y') : '' }})</p>
+
+                    @if(auth()->user()->school_id)
+                        <a href="{{ route('school-rkas.global-pdf', ['school' => auth()->user()->school_id]) }}" target="_blank" class="btn btn-primary d-flex align-items-center">
+                            <i class="bi bi-file-earmark-pdf-fill me-2"></i> Cetak PDF
+                        </a>
+                    @endif
                 </div>
                 <div class="card-body">
                     @if(isset($message))
