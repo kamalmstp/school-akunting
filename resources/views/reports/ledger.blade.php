@@ -116,11 +116,6 @@
                                                     <th scope="col" class="text-end">Saldo</th>
                                                     <th class="text-center">Detail</th>
                                                 </tr>
-                                                <tr>
-                                                    <td colspan="4">Saldo Awal</td>
-                                                    <td class="text-end">{{ number_format($item['opening_balance'], 0, ',', '.') }}</td>
-                                                    <td></td>
-                                                </tr>
                                             </thead>
                                             <tbody>
                                                 @php $runningBalance = $item['opening_balance']; @endphp
@@ -228,13 +223,7 @@
                                                     @endif
                                                 @endforeach
                                             </tbody>
-                                            <tfoot>
-                                                <tr>
-                                                    <td class="fw-bold" colspan="4">Saldo Akhir</td>
-                                                    <td class="text-end fw-bold">{{ number_format($item['closing_balance'], 0, ',', '.') }}</td>
-                                                    <td></td>
-                                                </tr>
-                                            </tfoot>
+
                                         </table>
                                     </div>
                                 </div>
