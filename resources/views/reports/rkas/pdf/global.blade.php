@@ -56,11 +56,10 @@ body {
     padding: 30px;
     background-color: white; /* Diatur putih agar tampilan web terlihat seperti kertas */
     font-size: 10pt;
-    /* Menghilangkan flex container yang hanya diperlukan untuk centering tombol */
 }
 
 .report-container {
-    width: 100%; /* Disesuaikan agar langsung mengisi layar saat cetak */
+    width: 100%;
     min-height: auto;
     background-color: white;
     padding: 0;
@@ -77,32 +76,39 @@ body {
 }
 
 /* -------------------------------------------------------------------
-| 2. KOP SURAT (MENGGUNAKAN GRID UNTUK KESTABILAN SEJAJAR)
+| 2. KOP SURAT (MENGGUNAKAN TABLE SESUAI PERMINTAAN)
 | -------------------------------------------------------------------*/
-.kop-surat {
+.kop-surat-table {
+    width: 100%;
     border-bottom: 3px solid #000;
     padding-bottom: 5px;
     margin-bottom: 10px;
-    display: grid;
-    grid-template-columns: 15% 85%;
-    align-items: center;
+    border-collapse: collapse; /* Penting untuk menghilangkan celah tabel */
 }
 
-.kop-surat .logo-container {
-    padding-right: 10px;
+.kop-surat-table td {
+    padding: 0;
+    vertical-align: middle;
 }
 
-.kop-surat .text-container {
+.kop-surat-table .logo-col {
+    width: 15%;
+    padding-right: 15px; /* Memberi jarak ke teks */
+}
+
+.kop-surat-table .text-col {
+    width: 85%;
     text-align: center;
 }
 
-.kop-surat p {
+.kop-surat-table p {
     margin: 0;
     line-height: 1.1;
 }
 
+
 /* -------------------------------------------------------------------
-| 3. TABEL
+| 3. TABEL DATA UTAMA
 | -------------------------------------------------------------------*/
 .table-print {
     border-collapse: collapse;
@@ -127,24 +133,24 @@ body {
 }
 
 /* -------------------------------------------------------------------
-| 4. FOOTER (TANDA TANGAN)
+| 4. FOOTER (TANDA TANGAN - MENGGUNAKAN TABLE SESUAI PERMINTAAN)
 | -------------------------------------------------------------------*/
-.signature-footer {
-    margin-top: 2rem;
-    display: flex;
-    justify-content: space-between;
+.signature-table {
     width: 100%;
+    margin-top: 2rem;
+    border-collapse: collapse;
     font-size: 0.9rem;
 }
 
-.signature-col {
+.signature-table td {
     width: 50%;
     text-align: center;
     padding: 0 10px;
+    vertical-align: top;
 }
 
 .signature-space {
-    height: 4rem;
+    height: 4rem; /* Jarak untuk tanda tangan */
 }
 
 .signature-label {
@@ -165,33 +171,39 @@ body {
 }
 
 </style>
-
+{{-- SCRIPT JAVASCRIPT UNTUK AUTO-PRINT --}}
+<script>
+    // Memastikan skrip dijalankan setelah seluruh konten dimuat
+    window.onload = function() {
+        // Memanggil fungsi cetak (akan membuka dialog Print)
+        window.print();
+        // Opsional: Setelah mencetak, bisa diarahkan kembali ke halaman sebelumnya
+        // window.history.back();
+    };
+</script>
 </head>
 <body>
 
 <div class="report-container">
 
-    <header class="kop-surat">
-        <table>
-            <tr>
-                <td>
-                    <div class="logo-container">
-                        {{-- LOGO DINAMIS --}}
-                        <img src="{{ $logoUrl }}"
-                            alt="Logo Sekolah"
-                            style="width: 80px; height: 80px; display: block; margin: 0 auto;">
-                    </div>
-                </td>
-                <td>
-                    <div class="text-container">
-                        <p style="font-size: 0.8rem; font-weight: bold;">LAPORAN KEGIATAN DAN ANGGARAN SEKOLAH</p>
-                        <p style="font-size: 1.2rem; font-weight: bold; text-transform: uppercase;">{{ $school->name ?? 'NAMA SEKOLAH' }}</p>
-                        <p style="font-size: 1rem;">{{ $activePeriod->name ?? 'TAHUN PELAJARAN' }}</p>
-                    </div>
-                </td>
-            </tr>
-        </table>
-    </header>
+    {{-- KOP SURAT DENGAN TABLE --}}
+    <table class="kop-surat-table">
+        <tr>
+            {{-- KOLOM LOGO --}}
+            <td class="logo-col">
+                <img src="{{ $logoUrl }}"
+                    alt="Logo Sekolah"
+                    style="width: 80px; height: 80px; display: block; margin: 0 auto;">
+            </td>
+            {{-- KOLOM TEKS KOP --}}
+            <td class="text-col">
+                <p style="font-size: 0.8rem; font-weight: bold;">LAPORAN KEGIATAN DAN ANGGARAN SEKOLAH</p>
+                <p style="font-size: 1.2rem; font-weight: bold; text-transform: uppercase;">{{ $school->name ?? 'NAMA SEKOLAH' }}</p>
+                <p style="font-size: 1rem;">{{ $activePeriod->name ?? 'TAHUN PELAJARAN' }}</p>
+            </td>
+        </tr>
+    </table>
+
 
     <div>
         <table class="table-print">
@@ -263,33 +275,28 @@ body {
         </table>
     </div>
 
-    <footer class="signature-footer">
-
-    <table>
+    {{-- TANDA TANGAN DENGAN TABLE --}}
+    <table class="signature-table">
         <tr>
+            {{-- KOLOM 1: Ketua Majelis (KIRI) --}}
             <td>
-                <div class="signature-col">
-                    <p class="signature-label">Menyetujui,</p>
-                    <p class="signature-label no-margin">Ketua Majelis Dikdasmen Kota {{ $signerData['city'] ?? 'Mojokerto' }}</p>
-                    <div class="signature-space"></div>
-                    <p class="signature-name">{{ $signerData['ketuaMajelisName'] ?? 'Nama Ketua Majelis' }}</p>
-                    <p class="no-margin" style="font-size: 0.75rem;">NIP. {{ $signerData['ketuaMajelisNip'] ?? '1234567890' }}</p>
-                </div>
+                <p class="signature-label">Menyetujui,</p>
+                <p class="signature-label no-margin">Ketua Majelis Dikdasmen Kota {{ $signerData['city'] ?? 'Mojokerto' }}</p>
+                <div class="signature-space"></div>
+                <p class="signature-name">{{ $signerData['ketuaMajelisName'] ?? 'Nama Ketua Majelis' }}</p>
+                <p class="no-margin" style="font-size: 0.75rem;">NIP. {{ $signerData['ketuaMajelisNip'] ?? '1234567890' }}</p>
             </td>
+
+            {{-- KOLOM 2: Kepala Sekolah (KANAN) --}}
             <td>
-                <div class="signature-col">
-                    <p class="signature-label no-margin">{{ $signerData['city'] ?? 'Mojokerto' }}, {{ $tanggalLaporan }}</p>
-                    <p class="signature-label no-margin">Kepala Sekolah</p>
-                    <div class="signature-space"></div>
-                    <p class="signature-name">{{ $signerData['kepalaSekolahName'] ?? 'Nama Kepala Sekolah' }}</p>
-                    <p class="no-margin" style="font-size: 0.75rem;">NIP. {{ $signerData['kepalaSekolahNip'] ?? '1234567890' }}</p>
-                </div>
+                <p class="signature-label no-margin">{{ $signerData['city'] ?? 'Mojokerto' }}, {{ $tanggalLaporan }}</p>
+                <p class="signature-label no-margin">Kepala Sekolah</p>
+                <div class="signature-space"></div>
+                <p class="signature-name">{{ $signerData['kepalaSekolahName'] ?? 'Nama Kepala Sekolah' }}</p>
+                <p class="no-margin" style="font-size: 0.75rem;">NIP. {{ $signerData['kepalaSekolahNip'] ?? '1234567890' }}</p>
             </td>
         </tr>
     </table>
-    
-
-    </footer>
 
 </div>
 
