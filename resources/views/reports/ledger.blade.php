@@ -116,13 +116,13 @@
                                                     <th scope="col" class="text-end">Saldo</th>
                                                     <th class="text-center">Detail</th>
                                                 </tr>
-                                            </thead>
-                                            <tbody>
                                                 <tr>
                                                     <td colspan="4">Saldo Awal</td>
                                                     <td class="text-end">{{ number_format($item['opening_balance'], 0, ',', '.') }}</td>
                                                     <td></td>
                                                 </tr>
+                                            </thead>
+                                            <tbody>
                                                 @php $runningBalance = $item['opening_balance']; @endphp
                                                 @foreach($item['transactions'] as $trans)
                                                     @php $runningBalance += $trans['balance']; @endphp
