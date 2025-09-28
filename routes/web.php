@@ -197,16 +197,19 @@ Route::middleware(['auth'])->group(function () {
             'store' => 'school-schedules.store',
         ]);
 
-        Route::get('/schools/{school}/reports/beginning-balance', [ReportController::class, 'beginningBalance'])->name('school-reports.beginning-balance');
-        Route::get('/schools/{school}/reports/general-journal', [ReportController::class, 'generalJournal'])->name('school-reports.general-journal');
-        Route::get('/schools/{school}/reports/ledger', [ReportController::class, 'ledger'])->name('school-reports.ledger');
-        Route::get('/schools/{school}/reports/trial-balance-before', [ReportController::class, 'trialBalanceBefore'])->name('school-reports.trial-balance-before');
-        Route::get('/schools/{school}/reports/adjusting-entries', [ReportController::class, 'adjustingEntries'])->name('school-reports.adjusting-entries');
-        Route::get('/schools/{school}/reports/trial-balance-after', [ReportController::class, 'trialBalanceAfter'])->name('school-reports.trial-balance-after');
-        Route::get('/schools/{school}/reports/financial-statements', [ReportController::class, 'financialStatements'])->name('school-reports.financial-statements');
-        Route::get('/schools/{school}/reports/cash-reports', [ReportController::class, 'cashReports'])->name('school-reports.cash-reports');
-
         Route::prefix('schools/{school}')->name('school-')->group(function () {
+
+            Route::prefix('reports')->name('reports.')->group(function (){
+                Route::get('/beginning-balance', [ReportController::class, 'beginningBalance'])->name('beginning-balance');
+                Route::get('/general-journal', [ReportController::class, 'generalJournal'])->name('general-journal');
+                Route::get('/ledger', [ReportController::class, 'ledger'])->name('ledger');
+                Route::get('/trial-balance-before', [ReportController::class, 'trialBalanceBefore'])->name('trial-balance-before');
+                Route::get('/adjusting-entries', [ReportController::class, 'adjustingEntries'])->name('adjusting-entries');
+                Route::get('/trial-balance-after', [ReportController::class, 'trialBalanceAfter'])->name('trial-balance-after');
+                Route::get('/financial-statements', [ReportController::class, 'financialStatements'])->name('financial-statements');
+                Route::get('/cash-reports', [ReportController::class, 'cashReports'])->name('cash-reports');
+            });
+
             Route::prefix('rkas')->name('rkas.')->group(function () {
                 Route::get('/global', [RkasController::class, 'global'])->name('global');
                 Route::get('/detail/{cashManagement}', [RkasController::class, 'detail'])->name('detail');
