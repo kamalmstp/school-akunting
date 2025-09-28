@@ -24,15 +24,14 @@
         <div class="col-xxl-12">
             <div class="card">
                 <div class="card-header">
-                    <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex justify-content-between">
                         <h5 class="card-title">Laporan RKAS Global</h5> <br>
-                        <p class="card-text">Periode: {{ optional($activePeriod)->name ?? 'Tidak Ada Periode Aktif' }} ({{ optional($activePeriod)->start_date ? \Carbon\Carbon::parse($activePeriod->start_date)->format('d M Y') : '' }} - {{ optional($activePeriod)->end_date ? \Carbon\Carbon::parse($activePeriod->end_date)->format('d M Y') : '' }})</p>
                         
                         @if(auth()->user()->school_id)
                             <a href="{{ route('school-rkas.global-pdf', ['school' => auth()->user()->school_id]) }}" target="_blank" class="btn btn-success" title="Cetak PDF">
                                 <span class="d-lg-block d-none">Cetak PDF</span>
                                 <span class="d-sm-block d-lg-none">
-                                    <i class="bi bi-file-earmark-pdf-fill me-2"></i>
+                                    <i class="bi bi-file-earmark-pdf-fill"></i>
                                 </span>
                             </a>
                         @endif
@@ -45,6 +44,8 @@
                         </div>
                     @else
                         <h6 class="fw-bold">Ringkasan Total Keuangan</h6>
+                        <br>
+                        <p class="fw-bold">Periode: {{ optional($activePeriod)->name ?? 'Tidak Ada Periode Aktif' }} ({{ optional($activePeriod)->start_date ? \Carbon\Carbon::parse($activePeriod->start_date)->format('d M Y') : '' }} - {{ optional($activePeriod)->end_date ? \Carbon\Carbon::parse($activePeriod->end_date)->format('d M Y') : '' }})</p>
                         <hr>
                         <table class="table table-sm">
                             <tbody>

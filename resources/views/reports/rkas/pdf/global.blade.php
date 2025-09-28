@@ -1,27 +1,11 @@
 @php
-    $rkasData = $rkasData ?? [
-        ['name' => 'SPP', 'income' => 47867500, 'expense' => 0],
-        ['name' => 'DPS', 'income' => 0, 'expense' => 0],
-        ['name' => 'DAPEN', 'income' => 0, 'expense' => 0],
-        ['name' => 'BOSNAS', 'income' => 0, 'expense' => 0],
-        ['name' => 'BOSDA', 'income' => 0, 'expense' => 0],
-        ['name' => 'KOPERASI', 'income' => 0, 'expense' => 0],
-    ];
-
-    $school = $school ?? (object)['name' => 'SD PLUS MUHAMMADIYAH BRAWIJAYA', 'address' => 'ALAMAT SEKOLAH', 'npsn' => '00000000', 'nss' => '00000000', 'logo' => 'path/ke/logo/sekolah.png'];
-    $activePeriod = $activePeriod ?? (object)['name' => 'Tahun Ajaran 2025/2026', 'start_date' => \Carbon\Carbon::createFromDate(2025, 7, 1)];
-
-    $totalIncome = 47867500;
-    $totalExpense = 0;
-    $balance = 47867500;
-
     $signerData = $signerData ?? [
         'ketuaMajelisName' => 'Nama Ketua Majelis', 'ketuaMajelisNip' => '1234567890',
         'kepalaSekolahName' => 'Nama Kepala Sekolah', 'kepalaSekolahNip' => '1234567890',
         'city' => 'Mojokerto'
     ];
 
-    $tanggalLaporan = optional($activePeriod->start_date)->isoFormat('D MMMM YYYY') ?? \Carbon\Carbon::now()->isoFormat('D MMMM YYYY');
+    $tanggalLaporan = \Carbon\Carbon::now()->isoFormat('D MMMM YYYY');
     $maxItems = count($rkasData);
     $rowsToDisplay = max($maxItems, 6);
     $totalBelanjaAkhir = $totalIncome;
