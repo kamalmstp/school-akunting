@@ -26,7 +26,7 @@ $signerData = $signerData ?? [
 $tanggalLaporan = optional($activePeriod->start_date)->isoFormat('D MMMM YYYY') ?? \Carbon\Carbon::now()->isoFormat('D MMMM YYYY');
 $maxItems = count($rkasData);
 $rowsToDisplay = max($maxItems, 6);
-$totalBelanjaAkhir = $totalIncome; // Sesuai dengan format RKAS, total belanja akhir harus sama dengan total pendapatan
+$totalBelanjaAkhir = $totalIncome;
 
 // Fungsi format Rupiah dengan simbol 'Rp. '
 function formatRupiah($amount, $withSymbol = true) {
@@ -54,53 +54,25 @@ body {
     font-family: 'Times New Roman', Times, serif;
     margin: 0;
     padding: 30px;
-    background-color: #f0f0f0; /* Latar belakang abu-abu untuk tampilan web */
+    background-color: white; /* Diatur putih agar tampilan web terlihat seperti kertas */
     font-size: 10pt;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    /* Menghilangkan flex container yang hanya diperlukan untuk centering tombol */
 }
 
 .report-container {
-    width: 210mm; /* Lebar A4 */
-    min-height: 297mm; /* Tinggi A4 */
+    width: 100%; /* Disesuaikan agar langsung mengisi layar saat cetak */
+    min-height: auto;
     background-color: white;
-    padding: 25mm; /* Margin A4 */
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
-    margin-top: 15px;
-}
-
-/* Tombol Cetak (Hanya muncul di tampilan web) */
-.print-button {
-    padding: 10px 20px;
-    background-color: #1e40af;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    margin-bottom: 20px;
+    padding: 0;
 }
 
 @media print {
     body {
         margin: 0;
         padding: 0;
-        background-color: white;
         font-size: 10pt;
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
-    }
-    .report-container {
-        box-shadow: none;
-        width: 100%;
-        min-height: auto;
-        padding: 0;
-    }
-    .print-button {
-        display: none; /* Sembunyikan tombol saat mencetak */
     }
 }
 
@@ -121,7 +93,7 @@ body {
 }
 
 .kop-surat .text-container {
-    text-align: center; /* Mengubah dari left ke center agar teks Kop di tengah */
+    text-align: center;
 }
 
 .kop-surat p {
@@ -176,10 +148,9 @@ body {
 }
 
 .signature-label {
-    margin-bottom: 0.5rem;
-    font-weight: normal;
     margin: 0;
     line-height: 1.2;
+    font-weight: normal;
 }
 
 .signature-name {
@@ -198,22 +169,28 @@ body {
 </head>
 <body>
 
-<button class="print-button" onclick="window.print()">Cetak PDF</button>
-
 <div class="report-container">
 
     <header class="kop-surat">
-        <div class="logo-container">
-            {{-- LOGO DINAMIS --}}
-            <img src="{{ $logoUrl }}"
-                alt="Logo Sekolah"
-                style="width: 80px; height: 80px; display: block; margin: 0 auto;">
-        </div>
-        <div class="text-container">
-            <p style="font-size: 0.8rem; font-weight: bold;">LAPORAN KEGIATAN DAN ANGGARAN SEKOLAH</p>
-            <p style="font-size: 1.2rem; font-weight: bold; text-transform: uppercase;">{{ $school->name ?? 'NAMA SEKOLAH' }}</p>
-            <p style="font-size: 1rem;">{{ $activePeriod->name ?? 'TAHUN PELAJARAN' }}</p>
-        </div>
+        <table>
+            <tr>
+                <td>
+                    <div class="logo-container">
+                        {{-- LOGO DINAMIS --}}
+                        <img src="{{ $logoUrl }}"
+                            alt="Logo Sekolah"
+                            style="width: 80px; height: 80px; display: block; margin: 0 auto;">
+                    </div>
+                </td>
+                <td>
+                    <div class="text-container">
+                        <p style="font-size: 0.8rem; font-weight: bold;">LAPORAN KEGIATAN DAN ANGGARAN SEKOLAH</p>
+                        <p style="font-size: 1.2rem; font-weight: bold; text-transform: uppercase;">{{ $school->name ?? 'NAMA SEKOLAH' }}</p>
+                        <p style="font-size: 1rem;">{{ $activePeriod->name ?? 'TAHUN PELAJARAN' }}</p>
+                    </div>
+                </td>
+            </tr>
+        </table>
     </header>
 
     <div>
@@ -288,23 +265,29 @@ body {
 
     <footer class="signature-footer">
 
-        {{-- KOLOM 1: Ketua Majelis (KIRI) --}}
-        <div class="signature-col">
-            <p class="signature-label">Menyetujui,</p>
-            <p class="signature-label no-margin">Ketua Majelis Dikdasmen Kota {{ $signerData['city'] ?? 'Mojokerto' }}</p>
-            <div class="signature-space"></div>
-            <p class="signature-name">{{ $signerData['ketuaMajelisName'] ?? 'Nama Ketua Majelis' }}</p>
-            <p class="no-margin" style="font-size: 0.75rem;">NIP. {{ $signerData['ketuaMajelisNip'] ?? '1234567890' }}</p>
-        </div>
-
-        {{-- KOLOM 2: Kepala Sekolah (KANAN) --}}
-        <div class="signature-col">
-            <p class="signature-label no-margin">{{ $signerData['city'] ?? 'Mojokerto' }}, {{ $tanggalLaporan }}</p>
-            <p class="signature-label no-margin">Kepala Sekolah</p>
-            <div class="signature-space"></div>
-            <p class="signature-name">{{ $signerData['kepalaSekolahName'] ?? 'Nama Kepala Sekolah' }}</p>
-            <p class="no-margin" style="font-size: 0.75rem;">NIP. {{ $signerData['kepalaSekolahNip'] ?? '1234567890' }}</p>
-        </div>
+    <table>
+        <tr>
+            <td>
+                <div class="signature-col">
+                    <p class="signature-label">Menyetujui,</p>
+                    <p class="signature-label no-margin">Ketua Majelis Dikdasmen Kota {{ $signerData['city'] ?? 'Mojokerto' }}</p>
+                    <div class="signature-space"></div>
+                    <p class="signature-name">{{ $signerData['ketuaMajelisName'] ?? 'Nama Ketua Majelis' }}</p>
+                    <p class="no-margin" style="font-size: 0.75rem;">NIP. {{ $signerData['ketuaMajelisNip'] ?? '1234567890' }}</p>
+                </div>
+            </td>
+            <td>
+                <div class="signature-col">
+                    <p class="signature-label no-margin">{{ $signerData['city'] ?? 'Mojokerto' }}, {{ $tanggalLaporan }}</p>
+                    <p class="signature-label no-margin">Kepala Sekolah</p>
+                    <div class="signature-space"></div>
+                    <p class="signature-name">{{ $signerData['kepalaSekolahName'] ?? 'Nama Kepala Sekolah' }}</p>
+                    <p class="no-margin" style="font-size: 0.75rem;">NIP. {{ $signerData['kepalaSekolahNip'] ?? '1234567890' }}</p>
+                </div>
+            </td>
+        </tr>
+    </table>
+    
 
     </footer>
 
