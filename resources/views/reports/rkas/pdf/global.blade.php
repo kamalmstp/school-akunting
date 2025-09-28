@@ -44,7 +44,7 @@
         body {
             font-family: 'Times New Roman', Times, serif;
             margin: 0;
-            padding: 10px;
+            padding: 5px;
             background-color: white;
             font-size: 10pt;
         }
