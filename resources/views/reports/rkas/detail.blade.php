@@ -78,6 +78,14 @@
                                         <th class="text-end">Pengeluaran</th>
                                         <th class="text-end">Saldo Berjalan</th>
                                     </tr>
+                                    <tr class="table-secondary">
+                                        <th class="text-center">-</th>
+                                        <th>-</th>
+                                        <th class="fw-bold">SALDO AWAL</th>
+                                        <th class="text-end">-</th>
+                                        <th class="text-end">-</th>
+                                        <th class="text-end fw-bold text-info">Rp {{ number_format($runningBalance, 0, ',', '.') }}</th>
+                                    </tr>
                                 </thead>
                                 <tbody>
                                     @php
@@ -85,15 +93,6 @@
                                         $i = 1;
                                     @endphp
                                     
-                                    <tr class="table-light" data-dt-row="ignore">
-                                        <td class="text-center">-</td>
-                                        <td>-</td>
-                                        <td class="fw-bold">SALDO AWAL</td>
-                                        <td class="text-end">-</td>
-                                        <td class="text-end">-</td>
-                                        <td class="text-end fw-bold text-info">Rp {{ number_format($runningBalance, 0, ',', '.') }}</td>
-                                    </tr>
-
                                     @forelse ($transactions as $item)
                                         @php
                                             $runningBalance += $item['debit'] - $item['credit'];
@@ -104,7 +103,6 @@
                                             <td>{{ $item['description'] }}</td>
                                             <td class="text-end text-success" data-sort="{{ $item['debit'] }}">Rp {{ number_format($item['debit'], 0, ',', '.') }}</td>
                                             <td class="text-end text-danger" data-sort="{{ $item['credit'] }}">Rp {{ number_format($item['credit'], 0, ',', '.') }}</td>
-                                            {{-- Kolom saldo berjalan tidak dapat diurutkan di DataTables tanpa perhitungan kompleks, kita biarkan saja --}}
                                             <td class="text-end fw-bold" data-sort="{{ $runningBalance }}">Rp {{ number_format($runningBalance, 0, ',', '.') }}</td>
                                         </tr>
                                     @empty
@@ -114,11 +112,11 @@
                                     @endforelse
                                 </tbody>
                                 <tfoot>
-                                    <tr class="table-primary">
-                                        <td colspan="3" class="fw-bold text-white">TOTAL</td>
-                                        <td class="text-end fw-bold text-white">Rp {{ number_format($totalDebit, 0, ',', '.') }}</td>
-                                        <td class="text-end fw-bold text-white">Rp {{ number_format($totalCredit, 0, ',', '.') }}</td>
-                                        <td class="text-end fw-bold text-white">Rp {{ number_format($finalBalance, 0, ',', '.') }}</td>
+                                    <tr class="table-secondary">
+                                        <td colspan="3" class="text-end">TOTAL</td>
+                                        <td class="text-end">Rp {{ number_format($totalDebit, 0, ',', '.') }}</td>
+                                        <td class="text-end">Rp {{ number_format($totalCredit, 0, ',', '.') }}</td>
+                                        <td class="text-end">Rp {{ number_format($finalBalance, 0, ',', '.') }}</td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -145,27 +143,13 @@
 
     <script>
         $(document).ready(function() {
-            // Inisialisasi DataTables
             $('#cashDetailTable').DataTable({
                 "paging": true,
                 "searching": true,
                 "info": true,
-                "ordering": true, // Pengurutan diaktifkan
+                "ordering": false,
                 "responsive": true,
-                "pageLength": 10,
-                "dom": 'lfrtip', 
-                "columnDefs": [
-                    { "orderable": false, "targets": [0, 5] }, // Kolom No dan Saldo Berjalan sulit diurutkan
-                    // Kolom 1 (Tanggal) akan diurutkan secara default
-                    // Kolom 3 (Pemasukan) dan 4 (Pengeluaran) akan diurutkan berdasarkan data-sort (nilai numerik)
-                ],
-                "order": [[1, 'asc']], // Urutkan berdasarkan kolom Tanggal secara default
-                "rowCallback": function( row, data, index ) {
-                    // Pastikan baris Saldo Awal tidak terpengaruh oleh DataTables
-                    if ($(row).attr('data-dt-row') === 'ignore') {
-                        $(row).addClass('bg-light fw-bold');
-                    }
-                }
+                "pageLength": 10
             });
         });
     </script>
