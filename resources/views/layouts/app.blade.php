@@ -457,7 +457,7 @@
 											<a href="{{ route('school-reports.cash-reports', auth()->user()->school_id) }}" class="rp-eighth">Laporan Kas</a>
 										</li> -->
 										<li>
-											<a href="{{ route('school-rkas.global', auth()->user()->school_id) }}" class="rkas-nineth">Laporan RKAS</a>
+											<a href="{{ route('school-reports.rkas-global', auth()->user()->school_id) }}" class="rp-nineth">Laporan RKAS</a>
 										</li>
                                     </ul>
                                 </li>
@@ -583,9 +583,9 @@
 				}
 
 				if (url.includes('rkas')) {
-					$('.rkas').addClass('active current-page');
-					$('.rkas > ul').addClass('menu-open');
-					$('.rkas-nineth').addClass('active-sub');
+					$('.report').addClass('active current-page');
+					$('.report > ul').addClass('menu-open');
+					$('.rp-nineth').addClass('active-sub');
 				}
 				if (url.includes('teachers')) {
 					$('.master').addClass('active current-page');

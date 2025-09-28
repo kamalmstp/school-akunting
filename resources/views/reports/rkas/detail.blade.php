@@ -122,7 +122,7 @@
                         </div>
                     </div>
                     <div class="card-footer text-center">
-                        <a href="{{ route('school-rkas.global', ['school' => $school->id]) }}" class="btn btn-secondary">
+                        <a href="{{ route('school-reports.rkas-global', ['school' => $school->id]) }}" class="btn btn-primary">
                             &larr; Kembali ke Ringkasan Global
                         </a>
                     </div>

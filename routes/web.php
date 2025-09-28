@@ -208,11 +208,11 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/trial-balance-after', [ReportController::class, 'trialBalanceAfter'])->name('trial-balance-after');
                 Route::get('/financial-statements', [ReportController::class, 'financialStatements'])->name('financial-statements');
                 Route::get('/cash-reports', [ReportController::class, 'cashReports'])->name('cash-reports');
+                Route::get('/rkas/global', [RkasController::class, 'global'])->name('rkas-global');
+                Route::get('/rkas/detail/{cashManagement}', [RkasController::class, 'detail'])->name('rkas-detail');
             });
 
             Route::prefix('rkas')->name('rkas.')->group(function () {
-                Route::get('/global', [RkasController::class, 'global'])->name('global');
-                Route::get('/detail/{cashManagement}', [RkasController::class, 'detail'])->name('detail');
                 Route::get('/global-pdf', [RkasController::class, 'printGlobalPdf'])->name('global-pdf');
             });
         });
