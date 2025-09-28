@@ -82,16 +82,16 @@
                                         <th class="text-end">Pengeluaran</th>
                                         <th class="text-end">Saldo Berjalan</th>
                                     </tr>
-                                    <tr class="table-secondary">
-                                        <th class="text-center">-</th>
-                                        <th>-</th>
-                                        <th class="fw-bold">SALDO AWAL</th>
-                                        <th class="text-end">-</th>
-                                        <th class="text-end">-</th>
-                                        <th class="text-end fw-bold text-info">Rp {{ number_format($runningBalance, 0, ',', '.') }}</th>
-                                    </tr>
                                 </thead>
                                 <tbody>
+                                    <tr class="table-secondary">
+                                        <td class="text-center">-</td>
+                                        <td>-</td>
+                                        <td class="fw-bold">SALDO AWAL</td>
+                                        <td class="text-end">-</td>
+                                        <td class="text-end">-</td>
+                                        <td class="text-end fw-bold text-info">Rp {{ number_format($runningBalance, 0, ',', '.') }}</td>
+                                    </tr>
                                     @forelse ($transactions as $item)
                                         @php
                                             $runningBalance += $item['debit'] - $item['credit'];
@@ -112,10 +112,10 @@
                                 </tbody>
                                 <tfoot>
                                     <tr class="table-secondary">
-                                        <td colspan="3" class="text-end">TOTAL</td>
-                                        <td class="text-end">Rp {{ number_format($totalDebit, 0, ',', '.') }}</td>
-                                        <td class="text-end">Rp {{ number_format($totalCredit, 0, ',', '.') }}</td>
-                                        <td class="text-end">Rp {{ number_format($finalBalance, 0, ',', '.') }}</td>
+                                        <td colspan="3" class="text-end fw-bold ">TOTAL</td>
+                                        <td class="text-end fw-bold ">Rp {{ number_format($totalDebit, 0, ',', '.') }}</td>
+                                        <td class="text-end fw-bold ">Rp {{ number_format($totalCredit, 0, ',', '.') }}</td>
+                                        <td class="text-end fw-bold ">Rp {{ number_format($finalBalance, 0, ',', '.') }}</td>
                                     </tr>
                                 </tfoot>
                             </table>
