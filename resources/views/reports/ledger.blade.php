@@ -295,20 +295,16 @@
 					});
 				}
 			}
+
             $('[id^="ledgerTable_"]').each(function() {
-                if ($(this).find('tbody tr').length > 2) { 
-                     $(this).DataTable({
-                        "paging": true,
-                        "searching": true,
-                        "info": true,
-                        "ordering": false,
-                        "responsive": true,
-                        "pageLength": 10,
-                        "columnDefs": [
-                            { "orderable": false, "targets": [4, 5] }
-                        ]
-                    });
-                }
+                $(this).DataTable({
+                    "paging": true,
+                    "searching": true,
+                    "info": true,
+                    "ordering": false,
+                    "responsive": true,
+                    "pageLength": 10
+                });
             });
         })
     </script>
