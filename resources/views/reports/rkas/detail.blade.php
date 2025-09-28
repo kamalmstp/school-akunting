@@ -1,7 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-    {{-- Memuat DataTables dan CSS Select2 untuk konsistensi --}}
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/3.0.0/css/responsive.dataTables.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" xintegrity="sha512-nMNlpuaDPr03RxBLj0DFl0rAEy/J6czQh+n7Gg1L0wNn7N5f4C1E1/p6jP7W7+E8JgWf7n7F9A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
