@@ -1,17 +1,13 @@
 @extends('layouts.app')
 
 @section('content')
-    <!-- Pastikan Anda memuat Select2 CSS karena digunakan di skrip -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" xintegrity="sha512-nMNlpuaDPr03RxBLj0DFl0rAEy/J6czQh+n7Gg1L0wNn7N5f4C1E1/p6jP7W7+E8JgWf7n7F9A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     
-    <!-- DataTables CSS/Responsive -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/3.0.0/css/responsive.dataTables.min.css">
 
-    <!-- App hero header starts -->
     <div class="app-hero-header d-flex align-items-start">
 
-        <!-- Breadcrumb start -->
         <ol class="breadcrumb">
             <li class="breadcrumb-item">
                 <i class="bi bi-pie-chart lh-1"></i>
@@ -19,17 +15,13 @@
             </li>
             <li class="breadcrumb-item" aria-current="page">Laporan Buku Besar</li>
         </ol>
-        <!-- Breadcrumb end -->
     </div>
-    <!-- App Hero header ends -->
 
-    <!-- App body starts -->
     <div class="app-body">
         <div class="row gx-3">
             <div class="col-xl-12">
                 <div class="card">
                     <div class="card-body">
-                        <!-- Row start -->
                         <form method="GET" class="mb-4">
                             <div class="row gx-3">
                                 @if(auth()->user()->role !== 'SchoolAdmin')
@@ -90,7 +82,6 @@
             </div>
         </div>
 
-        <!-- Row start -->
         <div class="row gx-3">
             <div class="col-xl-12">
                 @if(count($accounts) > 0)
@@ -105,19 +96,11 @@
                     <div class="card">
                         <div class="card-header fw-bold">{{ $item['account']->code }} - {{ $item['account']->name }}</div>
                         <div class="card-body">
-                            <!-- Row start -->
                             <div class="row gx-3">
                                 <div class="col-12">
                                     <div class="table-responsive">
                                         <table id="ledgerTable_{{ $item['account']->id }}" class="table table-striped">
                                             <thead>
-                                                {{-- BARIS SALDO AWAL (Diintegrasikan ke thead) --}}
-                                                {{-- Menggunakan colspan 4 untuk label dan 1 untuk nilai Saldo, 1 kosong untuk Detail --}}
-                                                <tr class="fw-bold bg-light" data-dt-row="ignore">
-                                                    <td colspan="4" class="text-start">Saldo Awal</td>
-                                                    <td class="text-end">{{ number_format($item['opening_balance'], 0, ',', '.') }}</td>
-                                                    <td class="bg-light"></td> 
-                                                </tr>
                                                 <tr>
                                                     <th scope="col">Tanggal</th>
                                                     <th scope="col">Deskripsi</th>
@@ -126,12 +109,17 @@
                                                     <th scope="col" class="text-end">Saldo</th>
                                                     <th class="text-center">Detail</th>
                                                 </tr>
+                                                <tr class="fw-bold bg-light" data-dt-row="ignore">
+                                                    <th colspan="4" class="text-start">Saldo Awal</th>
+                                                    <th class="text-end">{{ number_format($item['opening_balance'], 0, ',', '.') }}</th>
+                                                    <th class="bg-light"></th> 
+                                                </tr>
                                             </thead>
                                             <tbody>
                                                 @php $runningBalance = $item['opening_balance']; @endphp
                                                 @foreach($item['transactions'] as $trans)
                                                     @php $runningBalance += $trans['balance']; @endphp
-                                                    <tr class="transaction-row"> {{-- Baris Transaksi Utama (6 Kolom) --}}
+                                                    <tr class="transaction-row"> 
                                                         <td>{{ \Carbon\Carbon::parse($trans['transaction']->date)->format('d-m-Y') }}</td>
                                                         <td>{{ $trans['transaction']->description ?? '-' }}</td>
                                                         <td class="text-end">{{ number_format($trans['transaction']->debit, 0, ',', '.') }}</td>
@@ -140,21 +128,19 @@
                                                         <td class="text-center">
                                                             @php
                                                                 $details = null;
-                                                                // Student Receivable Check
+                                                                
                                                                 if ($trans['student_receivable'] && $trans['transaction']->credit > 0 && Str::startsWith($trans['transaction']->account->code, '1-12') && $trans['student_receivable']->student_receivable_details->isNotEmpty()) {
                                                                     $details = [
                                                                         'type' => 'Siswa',
                                                                         'name' => $trans['student_receivable']->student->name ?? 'N/A',
                                                                         'data' => $trans['student_receivable']->student_receivable_details->toArray(),
                                                                     ];
-                                                                // Teacher Receivable Check
                                                                 } elseif ($trans['teacher_receivable'] && $trans['transaction']->credit > 0 && Str::startsWith($trans['transaction']->account->code, '1-12') && $trans['teacher_receivable']->teacher_receivable_details->isNotEmpty()) {
                                                                     $details = [
                                                                         'type' => 'Guru',
                                                                         'name' => $trans['teacher_receivable']->teacher->name ?? 'N/A',
                                                                         'data' => $trans['teacher_receivable']->teacher_receivable_details->toArray(),
                                                                     ];
-                                                                // Employee Receivable Check
                                                                 } elseif ($trans['employee_receivable'] && $trans['transaction']->credit > 0 && Str::startsWith($trans['transaction']->account->code, '1-12') && $trans['employee_receivable']->employee_receivable_details->isNotEmpty()) {
                                                                     $details = [
                                                                         'type' => 'Karyawan',
@@ -178,29 +164,24 @@
                                                 @endforeach
                                             </tbody>
                                             <tfoot class="fw-bold bg-light">
-                                                {{-- BARIS SALDO AKHIR (Diintegrasikan ke tfoot) --}}
                                                 <tr>
                                                     <td colspan="4">Saldo Akhir</td>
                                                     <td class="text-end">{{ number_format($item['closing_balance'], 0, ',', '.') }}</td>
-                                                    <td></td> {{-- Kolom Detail dibiarkan kosong --}}
+                                                    <td></td> 
                                                 </tr>
                                             </tfoot>
                                         </table>
                                     </div>
                                 </div>
                             </div>
-                            <!-- Row end -->                        
                         </div>
                     </div>
                     @endforeach
                 @endforeach
             </div>
         </div>
-        <!-- Row end -->
     </div>
-    <!-- App body ends -->
 
-    <!-- Modal Detail Transaksi -->
     <div class="modal fade" id="transactionDetailModal" tabindex="-1" aria-labelledby="transactionDetailModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -211,7 +192,6 @@
                 <div class="modal-body">
                     <p><strong>Pihak Terkait: </strong><span id="detailRecipientName"></span> (<span id="detailRecipientType"></span>)</p>
                     <div id="detailContentTable" class="table-responsive">
-                        {{-- Isi tabel detail akan di-generate oleh JavaScript --}}
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -220,20 +200,16 @@
             </div>
         </div>
     </div>
-    <!-- Akhir Modal Detail Transaksi -->
 
 @endsection
 @section('js')
-    {{-- FIX: Memastikan jQuery dimuat pertama kali --}}
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/3.0.0/js/dataTables.responsive.min.js"></script>
 
-    {{-- Memuat Select2 JS, pastikan CSS-nya juga sudah dimuat di atas --}}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.full.min.js" xintegrity="sha512-H9YQ81rwKth0zWvF/P4Jp8Bv+7k7fP4MvO6z6xWzP5p75B1d5x0M2F8j0M+0qLg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <script>
-        // Helper function for formatting currency (Rupiah)
         function formatRupiah(number) {
             return new Intl.NumberFormat('id-ID', {
                 minimumFractionDigits: 0,
@@ -242,14 +218,12 @@
         }
 
         $(document).ready(function() {
-            // Inisialisasi Select2
             $('#accountType').select2();
             $('#accountParent').select2();
             if (@json(auth()->user()->role) !== 'SchoolAdmin') {
                 $('#schoolFilter').select2();
             }
 
-            // --- Logika Filter Akun (Tetap) ---
             let accountType = @json($accountType);
             let singleAccount = @json($singleAccount);
             if (accountType) {
@@ -284,7 +258,6 @@
                 }
             }
             
-            // --- Inisialisasi DataTables ---
             $('[id^="ledgerTable_"]').each(function() {
                 $.fn.dataTable.ext.errMode = 'throw'; 
 
@@ -293,12 +266,11 @@
                         "paging": true,
                         "searching": true,
                         "info": true,
-                        "ordering": false, // DIUBAH KE FALSE: Menonaktifkan pengurutan
+                        "ordering": false,
                         "responsive": true,
                         "pageLength": 10,
                         "dom": 'lfrtip', 
                         "rowCallback": function( row, data, index ) {
-                            // Tambahan untuk memastikan baris saldo di thead/tfoot tetap memiliki styling
                             if ($(row).attr('data-dt-row') === 'ignore') {
                                 $(row).addClass('bg-light fw-bold');
                             }
@@ -309,14 +281,10 @@
                 }
             });
 
-            // --- Logika Modal Detail Transaksi (Tetap) ---
             const detailModal = document.getElementById('transactionDetailModal');
             if (detailModal) {
                 detailModal.addEventListener('show.bs.modal', function (event) {
-                    // Tombol yang memicu modal
                     const button = event.relatedTarget;
-                    
-                    // Ambil data JSON dari atribut data-transaction-details
                     const detailJson = button.getAttribute('data-transaction-details');
                     
                     if (!detailJson) {
@@ -327,11 +295,9 @@
                     try {
                         const details = JSON.parse(detailJson);
                         
-                        // Set informasi penerima di modal header
                         $('#detailRecipientName').text(details.name);
                         $('#detailRecipientType').text(details.type);
 
-                        // Bangun tabel detail
                         let tableHtml = `
                             <table class="table table-bordered table-striped w-100">
                                 <thead>
@@ -350,7 +316,6 @@
                                     <td>${item.period ? new Date(item.period).toLocaleDateString('id-ID') : '-'}</td>
                                     <td>${item.description || '-'}</td>
                                     <td class="text-end">Rp ${formatRupiah(item.amount)}</td>
-                                
                                 </tr>
                             `;
                         });
