@@ -99,7 +99,7 @@
                             <div class="row gx-3">
                                 <div class="col-12">
                                     <div class="table-responsive">
-                                        <table id="ledgerTable_{{ $item['account']->id }}" class="table table-striped">
+                                        <table id="ledgerTable_{{ $item['account']->id }}" class="table table-striped" style="width: 100%;">
                                             <thead>
                                                 <tr>
                                                     <th scope="col">Tanggal</th>
