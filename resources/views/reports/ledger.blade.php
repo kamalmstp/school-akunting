@@ -109,10 +109,10 @@
                                                     <th scope="col" class="text-end">Saldo</th>
                                                     <th class="text-center">Detail</th>
                                                 </tr>
-                                                <tr class="fw-bold bg-light" data-dt-row="ignore">
+                                                <tr>
                                                     <th colspan="4" class="text-start">Saldo Awal</th>
                                                     <th class="text-end">{{ number_format($item['opening_balance'], 0, ',', '.') }}</th>
-                                                    <th class="bg-light"></th> 
+                                                    <th></th> 
                                                 </tr>
                                             </thead>
                                             <tbody>
@@ -268,13 +268,7 @@
                         "info": true,
                         "ordering": false,
                         "responsive": true,
-                        "pageLength": 10,
-                        "dom": 'lfrtip', 
-                        "rowCallback": function( row, data, index ) {
-                            if ($(row).attr('data-dt-row') === 'ignore') {
-                                $(row).addClass('bg-light fw-bold');
-                            }
-                        }
+                        "pageLength": 10
                     });
                 } catch (e) {
                     console.error("Error initializing DataTable for table:", this.id, e);
