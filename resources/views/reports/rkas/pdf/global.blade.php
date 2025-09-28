@@ -118,7 +118,7 @@
     <header class="kop-surat">
         <div class="flex items-center">
             <div style="width: 15%; margin-right: 15px;">
-                <img src="https://placehold.co/100x100/1e40af/ffffff?text=LOGO" alt="Logo Sekolah" style="width: 80px; height: 80px; display: block; margin: 0 auto;">
+                <img src="{{ public_path($school->logo) }}" alt="Logo Sekolah" style="width: 80px; height: 80px; display: block; margin: 0 auto;">
             </div>
 
             <div style="width: 85%; text-align: center;">
