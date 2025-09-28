@@ -1,11 +1,15 @@
 @extends('layouts.app')
 
 @section('content')
+    <!-- Pastikan Anda memuat Select2 CSS karena digunakan di skrip -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" xintegrity="sha512-nMNlpuaDPr03RxBLj0DFl0rAEy/J6czQh+n7Gg1L0wNn7N5f4C1E1/p6jP7W7+E8JgWf7n7F9A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- DataTables CSS/Responsive -->
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/3.0.0/css/responsive.dataTables.min.css">
 
     <!-- App hero header starts -->
-	<div class="app-hero-header d-flex align-items-start">
+    <div class="app-hero-header d-flex align-items-start">
 
         <!-- Breadcrumb start -->
         <ol class="breadcrumb">
@@ -41,24 +45,24 @@
                                     </div>
                                 @endif
                                 <div class="col-xl-4 col-md-6 col-12">
-									<div class="mb-3">
-										<label for="accountType" class="form-label">Tipe Akun</label>
-										<select name="account_type" class="form-select" id="accountType">
-											<option value="">Pilih Tipe Akun</option>
-											@foreach (\App\Models\Account::whereNull('parent_id')->pluck('name', 'id') as $key => $type)
-												<option value="{{ $type }}" {{ $accountType == $type ? 'selected' : '' }}>{{ $type }}</option>
-											@endforeach
-										</select>
-									</div>
-								</div>
-								<div class="col-xl-4 col-md-6 col-12">
-									<div class="mb-3">
-										<label for="accountParent" class="form-label">Akun</label>
-										<select name="account" class="form-select" id="accountParent">
-											<option value="">Pilih Akun</option>
-										</select>
-									</div>
-								</div>
+                                    <div class="mb-3">
+                                        <label for="accountType" class="form-label">Tipe Akun</label>
+                                        <select name="account_type" class="form-select" id="accountType">
+                                            <option value="">Pilih Tipe Akun</option>
+                                            @foreach (\App\Models\Account::whereNull('parent_id')->pluck('name', 'id') as $key => $type)
+                                                <option value="{{ $type }}" {{ $accountType == $type ? 'selected' : '' }}>{{ $type }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-xl-4 col-md-6 col-12">
+                                    <div class="mb-3">
+                                        <label for="accountParent" class="form-label">Akun</label>
+                                        <select name="account" class="form-select" id="accountParent">
+                                            <option value="">Pilih Akun</option>
+                                        </select>
+                                    </div>
+                                </div>
                             </div>
                             <div class="row gx-3">
                                 <div class="col-xl-4 col-md-6 col-12">
@@ -105,9 +109,15 @@
                             <!-- Row start -->
                             <div class="row gx-3">
                                 <div class="col-12">
+                                    {{-- NOTE: Saldo Awal dipindahkan di luar tabel agar DataTables tidak error karena colspan --}}
+                                    <div class="d-flex justify-content-between align-items-center fw-bold p-2 bg-light border-bottom border-top rounded-top-2">
+                                        <span>Saldo Awal</span>
+                                        <span class="text-end">{{ number_format($item['opening_balance'], 0, ',', '.') }}</span>
+                                    </div>
                                     <div class="table-responsive">
                                         <table id="ledgerTable_{{ $item['account']->id }}" class="table table-striped">
                                             <thead>
+                                                {{-- Hanya ada satu baris header kolom --}}
                                                 <tr>
                                                     <th scope="col">Tanggal</th>
                                                     <th scope="col">Deskripsi</th>
@@ -118,10 +128,11 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
+                                                {{-- Hanya berisi data transaksi murni --}}
                                                 @php $runningBalance = $item['opening_balance']; @endphp
                                                 @foreach($item['transactions'] as $trans)
                                                     @php $runningBalance += $trans['balance']; @endphp
-                                                    <tr>
+                                                    <tr class="transaction-row"> {{-- Baris Transaksi Utama --}}
                                                         <td>{{ \Carbon\Carbon::parse($trans['transaction']->date)->format('d-m-Y') }}</td>
                                                         <td>{{ $trans['transaction']->description ?? '-' }}</td>
                                                         <td class="text-end">{{ number_format($trans['transaction']->debit, 0, ',', '.') }}</td>
@@ -137,8 +148,9 @@
                                                             @endif
                                                         </td>
                                                     </tr>
+                                                    {{-- COLLAPSE ROWS: Ditandai dengan data-dt-row="ignore" agar DataTables mengabaikannya --}}
                                                     @if($trans['student_receivable'] && $trans['transaction']->credit > 0 && Str::startsWith($trans['transaction']->account->code, '1-12') && $trans['student_receivable']->student_receivable_details->isNotEmpty())
-                                                        <tr class="collapse" id="paymentDetails{{ $trans['transaction']->id }}">
+                                                        <tr class="collapse" id="paymentDetails{{ $trans['transaction']->id }}" data-dt-row="ignore">
                                                             <td colspan="6">
                                                                 <table class="table table-bordered">
                                                                     <thead>
@@ -166,7 +178,7 @@
                                                         </tr>
                                                     @endif
                                                     @if($trans['teacher_receivable'] && $trans['transaction']->credit > 0 && Str::startsWith($trans['transaction']->account->code, '1-12') && $trans['teacher_receivable']->teacher_receivable_details->isNotEmpty())
-                                                        <tr class="collapse" id="paymentTeacherDetails{{ $trans['transaction']->id }}">
+                                                        <tr class="collapse" id="paymentTeacherDetails{{ $trans['transaction']->id }}" data-dt-row="ignore">
                                                             <td colspan="6">
                                                                 <table class="table table-bordered">
                                                                     <thead>
@@ -194,7 +206,7 @@
                                                         </tr>
                                                     @endif
                                                     @if($trans['employee_receivable'] && $trans['transaction']->credit > 0 && Str::startsWith($trans['transaction']->account->code, '1-12') && $trans['employee_receivable']->employee_receivable_details->isNotEmpty())
-                                                        <tr class="collapse" id="paymentEmployeeDetails{{ $trans['transaction']->id }}">
+                                                        <tr class="collapse" id="paymentEmployeeDetails{{ $trans['transaction']->id }}" data-dt-row="ignore">
                                                             <td colspan="6">
                                                                 <table class="table table-bordered">
                                                                     <thead>
@@ -223,7 +235,14 @@
                                                     @endif
                                                 @endforeach
                                             </tbody>
-
+                                            {{-- Saldo Akhir di <tfoot> (posisi sudah benar) --}}
+                                            <tfoot>
+                                                <tr>
+                                                    <td class="fw-bold" colspan="4">Saldo Akhir</td>
+                                                    <td class="text-end fw-bold">{{ number_format($item['closing_balance'], 0, ',', '.') }}</td>
+                                                    <td></td>
+                                                </tr>
+                                            </tfoot>
                                         </table>
                                     </div>
                                 </div>
@@ -240,62 +259,80 @@
     <!-- App body ends -->
 @endsection
 @section('js')
+    {{-- FIX: Memastikan jQuery dimuat pertama kali --}}
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
     <script src="https://cdn.datatables.net/responsive/3.0.0/js/dataTables.responsive.min.js"></script>
 
+    {{-- Memuat Select2 JS, pastikan CSS-nya juga sudah dimuat di atas --}}
+    {{-- Pindahkan ke sini setelah jQuery --}}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.full.min.js" xintegrity="sha512-H9YQ81rwKth0zWvF/P4Jp8Bv+7k7fP4MvO6z6xWzP5p75B1d5x0M2F8j0M+0qLg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
     <script>
         $(document).ready(function() {
+            // Inisialisasi Select2
             $('#accountType').select2();
-			$('#accountParent').select2();
+            $('#accountParent').select2();
             if (@json(auth()->user()->role) !== 'SchoolAdmin') {
-				$('#schoolFilter').select2();
-			}
+                $('#schoolFilter').select2();
+            }
+
+            // Logika filter akun
             let accountType = @json($accountType);
-			let singleAccount = @json($singleAccount);
-			if (accountType) {
-				getAccount(accountType, singleAccount);
-			}
-			$(document).on('change', '#accountType', function() {
-				getAccount($(this).val(), null);
-				
-			})
+            let singleAccount = @json($singleAccount);
+            if (accountType) {
+                getAccount(accountType, singleAccount);
+            }
+            $(document).on('change', '#accountType', function() {
+                getAccount($(this).val(), null);
+                
+            })
 
-			function getAccount(account, single) {
-				const school = $('#schoolFilter').val();
-				const accountType = account;
-				if (accountType) {
-					$.ajax({
-						type:'POST',
-						url:'/transactions/account-parent',
-						data: {school, accountType},
-						dataType: 'json',
-						headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
-						success:function(data){
-							let options = '<option value="">Pilih Akun</option>';
-							$.each(data, function(key, value) {
-								if (single && single.id === value['id']) {
-									options += '<option value=' + value['id'] + ' selected>' + value['code'] + '-' + value['name'] + '</option>';
-								}
-								options += '<option value=' + value['id'] + '>' + value['code'] + '-' + value['name'] + '</option>';
-							});
-							$('#accountParent').empty();
-							$('#accountParent').append(options);
-							
-						}
-					});
-				}
-			}
-
+            function getAccount(account, single) {
+                const school = $('#schoolFilter').val();
+                const accountType = account;
+                if (accountType) {
+                    $.ajax({
+                        type:'POST',
+                        url:'/transactions/account-parent',
+                        data: {school, accountType},
+                        dataType: 'json',
+                        headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                        success:function(data){
+                            let options = '<option value="">Pilih Akun</option>';
+                            $.each(data, function(key, value) {
+                                if (single && single.id === value['id']) {
+                                    options += '<option value=' + value['id'] + ' selected>' + value['code'] + '-' + value['name'] + '</option>';
+                                }
+                                options += '<option value=' + value['id'] + '>' + value['code'] + '-' + value['name'] + '</option>';
+                            });
+                            $('#accountParent').empty();
+                            $('#accountParent').append(options);
+                            
+                        }
+                    });
+                }
+            }
+            
+            // Inisialisasi DataTables untuk setiap tabel yang ID-nya diawali 'ledgerTable_'
             $('[id^="ledgerTable_"]').each(function() {
-                $(this).DataTable({
-                    "paging": true,
-                    "searching": true,
-                    "info": true,
-                    "ordering": false,
-                    "responsive": true,
-                    "pageLength": 10
-                });
+                // Tambahkan error handler untuk DataTables agar inisialisasi tabel lain tidak terhenti
+                $.fn.dataTable.ext.errMode = 'throw'; 
+
+                try {
+                    $(this).DataTable({
+                        "paging": true,
+                        "searching": true,
+                        "info": true,
+                        "ordering": true,
+                        "responsive": true,
+                        "pageLength": 10,
+                        // Secara default, DataTables 2.0+ akan membaca atribut data-dt-row="ignore"
+                    });
+                } catch (e) {
+                    console.error("Error initializing DataTable for table:", this.id, e);
+                    // Tampilkan pesan sederhana di konsol jika gagal
+                }
             });
         })
     </script>
