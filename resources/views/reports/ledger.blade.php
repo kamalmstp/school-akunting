@@ -82,7 +82,6 @@
                                 <div class="col-xl-4 col-md-6 col-12">
                                     <button type="submit" class="btn btn-primary">Tampilkan</button>
                                     <a href="{{ auth()->user()->role != 'SchoolAdmin' ? route('reports.ledger') : route('school-reports.ledger', $school) }}" class="btn btn-danger">Reset</a>
-                                    <!-- <a href="{{ route('ledger', array_merge(['school' => $school ? $school->id : request()->query('school_id')], request()->except('school_id'), ['export' => 'excel'])) }}" class="btn btn-success">Export Excel</a> -->
                                 </div>
                             </div>
                         </form>
@@ -109,15 +108,16 @@
                             <!-- Row start -->
                             <div class="row gx-3">
                                 <div class="col-12">
-                                    {{-- NOTE: Saldo Awal dipindahkan di luar tabel agar DataTables tidak error karena colspan --}}
-                                    <div class="d-flex justify-content-between align-items-center fw-bold p-2 bg-light border-bottom border-top rounded-top-2">
-                                        <span>Saldo Awal</span>
-                                        <span class="text-end">{{ number_format($item['opening_balance'], 0, ',', '.') }}</span>
-                                    </div>
                                     <div class="table-responsive">
                                         <table id="ledgerTable_{{ $item['account']->id }}" class="table table-striped">
                                             <thead>
-                                                {{-- Hanya ada satu baris header kolom --}}
+                                                {{-- BARIS SALDO AWAL (Diintegrasikan ke thead) --}}
+                                                {{-- Menggunakan colspan 4 untuk label dan 1 untuk nilai Saldo, 1 kosong untuk Detail --}}
+                                                <tr class="fw-bold bg-light" data-dt-row="ignore">
+                                                    <td colspan="4" class="text-start">Saldo Awal</td>
+                                                    <td class="text-end">{{ number_format($item['opening_balance'], 0, ',', '.') }}</td>
+                                                    <td class="bg-light"></td> 
+                                                </tr>
                                                 <tr>
                                                     <th scope="col">Tanggal</th>
                                                     <th scope="col">Deskripsi</th>
@@ -128,119 +128,61 @@
                                                 </tr>
                                             </thead>
                                             <tbody>
-                                                {{-- Hanya berisi data transaksi murni --}}
                                                 @php $runningBalance = $item['opening_balance']; @endphp
                                                 @foreach($item['transactions'] as $trans)
                                                     @php $runningBalance += $trans['balance']; @endphp
-                                                    <tr class="transaction-row"> {{-- Baris Transaksi Utama --}}
+                                                    <tr class="transaction-row"> {{-- Baris Transaksi Utama (6 Kolom) --}}
                                                         <td>{{ \Carbon\Carbon::parse($trans['transaction']->date)->format('d-m-Y') }}</td>
                                                         <td>{{ $trans['transaction']->description ?? '-' }}</td>
                                                         <td class="text-end">{{ number_format($trans['transaction']->debit, 0, ',', '.') }}</td>
                                                         <td class="text-end">{{ number_format($trans['transaction']->credit, 0, ',', '.') }}</td>
                                                         <td class="text-end">{{ number_format($runningBalance, 0, ',', '.') }}</td>
                                                         <td class="text-center">
-                                                            @if($trans['student_receivable'] && $trans['transaction']->credit > 0 && Str::startsWith($trans['transaction']->account->code, '1-12') && $trans['student_receivable']->student_receivable_details->isNotEmpty())
-                                                                <button class="btn btn-sm btn-info" type="button" data-bs-toggle="collapse" data-bs-target="#paymentDetails{{ $trans['transaction']->id }}">Lihat Detail</button>
-                                                            @elseif($trans['teacher_receivable'] && $trans['transaction']->credit > 0 && Str::startsWith($trans['transaction']->account->code, '1-12') && $trans['teacher_receivable']->teacher_receivable_details->isNotEmpty())
-                                                                <button class="btn btn-sm btn-info" type="button" data-bs-toggle="collapse" data-bs-target="#paymentTeacherDetails{{ $trans['transaction']->id }}">Lihat Detail</button>
-                                                            @elseif($trans['employee_receivable'] && $trans['transaction']->credit > 0 && Str::startsWith($trans['transaction']->account->code, '1-12') && $trans['employee_receivable']->employee_receivable_details->isNotEmpty())
-                                                                <button class="btn btn-sm btn-info" type="button" data-bs-toggle="collapse" data-bs-target="#paymentEmployeeDetails{{ $trans['transaction']->id }}">Lihat Detail</button>
+                                                            @php
+                                                                $details = null;
+                                                                // Student Receivable Check
+                                                                if ($trans['student_receivable'] && $trans['transaction']->credit > 0 && Str::startsWith($trans['transaction']->account->code, '1-12') && $trans['student_receivable']->student_receivable_details->isNotEmpty()) {
+                                                                    $details = [
+                                                                        'type' => 'Siswa',
+                                                                        'name' => $trans['student_receivable']->student->name ?? 'N/A',
+                                                                        'data' => $trans['student_receivable']->student_receivable_details->toArray(),
+                                                                    ];
+                                                                // Teacher Receivable Check
+                                                                } elseif ($trans['teacher_receivable'] && $trans['transaction']->credit > 0 && Str::startsWith($trans['transaction']->account->code, '1-12') && $trans['teacher_receivable']->teacher_receivable_details->isNotEmpty()) {
+                                                                    $details = [
+                                                                        'type' => 'Guru',
+                                                                        'name' => $trans['teacher_receivable']->teacher->name ?? 'N/A',
+                                                                        'data' => $trans['teacher_receivable']->teacher_receivable_details->toArray(),
+                                                                    ];
+                                                                // Employee Receivable Check
+                                                                } elseif ($trans['employee_receivable'] && $trans['transaction']->credit > 0 && Str::startsWith($trans['transaction']->account->code, '1-12') && $trans['employee_receivable']->employee_receivable_details->isNotEmpty()) {
+                                                                    $details = [
+                                                                        'type' => 'Karyawan',
+                                                                        'name' => $trans['employee_receivable']->employee->name ?? 'N/A',
+                                                                        'data' => $trans['employee_receivable']->employee_receivable_details->toArray(),
+                                                                    ];
+                                                                }
+                                                            @endphp
+
+                                                            @if($details)
+                                                                <button class="btn btn-sm btn-info detail-modal-btn" 
+                                                                        type="button" 
+                                                                        data-bs-toggle="modal" 
+                                                                        data-bs-target="#transactionDetailModal"
+                                                                        data-transaction-details="{{ json_encode($details) }}">
+                                                                    Lihat Detail
+                                                                </button>
                                                             @endif
                                                         </td>
                                                     </tr>
-                                                    {{-- COLLAPSE ROWS: Ditandai dengan data-dt-row="ignore" agar DataTables mengabaikannya --}}
-                                                    @if($trans['student_receivable'] && $trans['transaction']->credit > 0 && Str::startsWith($trans['transaction']->account->code, '1-12') && $trans['student_receivable']->student_receivable_details->isNotEmpty())
-                                                        <tr class="collapse" id="paymentDetails{{ $trans['transaction']->id }}" data-dt-row="ignore">
-                                                            <td colspan="6">
-                                                                <table class="table table-bordered">
-                                                                    <thead>
-                                                                        <tr>
-                                                                            <th scope="col">Tanggal Pembayaran</th>
-                                                                            <th scope="col">Nama Siswa</th>
-                                                                            <th scope="col">Deskripsi</th>
-                                                                            <th scope="col" class="text-end">Jumlah Pembayaran</th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody>
-                                                                        <tr>
-                                                                        @foreach($trans['student_receivable']->student_receivable_details as $detail)
-                                                                            <tr>
-                                                                                <td>{{ \Carbon\Carbon::parse($detail->period)->format('d-m-Y') }}</td>
-                                                                                <td>{{ $trans['student_receivable']->student->name }}</td>
-                                                                                <td>{{ $detail->description }}</td>
-                                                                                <td class="text-end">{{ number_format($detail->amount, 0, ',', '.') }}</td>
-                                                                            </tr>
-                                                                        @endforeach
-                                                                        </tr>
-                                                                    </tbody>
-                                                                </table>
-                                                            </td>
-                                                        </tr>
-                                                    @endif
-                                                    @if($trans['teacher_receivable'] && $trans['transaction']->credit > 0 && Str::startsWith($trans['transaction']->account->code, '1-12') && $trans['teacher_receivable']->teacher_receivable_details->isNotEmpty())
-                                                        <tr class="collapse" id="paymentTeacherDetails{{ $trans['transaction']->id }}" data-dt-row="ignore">
-                                                            <td colspan="6">
-                                                                <table class="table table-bordered">
-                                                                    <thead>
-                                                                        <tr>
-                                                                            <th scope="col">Tanggal Pembayaran</th>
-                                                                            <th scope="col">Nama Guru</th>
-                                                                            <th scope="col">Deskripsi</th>
-                                                                            <th scope="col" class="text-end">Jumlah Pembayaran</th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody>
-                                                                        <tr>
-                                                                        @foreach($trans['teacher_receivable']->teacher_receivable_details as $detail)
-                                                                            <tr>
-                                                                                <td>{{ \Carbon\Carbon::parse($detail->period)->format('d-m-Y') }}</td>
-                                                                                <td>{{ $trans['teacher_receivable']->teacher->name }}</td>
-                                                                                <td>{{ $detail->description }}</td>
-                                                                                <td class="text-end">{{ number_format($detail->amount, 0, ',', '.') }}</td>
-                                                                            </tr>
-                                                                        @endforeach
-                                                                        </tr>
-                                                                    </tbody>
-                                                                </table>
-                                                            </td>
-                                                        </tr>
-                                                    @endif
-                                                    @if($trans['employee_receivable'] && $trans['transaction']->credit > 0 && Str::startsWith($trans['transaction']->account->code, '1-12') && $trans['employee_receivable']->employee_receivable_details->isNotEmpty())
-                                                        <tr class="collapse" id="paymentEmployeeDetails{{ $trans['transaction']->id }}" data-dt-row="ignore">
-                                                            <td colspan="6">
-                                                                <table class="table table-bordered">
-                                                                    <thead>
-                                                                        <tr>
-                                                                            <th scope="col">Tanggal Pembayaran</th>
-                                                                            <th scope="col">Nama Karyawan</th>
-                                                                            <th scope="col">Deskripsi</th>
-                                                                            <th scope="col">Jumlah Pembayaran</th>
-                                                                        </tr>
-                                                                    </thead>
-                                                                    <tbody>
-                                                                        <tr>
-                                                                        @foreach($trans['employee_receivable']->employee_receivable_details as $detail)
-                                                                            <tr>
-                                                                                <td>{{ \Carbon\Carbon::parse($detail->period)->format('d-m-Y') }}</td>
-                                                                                <td>{{ $trans['employee_receivable']->employee->name }}</td>
-                                                                                <td>{{ $detail->description }}</td>
-                                                                                <td class="text-end">{{ number_format($detail->amount, 0, ',', '.') }}</td>
-                                                                            </tr>
-                                                                        @endforeach
-                                                                        </tr>
-                                                                    </tbody>
-                                                                </table>
-                                                            </td>
-                                                        </tr>
-                                                    @endif
                                                 @endforeach
                                             </tbody>
-                                            {{-- Saldo Akhir di <tfoot> (posisi sudah benar) --}}
-                                            <tfoot>
+                                            <tfoot class="fw-bold bg-light">
+                                                {{-- BARIS SALDO AKHIR (Diintegrasikan ke tfoot) --}}
                                                 <tr>
-                                                    <td class="fw-bold" colspan="4">Saldo Akhir</td>
-                                                    <td class="text-end fw-bold">{{ number_format($item['closing_balance'], 0, ',', '.') }}</td>
-                                                    <td></td>
+                                                    <td colspan="4">Saldo Akhir</td>
+                                                    <td class="text-end">{{ number_format($item['closing_balance'], 0, ',', '.') }}</td>
+                                                    <td></td> {{-- Kolom Detail dibiarkan kosong --}}
                                                 </tr>
                                             </tfoot>
                                         </table>
@@ -257,6 +199,29 @@
         <!-- Row end -->
     </div>
     <!-- App body ends -->
+
+    <!-- Modal Detail Transaksi -->
+    <div class="modal fade" id="transactionDetailModal" tabindex="-1" aria-labelledby="transactionDetailModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="transactionDetailModalLabel">Detail Transaksi Penerimaan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Pihak Terkait: </strong><span id="detailRecipientName"></span> (<span id="detailRecipientType"></span>)</p>
+                    <div id="detailContentTable" class="table-responsive">
+                        {{-- Isi tabel detail akan di-generate oleh JavaScript --}}
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Akhir Modal Detail Transaksi -->
+
 @endsection
 @section('js')
     {{-- FIX: Memastikan jQuery dimuat pertama kali --}}
@@ -265,10 +230,17 @@
     <script src="https://cdn.datatables.net/responsive/3.0.0/js/dataTables.responsive.min.js"></script>
 
     {{-- Memuat Select2 JS, pastikan CSS-nya juga sudah dimuat di atas --}}
-    {{-- Pindahkan ke sini setelah jQuery --}}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.full.min.js" xintegrity="sha512-H9YQ81rwKth0zWvF/P4Jp8Bv+7k7fP4MvO6z6xWzP5p75B1d5x0M2F8j0M+0qLg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 
     <script>
+        // Helper function for formatting currency (Rupiah)
+        function formatRupiah(number) {
+            return new Intl.NumberFormat('id-ID', {
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(number);
+        }
+
         $(document).ready(function() {
             // Inisialisasi Select2
             $('#accountType').select2();
@@ -277,7 +249,7 @@
                 $('#schoolFilter').select2();
             }
 
-            // Logika filter akun
+            // --- Logika Filter Akun (Tetap) ---
             let accountType = @json($accountType);
             let singleAccount = @json($singleAccount);
             if (accountType) {
@@ -285,8 +257,7 @@
             }
             $(document).on('change', '#accountType', function() {
                 getAccount($(this).val(), null);
-                
-            })
+            });
 
             function getAccount(account, single) {
                 const school = $('#schoolFilter').val();
@@ -297,7 +268,7 @@
                         url:'/transactions/account-parent',
                         data: {school, accountType},
                         dataType: 'json',
-                        headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                        headers: {'X-CSRF-TOKEN': $('meta[name="csrf-csrf-token"]').attr('content')},
                         success:function(data){
                             let options = '<option value="">Pilih Akun</option>';
                             $.each(data, function(key, value) {
@@ -308,15 +279,13 @@
                             });
                             $('#accountParent').empty();
                             $('#accountParent').append(options);
-                            
                         }
                     });
                 }
             }
             
-            // Inisialisasi DataTables untuk setiap tabel yang ID-nya diawali 'ledgerTable_'
+            // --- Inisialisasi DataTables ---
             $('[id^="ledgerTable_"]').each(function() {
-                // Tambahkan error handler untuk DataTables agar inisialisasi tabel lain tidak terhenti
                 $.fn.dataTable.ext.errMode = 'throw'; 
 
                 try {
@@ -324,16 +293,81 @@
                         "paging": true,
                         "searching": true,
                         "info": true,
-                        "ordering": true,
+                        "ordering": false, // DIUBAH KE FALSE: Menonaktifkan pengurutan
                         "responsive": true,
                         "pageLength": 10,
-                        // Secara default, DataTables 2.0+ akan membaca atribut data-dt-row="ignore"
+                        "dom": 'lfrtip', 
+                        "rowCallback": function( row, data, index ) {
+                            // Tambahan untuk memastikan baris saldo di thead/tfoot tetap memiliki styling
+                            if ($(row).attr('data-dt-row') === 'ignore') {
+                                $(row).addClass('bg-light fw-bold');
+                            }
+                        }
                     });
                 } catch (e) {
                     console.error("Error initializing DataTable for table:", this.id, e);
-                    // Tampilkan pesan sederhana di konsol jika gagal
                 }
             });
-        })
+
+            // --- Logika Modal Detail Transaksi (Tetap) ---
+            const detailModal = document.getElementById('transactionDetailModal');
+            if (detailModal) {
+                detailModal.addEventListener('show.bs.modal', function (event) {
+                    // Tombol yang memicu modal
+                    const button = event.relatedTarget;
+                    
+                    // Ambil data JSON dari atribut data-transaction-details
+                    const detailJson = button.getAttribute('data-transaction-details');
+                    
+                    if (!detailJson) {
+                        console.error("Data detail transaksi tidak ditemukan.");
+                        return;
+                    }
+
+                    try {
+                        const details = JSON.parse(detailJson);
+                        
+                        // Set informasi penerima di modal header
+                        $('#detailRecipientName').text(details.name);
+                        $('#detailRecipientType').text(details.type);
+
+                        // Bangun tabel detail
+                        let tableHtml = `
+                            <table class="table table-bordered table-striped w-100">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Tanggal Pembayaran/Periode</th>
+                                        <th scope="col">Deskripsi</th>
+                                        <th scope="col" class="text-end">Jumlah Pembayaran</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+                        
+                        details.data.forEach(item => {
+                            tableHtml += `
+                                <tr>
+                                    <td>${item.period ? new Date(item.period).toLocaleDateString('id-ID') : '-'}</td>
+                                    <td>${item.description || '-'}</td>
+                                    <td class="text-end">Rp ${formatRupiah(item.amount)}</td>
+                                
+                                </tr>
+                            `;
+                        });
+
+                        tableHtml += `
+                                </tbody>
+                            </table>
+                        `;
+                        
+                        $('#detailContentTable').html(tableHtml);
+
+                    } catch (e) {
+                        console.error("Gagal memparsing data JSON:", e);
+                        $('#detailContentTable').html('<p class="text-danger">Gagal memuat detail transaksi.</p>');
+                    }
+                });
+            }
+        });
     </script>
 @endsection
