@@ -456,20 +456,21 @@
 										<!-- <li>
 											<a href="{{ route('school-reports.cash-reports', auth()->user()->school_id) }}" class="rp-eighth">Laporan Kas</a>
 										</li> -->
+										<li>
+											<a href="{{ route('school-rkas.global', auth()->user()->school_id) }}" class="rp-nineth">Laporan RKAS</a>
+										</li>
                                     </ul>
                                 </li>
 
-								<li class="treeview report">
+								<!-- <li class="treeview report">
                                     <a href="#!">
                                         <i class="bi bi-journals"></i>
                                         <span class="menu-text">RKAS</span>
                                     </a>
                                     <ul class="treeview-menu">
-										<li>
-											<a href="{{ route('school-rkas.global', auth()->user()->school_id) }}" class="rkas-first">Global</a>
-										</li>
+										
                                     </ul>
-                                </li>
+                                </li> -->
                             @endif
 							<li class="@if(Route::is('users.profile')) active current-page @endif">
 								<a href="{{ route('users.profile') }}">
@@ -579,6 +580,12 @@
 					$('.report').addClass('active current-page');
 					$('.report > ul').addClass('menu-open');
 					$('.rp-eighth').addClass('active-sub');
+				}
+
+				if (url.includes('rkas')) {
+					$('.rkas').addClass('active current-page');
+					$('.rkas > ul').addClass('menu-open');
+					$('.rp-nineth').addClass('active-sub');
 				}
 				if (url.includes('teachers')) {
 					$('.master').addClass('active current-page');

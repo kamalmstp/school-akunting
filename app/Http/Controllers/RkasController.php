@@ -8,6 +8,8 @@ use App\Models\School;
 use App\Models\FinancialPeriod;
 use App\Models\CashManagement;
 use App\Models\Transaction;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Illuminate\Support\Str;
 
 class RkasController extends Controller
 {
@@ -20,7 +22,6 @@ class RkasController extends Controller
 
     public static function getCashSourcesForMenu(School $school): array
     {
-        // Panggil fungsi non-statis untuk mendapatkan periode aktif
         $instance = new static(); 
         $activePeriod = $instance->getActivePeriod($school);
 
@@ -28,8 +29,6 @@ class RkasController extends Controller
             return [];
         }
         
-        // Mengambil semua nama akun kas yang unik (distinct name) 
-        // untuk sekolah dan periode aktif.
         $sources = CashManagement::where('school_id', $school->id)
                                  ->where('financial_period_id', $activePeriod->id)
                                  ->distinct()
@@ -203,5 +202,85 @@ class RkasController extends Controller
             'balance' => $currentBalance,
             'items' => $items,
         ];
+    }
+
+    public function printGlobalPdf(Request $request, School $school = null)
+    {
+        $user = auth()->user();
+        $school = $this->resolveSchool($user, $school);
+        $schoolId = $school ? $school->id : null;
+
+        $activePeriod = $schoolId ? FinancialPeriod::where('school_id', $schoolId)->where('is_active', true)->first() : null;
+
+        $rkasData = [];
+        $totalIncome = 0;
+        $totalExpense = 0;
+        $balance = 0;
+        
+        if ($activePeriod) {
+            $startDate = $activePeriod->start_date;
+            $endDate = $activePeriod->end_date;
+
+            $cashManagements = CashManagement::where('school_id', $schoolId)
+                ->where('financial_period_id', $activePeriod->id)
+                ->with('account')
+                ->get();
+
+            foreach ($cashManagements as $cashManagement) {
+                $report = $this->getReportForCashManagement($cashManagement, $startDate, $endDate);
+                $rkasData[] = $report;
+                $totalIncome += $report['income'];
+                $totalExpense += $report['expense'];
+            }
+
+            $balance = $totalIncome - $totalExpense;
+        }
+        
+        $data = compact('school', 'rkasData', 'totalIncome', 'totalExpense', 'balance', 'activePeriod');
+
+        $pdf = Pdf::loadView('reports.rkas.pdf.global', $data);
+        $pdf->setPaper('a4', 'landscape');
+
+        $filename = "RKAS-Global-" . Str::slug($school->name ?? 'Sekolah') . "-" . date('Ymd') . ".pdf";
+        return $pdf->download($filename);
+    }
+
+    public function printDetailPdf(School $school, CashManagement $cashManagement)
+    {
+        $activePeriod = $this->getActivePeriod($school);
+
+        if (!$activePeriod || $cashManagement->financial_period_id !== $activePeriod->id) {
+             return redirect()->back()->with('error', 'Periode keuangan tidak aktif atau tidak cocok.');
+        }
+
+        $report = $this->getReportForCashManagement(
+            $cashManagement, 
+            $activePeriod->start_date, 
+            $activePeriod->end_date
+        );
+        
+        $title = "Laporan Jurnal Kas: " . $cashManagement->name;
+        $initialBalance = $report['initial_balance'];
+        $transactions = collect($report['items']); 
+        $totalDebit = $report['income'];
+        $totalCredit = $report['expense'];
+        $finalBalance = $report['balance'];
+
+        $data = compact(
+            'school', 
+            'activePeriod',
+            'title',
+            'initialBalance',
+            'transactions',
+            'totalDebit',
+            'totalCredit',
+            'finalBalance'
+        );
+
+        $pdf = Pdf::loadView('reports.rkas.pdf.detail', $data);
+        $pdf->setPaper('a4', 'landscape');
+
+        $filename = "RKAS-Detail-" . Str::slug($cashManagement->name) . "-" . date('Ymd') . ".pdf";
+        return $pdf->download($filename);
     }
 }
