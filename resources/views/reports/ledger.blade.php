@@ -227,12 +227,14 @@
                                                         </tr>
                                                     @endif
                                                 @endforeach
+                                            </tbody>
+                                            <tfoot>
                                                 <tr>
                                                     <td class="fw-bold" colspan="4">Saldo Akhir</td>
                                                     <td class="text-end fw-bold">{{ number_format($item['closing_balance'], 0, ',', '.') }}</td>
                                                     <td></td>
                                                 </tr>
-                                            </tbody>
+                                            </tfoot>
                                         </table>
                                     </div>
                                 </div>
