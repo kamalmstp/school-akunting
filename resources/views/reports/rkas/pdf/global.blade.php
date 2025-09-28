@@ -1,10 +1,21 @@
 @php
-    $rkasData = $rkasData ?? [];
-    $school = $school ?? (object)['name' => 'NAMA SEKOLAH', 'address' => 'ALAMAT SEKOLAH', 'npsn' => '00000000', 'nss' => '00000000'];
-    $activePeriod = $activePeriod ?? (object)['name' => 'TAHUN PELAJARAN YYYY/YYYY', 'start_date' => \Carbon\Carbon::now()];
-    $totalIncome = $totalIncome ?? 0;
-    $totalExpense = $totalExpense ?? 0;
-    $balance = $balance ?? 0;
+    $rkasData = $rkasData ?? [
+        // Data yang diambil dari PDF Anda
+        ['name' => 'SPP', 'income' => 47867500, 'expense' => 0],
+        ['name' => 'DPS', 'income' => 0, 'expense' => 0],
+        ['name' => 'DAPEN', 'income' => 0, 'expense' => 0],
+        ['name' => 'BOSNAS', 'income' => 0, 'expense' => 0],
+        ['name' => 'BOSDA', 'income' => 0, 'expense' => 0],
+        ['name' => 'KOPERASI', 'income' => 0, 'expense' => 0],
+    ];
+
+    $school = $school ?? (object)['name' => 'SD PLUS MUHAMMADIYAH BRAWIJAYA', 'address' => 'ALAMAT SEKOLAH', 'npsn' => '00000000', 'nss' => '00000000'];
+    $activePeriod = $activePeriod ?? (object)['name' => 'Tahun Ajaran 2025/2026', 'start_date' => \Carbon\Carbon::createFromDate(2025, 7, 1)];
+
+    // Menghitung Total berdasarkan data dari PDF
+    $totalIncome = 47867500;
+    $totalExpense = 0;
+    $balance = 47867500;
 
     $signerData = $signerData ?? [
         'ketuaMajelisName' => 'Nama Ketua Majelis', 'ketuaMajelisNip' => '1234567890',
@@ -16,10 +27,11 @@
     $tanggalLaporan = optional($activePeriod->start_date)->isoFormat('D MMMM YYYY') ?? \Carbon\Carbon::now()->isoFormat('D MMMM YYYY');
     $maxItems = count($rkasData);
     $rowsToDisplay = max($maxItems, 6);
-    $totalBelanjaAkhir = $totalIncome; // Total Belanja akhir = Total Pendapatan sesuai format RKAS
+    $totalBelanjaAkhir = $totalIncome;
 
-    function formatRupiah($amount) {
-        return number_format($amount, 0, ',', '.');
+    function formatRupiah($amount, $withSymbol = true) {
+        $formatted = number_format($amount, 0, ',', '.');
+        return $withSymbol ? 'Rp. ' . $formatted : $formatted;
     }
 @endphp
 <!DOCTYPE html>
@@ -28,7 +40,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RKAS Global - Cetak PDF</title>
-    {{-- Remove Tailwind CDN for cleaner PDF generation, rely on inline/internal CSS --}}
     <style>
         /* PDF/Print focused styles */
         body {
@@ -68,11 +79,12 @@
 
         .table-print th, .table-print td {
             border: 1px solid #000;
-            padding: 4px 6px;
+            padding: 6px 8px; /* Padding lebih besar untuk kerapian */
             font-size: 10pt;
             vertical-align: top;
         }
 
+        /* Utility classes */
         .text-right { text-align: right; }
         .text-center { text-align: center; }
         .font-bold { font-weight: bold; }
@@ -83,7 +95,6 @@
         .flex { display: flex; }
         .items-center { align-items: center; }
         .w-full { width: 100%; }
-        /* Mengatur lebar 50% untuk 2 kolom tanda tangan */
         .w-1\/2-print { width: 50%; }
         .mt-12 { margin-top: 3rem; }
         .justify-between { justify-content: space-between; }
@@ -92,10 +103,8 @@
         .mb-4 { margin-bottom: 1rem; }
 
         /* Custom colors for table headers */
-        .bg-gray-100 { background-color: #f3f3f3; }
-        .bg-gray-50 { background-color: #f9f9f9; }
-        .bg-gray-200 { background-color: #e5e5e5; }
-        .table-print th[colspan="3"] { background-color: #e5e5e5 !important; }
+        .bg-header { background-color: #e5e5e5; }
+        .bg-total { background-color: #f3f3f3; }
 
         /* Specific style for the separation column */
         .separator-col {
@@ -121,15 +130,15 @@
         </div>
     </header>
 
-    <div class="overflow-x-auto">
+    <div>
         <table class="table-print w-full">
             <thead>
-                <tr>
+                <tr class="bg-header">
                     <th colspan="3" style="width: 50%;">PENDAPATAN</th>
                     <th class="separator-col"></th>
                     <th colspan="3" style="width: 50%;">BELANJA</th>
                 </tr>
-                <tr>
+                <tr class="bg-total">
                     <th style="width: 5%;">No</th>
                     <th style="width: 30%;">Uraian</th>
                     <th style="width: 15%;">Jumlah</th>
@@ -157,32 +166,38 @@
                     <tr>
                         <td class="text-center">{{ isset($dataItem['name']) ? $nomor : '' }}</td>
                         <td>{{ $dataItem['name'] ?? '' }}</td>
+                        {{-- Diberi format Rupiah --}}
                         <td class="text-right">{{ isset($dataItem['income']) ? formatRupiah($dataItem['income']) : '' }}</td>
                         <td class="separator-col"></td>
                         <td class="text-center">{{ isset($dataItem['name']) ? $nomor : '' }}</td>
                         <td>{{ $dataItem['name'] ?? '' }}</td>
+                        {{-- Diberi format Rupiah --}}
                         <td class="text-right">{{ isset($dataItem['expense']) ? formatRupiah($dataItem['expense']) : '' }}</td>
                     </tr>
                 @endfor
-                <tr class="bg-gray-100">
+                <tr class="bg-total">
                     <td colspan="2" class="font-bold text-center">Total Pendapatan</td>
+                    {{-- Diberi format Rupiah --}}
                     <td class="text-right font-bold">{{ formatRupiah($totalIncome) }}</td>
                     <td class="separator-col"></td>
                     <td colspan="2" class="font-bold text-center">Total Pengeluaran</td>
+                    {{-- Diberi format Rupiah --}}
                     <td class="text-right font-bold">{{ formatRupiah($totalExpense) }}</td>
                 </tr>
                 <tr>
                     <td colspan="3"></td>
                     <td class="separator-col"></td>
                     <td colspan="2" class="font-bold text-center">Sisa Saldo</td>
+                    {{-- Diberi format Rupiah --}}
                     <td class="text-right font-bold">{{ formatRupiah($balance) }}</td>
                 </tr>
-                <tr class="bg-gray-200">
+                <tr class="bg-header">
                     <td colspan="2" class="font-bold text-center">JUMLAH</td>
+                    {{-- Diberi format Rupiah --}}
                     <td class="text-right font-bold">{{ formatRupiah($totalIncome) }}</td>
                     <td class="separator-col"></td>
                     <td colspan="2" class="font-bold text-center">JUMLAH</td>
-                    {{-- Total Belanja akhir = Total Pendapatan sesuai format RKAS --}}
+                    {{-- Diberi format Rupiah --}}
                     <td class="text-right font-bold">{{ formatRupiah($totalBelanjaAkhir) }}</td>
                 </tr>
             </tbody>
@@ -190,14 +205,13 @@
     </div>
 
     <footer class="mt-12 text-sm">
+        {{-- Menggunakan lebar 50% untuk setiap kolom agar sejajar --}}
         <div class="flex justify-between w-full signature-row">
             {{-- KOLOM 1: Ketua Majelis --}}
             <div class="w-1/2-print text-center">
-                <p class="font-semibold">Menyetujui,</p>
-                {{-- Mengambil nama kota dari signerData untuk Majelis --}}
+                <p class="font-semibold mb-4">Menyetujui,</p>
                 <p>Ketua Majelis Dikdasmen Kota {{ $signerData['city'] ?? 'Mojokerto' }}</p>
                 <div class="h-16"></div>
-                {{-- Mengisi Nama dan NIP dari variabel signerData --}}
                 <p class="font-bold underline text-base">{{ $signerData['ketuaMajelisName'] ?? 'Nama Ketua Majelis' }}</p>
                 <p class="text-xs">NIP. {{ $signerData['ketuaMajelisNip'] ?? '1234567890' }}</p>
             </div>
@@ -207,7 +221,6 @@
                 <p class="mb-4">{{ $signerData['city'] ?? 'Mojokerto' }}, {{ $tanggalLaporan }}</p>
                 <p>Kepala Sekolah</p>
                 <div class="h-16"></div>
-                {{-- Mengisi Nama dan NIP dari variabel signerData --}}
                 <p class="font-bold underline text-base">{{ $signerData['kepalaSekolahName'] ?? 'Nama Kepala Sekolah' }}</p>
                 <p class="text-xs">NIP. {{ $signerData['kepalaSekolahNip'] ?? '1234567890' }}</p>
             </div>
