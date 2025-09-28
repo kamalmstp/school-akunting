@@ -140,10 +140,7 @@
                     "info": true,
                     "ordering": false,
                     "responsive": true,
-                    "pageLength": 10,
-                    "language": {
-                        "url": "//cdn.datatables.net/plug-ins/2.0.8/i18n/id.json"
-                    }
+                    "pageLength": 10
                 });
             });
         })

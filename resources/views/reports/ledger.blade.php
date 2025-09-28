@@ -1,6 +1,9 @@
 @extends('layouts.app')
 
 @section('content')
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/3.0.0/css/responsive.dataTables.min.css">
+
     <!-- App hero header starts -->
 	<div class="app-hero-header d-flex align-items-start">
 
@@ -103,7 +106,7 @@
                             <div class="row gx-3">
                                 <div class="col-12">
                                     <div class="table-responsive">
-                                        <table class="table table-striped">
+                                        <table id="ledgerTable_{{ $item['account']->id }}" class="table table-striped">
                                             <thead>
                                                 <tr>
                                                     <th scope="col">Tanggal</th>
@@ -246,6 +249,10 @@
     <!-- App body ends -->
 @endsection
 @section('js')
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/responsive/3.0.0/js/dataTables.responsive.min.js"></script>
+
     <script>
         $(document).ready(function() {
             $('#accountType').select2();
@@ -288,6 +295,21 @@
 					});
 				}
 			}
+            $('[id^="ledgerTable_"]').each(function() {
+                if ($(this).find('tbody tr').length > 2) { 
+                     $(this).DataTable({
+                        "paging": true,
+                        "searching": true,
+                        "info": true,
+                        "ordering": false,
+                        "responsive": true,
+                        "pageLength": 10,
+                        "columnDefs": [
+                            { "orderable": false, "targets": [4, 5] }
+                        ]
+                    });
+                }
+            });
         })
     </script>
 @endsection
