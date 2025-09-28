@@ -86,7 +86,7 @@
                             <div class="row gx-3">
                                 <div class="col-12">
                                     <div class="table-responsive">
-                                        <table id="journalTable_{{ $schoolId }}" class="table table-striped dt-responsive nowrap" style="width: 100%;">
+                                        <table id="journalTable_{{ $schoolId }}" class="table table-striped" style="width: 100%;">
                                             <thead>
                                                 <tr>
                                                     <th scope="col">Tanggal</th>
