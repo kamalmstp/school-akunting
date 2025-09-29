@@ -134,7 +134,7 @@
 									@forelse($accounts as $index => $account)
                                         <tr>
 											<td>{{ $accounts->currentPage() * 10 - (9 - $index) }}</td>
-											@if(auth()->user()->role == 'SuperAdmin')<td>{{ $account->school->name }}</td>@endif
+											@if(auth()->user()->role == 'SuperAdmin')<td>{{ $account->school?->name }}</td>@endif
                                             <td>{{ $account->code }}</td>
                                             <td>{{ $account->parent ? str_repeat(' ', 4) : '' }}{{ $account->name }}</td>
                                             <td>{{ $account->account_type }}</td>

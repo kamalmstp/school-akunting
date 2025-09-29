@@ -22,30 +22,30 @@ class AccountController extends Controller
      * Display a listing of accounts.
      */
    public function index(Request $request, School $school = null)
-{
-    $user    = auth()->user();
-    $account = $request->get('account');
-    $type    = $request->get('type');
-    $schoolId = null;
+    {
+        $user    = auth()->user();
+        $account = $request->get('account');
+        $type    = $request->get('type');
+        $schoolId = null;
 
-    if ($user->role === 'SchoolAdmin') {
-        if ($school && $user->school_id !== $school->id) {
-            abort(403, 'Unauthorized access to this school.');
+        if ($user->role === 'SchoolAdmin') {
+            if ($school && $user->school_id !== $school->id) {
+                abort(403, 'Unauthorized access to this school.');
+            }
+            $schoolId = $school ? $school->id : $user->school_id;
+        } else {
+            $schoolId = $request->get('school');
         }
-        $schoolId = $school ? $school->id : $user->school_id;
-    } else {
-        $schoolId = $request->get('school');
+
+        $accounts = Account::with(['parent', 'school'])
+            ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
+            ->when($account, fn($q) => $q->where('account_type', $account))
+            ->when($type, fn($q) => $q->where('normal_balance', $type))
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('accounts.index', compact('accounts', 'school', 'account', 'type', 'schoolId'));
     }
-
-    $accounts = Account::with(['parent', 'school'])
-        ->when($schoolId, fn($q) => $q->where('school_id', $schoolId))
-        ->when($account, fn($q) => $q->where('account_type', $account))
-        ->when($type, fn($q) => $q->where('normal_balance', $type))
-        ->paginate(10)
-        ->withQueryString();
-
-    return view('accounts.index', compact('accounts', 'school', 'account', 'type', 'schoolId'));
-}
 
 
 
