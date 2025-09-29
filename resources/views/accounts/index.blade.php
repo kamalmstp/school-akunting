@@ -142,6 +142,7 @@
                                             <td>{{ $account->parent ? $account->parent->name : '-' }}</td>
                                             @if(auth()->user()->role != 'AdminMonitor')
 	                                            <td>
+												@if($account->school)
 	                                                <a href="{{ route('school-accounts.edit', [$account->school, $account]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
 	                                                <form action="{{ route('school-accounts.destroy', [$account->school, $account]) }}" method="POST" style="display:inline;">
 	                                                    @csrf
@@ -149,6 +150,9 @@
 	                                                    <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus akun ini?')">Hapus</button>
 	                                                </form>
 	                                            </td>
+												@else
+
+												@endif
 											@endif
                                         </tr>
 									@empty
