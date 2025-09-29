@@ -100,9 +100,7 @@
                                             <td class="text-end fw-bold" data-sort="{{ $runningBalance }}">Rp {{ number_format($runningBalance, 0, ',', '.') }}</td>
                                         </tr>
                                     @empty
-                                        <tr>
-                                            <td colspan="6" class="text-center">Belum ada transaksi tercatat untuk sumber kas ini dalam periode aktif.</td>
-                                        </tr>
+
                                     @endforelse
                                 </tbody>
                                 <tfoot>

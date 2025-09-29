@@ -1,9 +1,6 @@
 @extends('layouts.app')
 
 @section('content')
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/3.0.0/css/responsive.dataTables.min.css">
-
     <!-- App hero header starts -->
 	<div class="app-hero-header d-flex align-items-start">
 
@@ -124,9 +121,6 @@
     <!-- App body ends -->
 @endsection
 @section('js')
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
-    <script src="https://cdn.datatables.net/responsive/3.0.0/js/dataTables.responsive.min.js"></script>
     <script>
         $(document).ready(function() {
             if (@json(auth()->user()->role) !== 'SchoolAdmin') {

@@ -8,40 +8,55 @@
 		<title>Sistem Akuntansi Sekolah</title>
 
 		<link rel="shortcut icon" href="{{ asset('images/account3.png') }}" />
-
-		<!-- *************
-			************ CSS Files *************
-		************* -->
 		<link rel="stylesheet" href="{{ asset('fonts/bootstrap/bootstrap-icons.css') }}" />
 		<link rel="stylesheet" href="{{ asset('css/main.min.css') }}" />
 		<link rel="stylesheet" href="{{ asset('css/app.css') }}" />
-
-		<!-- *************
-			************ Vendor Css Files *************
-		************ -->
-
-		<!-- Select2 CSS -->
 		<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 		<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
 	    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/3.0.0/css/responsive.dataTables.min.css">
-
-		<!-- Scrollbar CSS -->
 		<link rel="stylesheet" href="{{ asset('css/OverlayScrollbars.min.css') }}" />
-
-		<!-- Toastify CSS -->
 		<link rel="stylesheet" href="{{ asset('css/toastify.css') }}" />
+
+		<style>
+            /* Memastikan elemen dasar mengambil tinggi penuh viewport */
+            html, body {
+                height: 100%;
+                min-height: 100vh;
+                margin: 0;
+            }
+            /* Memastikan container utama mengambil tinggi penuh dan menggunakan flexbox */
+            .page-wrapper {
+                min-height: 100vh;
+                display: flex; 
+                flex-direction: column; 
+            }
+            /* Memastikan main-container mengambil sisa tinggi dan mengatur layout horizontal */
+            .main-container {
+                flex-grow: 1; 
+                display: flex; 
+                /* height: 100%; tidak perlu jika parent flex-grow: 1 */
+            }
+            /* Memastikan sidebar mengambil tinggi penuh */
+            .sidebar-wrapper {
+                height: 100%; 
+            }
+            /* Memastikan app-container mengambil sisa lebar dan mengatur layout vertikal untuk konten */
+            .app-container {
+                flex-grow: 1; 
+                display: flex;
+                flex-direction: column;
+            }
+            /* Mendorong footer ke bawah */
+            .app-footer {
+                margin-top: auto;
+            }
+        </style>
 
 	</head>
 
 	<body>
-
-		<!-- Page wrapper start -->
 		<div class="page-wrapper">
-
-			<!-- App header starts -->
 			<div class="app-header d-flex align-items-center">
-
-				<!-- Toggle buttons start -->
 				<div class="d-flex">
 					<button class="toggle-sidebar" id="toggle-sidebar">
 						<i class="bi bi-list lh-1"></i>
@@ -50,9 +65,6 @@
 						<i class="bi bi-list lh-1"></i>
 					</button>
 				</div>
-				<!-- Toggle buttons end -->
-
-				<!-- App brand starts -->
 				<div class="app-brand py-2 ms-3">
 					<a href="{{ redirect('/') }}" class="d-sm-block d-none">
 						<img src="{{ asset('images/account3.png') }}" class="logo" alt="Bootstrap Gallery" />
@@ -61,9 +73,6 @@
 						<img src="{{ asset('images/account3.png') }}" class="logo" alt="Bootstrap Gallery" />
 					</a>
 				</div>
-				<!-- App brand ends -->
-
-				<!-- App header actions start -->
 				<div class="header-actions col">
 					<div class="dropdown ms-2">
 						<a id="userSettings" class="dropdown-toggle d-flex py-2 align-items-center text-decoration-none" href="#!"
@@ -81,18 +90,10 @@
 						</div>
 					</div>
 				</div>
-				<!-- App header actions end -->
-
 			</div>
-			<!-- App header ends -->
 
-			<!-- Main container start -->
 			<div class="main-container">
-
-				<!-- Sidebar wrapper start -->
 				<nav id="sidebar" class="sidebar-wrapper">
-
-					<!-- Sidebar menu starts -->
 					<div class="sidebarMenuScroll">
 						<ul class="sidebar-menu">
                             @if(auth()->user()->role === 'SuperAdmin')
@@ -482,37 +483,19 @@
 							</li>
 						</ul>
 					</div>
-					<!-- Sidebar menu ends -->
-
 				</nav>
-				<!-- Sidebar wrapper end -->
-
-				<!-- App container starts -->
 				<div class="app-container">
 					@yield('content')
 
-					<!-- App footer start -->
 					<div class="app-footer">
 						<span>© Sistem Akuntasi</span>
 					</div>
-					<!-- App footer end -->
-
 				</div>
-				<!-- App container ends -->
-
 			</div>
-			<!-- Main container end -->
-
 		</div>
-		<!-- Page wrapper end -->
 
-		<!-- *************
-			************ JavaScript Files *************
-		************* -->
-		<!-- Required jQuery first, then Bootstrap Bundle JS -->
 		<script src="{{ asset('js/jquery.min.js') }}"></script>
 		<script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
-		<!-- Select2 JS -->
 		<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 		<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 		<script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
@@ -520,18 +503,10 @@
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.full.min.js" xintegrity="sha512-H9YQ81rwKth0zWvF/P4Jp8Bv+7k7fP4MvO6z6xWzP5p75B1d5x0M2F8j0M+0qLg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 		<script src="{{ asset('js/moment.min.js') }}"></script>
 
-		<!-- *************
-			************ Vendor Js Files *************
-		************* -->
-
-		<!-- Overlay Scroll JS -->
 		<script src="{{ asset('js/jquery.overlayScrollbars.min.js') }}"></script>
 		<script src="{{ asset('js/custom-scrollbar.js') }}"></script>
 
-		<!-- Toastify JS -->
 		<script src="{{ asset('js/toastify.js') }}"></script>
-
-		<!-- Custom JS files -->
 		<script src="{{ asset('js/custom.js') }}"></script>
 		<script src="{{ asset('js/todays-date.js') }}"></script>
 		<script type="text/javascript">
@@ -669,5 +644,4 @@
 		</script>
 		@yield('js')
 	</body>
-
 </html>
