@@ -224,29 +224,32 @@
                         <span class="menu-text">Laporan</span>
                     </a>
                     <ul class="treeview-menu">
-                        <li>
+                        <!-- <li>
                             <a href="{{ route('reports.beginning-balance') }}" class="rp-first">Saldo Awal</a>
-                        </li>
+                        </li> -->
                         <li>
                             <a href="{{ route('reports.general-journal') }}" class="rp-second">Jurnal Umum</a>
                         </li>
                         <li>
                             <a href="{{ route('reports.ledger') }}" class="rp-third">Buku Besar</a>
                         </li>
-                        <li>
+                        <!-- <li>
                             <a href="{{ route('reports.trial-balance-before') }}" class="rp-fourth">Neraca Saldo Awal</a>
-                        </li>
+                        </li> -->
                         <!--<li>-->
                         <!--	<a href="{{ route('reports.adjusting-entries') }}" class="rp-fifth">Jurnal Penyesuaian</a>-->
                         <!--</li>-->
-                        <li>
+                        <!-- <li>
                             <a href="{{ route('reports.trial-balance-after') }}" class="rp-sixth">Neraca Saldo Akhir</a>
-                        </li>
+                        </li> -->
                         <li>
                             <a href="{{ route('reports.financial-statements') }}" class="rp-seventh">Laporan Keuangan</a>
                         </li>
-                        <li>
+                        <!-- <li>
                             <a href="{{ route('reports.cash-reports') }}" class="rp-eighth">Laporan Kas</a>
+                        </li> -->
+                        <li>
+                            <a href="{{ route('reports.rkas-global') }}" class="rp-nineth">Laporan RKAS</a>
                         </li>
                     </ul>
                 </li>
