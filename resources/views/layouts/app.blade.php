@@ -30,11 +30,9 @@
                 margin: 0;
             }
             
-            /* 3. Page wrapper tidak perlu mengatur tinggi, biarkan fixed header bekerja */
+            /* 3. Page wrapper harus mencegah scroll ganda pada keseluruhan body */
             .page-wrapper {
-                /* Nonaktifkan scroll pada wrapper utama, biarkan body atau elemen dalamnya yang scroll */
-                /* height: 100%; <- Hapus ini */
-                /* overflow: hidden; <- Tambahkan ini untuk mencegah scroll ganda/header scroll */
+                height: 100%;
                 overflow: hidden; 
             }
 
@@ -60,19 +58,21 @@
             }
 
             /* Fix C: Sidebar Wrapper harus mengambil sisa tinggi main-container */
-            /* Pastikan sidebar tidak menggunakan 'position: fixed' lagi (jika Anda menambahkannya)
-               karena parentnya (.main-container) sudah di-offset */
             #sidebar, .sidebar-wrapper {
                 height: 100% !important; /* Tinggi penuh parent (.main-container) */
                 flex-shrink: 0; /* Pastikan tidak mengecil */
+                display: flex; /* Tambahkan display flex untuk mengisi tinggi menu scroll */
+                flex-direction: column;
             }
 
-            /* Fix D: Hanya menu sidebar yang boleh scroll */
+            /* Fix D: Hanya menu sidebar yang boleh scroll (PERBAIKAN KRITIS) */
             .sidebarMenuScroll {
-                /* Tentukan tinggi yang dapat digulir. Ini harusnya sudah dikelola oleh OverlayScrollbars,
-                   tetapi height: 100% penting. */
-                height: 100% !important;
-                overflow-y: auto !important;
+                /* Mengisi semua ruang yang tersisa di sidebar */
+                flex-grow: 1; 
+                /* Memastikan elemen ini benar-benar memiliki batas tinggi */
+                height: 100% !important; 
+                /* PENTING: Aktifkan scroll pada elemen ini */
+                overflow-y: auto !important; 
             }
 
             /* Fix E: Konten Utama harus dapat digulir */
