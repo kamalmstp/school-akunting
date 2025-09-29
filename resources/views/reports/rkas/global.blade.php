@@ -35,7 +35,7 @@
                                         <select name="school" id="school_filter" class="form-select" onchange="this.form.submit()">
                                             <option value="">-- Semua Sekolah --</option>
                                             @foreach($schools as $s)
-                                                <option value="{{ $s->slug }}" {{ $school && $school->slug == $s->slug ? 'selected' : '' }}>
+                                                <option value="{{ $s->id }}" {{ (int)request('school') === $s->id ? 'selected' : '' }}>
                                                     {{ $s->name }}
                                                 </option>
                                             @endforeach
@@ -104,6 +104,9 @@
                                     <tr>
                                         <th>#</th>
                                         <th>Sumber Dana</th>
+                                        @if (!$school && auth()->user()->role != 'SchoolAdmin')
+                                            <td>Sekolah</td>
+                                        @endif
                                         <th class="text-end">Saldo Awal</th>
                                         <th class="text-end">Pendapatan</th>
                                         <th class="text-end">Pengeluaran</th>
@@ -115,6 +118,9 @@
                                     @forelse($rkasData as $index => $item)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
+                                            @if (!$school && auth()->user()->role != 'SchoolAdmin')
+                                                <td>{{ $item['school_name'] }}</td>
+                                            @endif
                                             <td>{{ $item['name'] }}</td>
                                             <td class="text-end">Rp {{ number_format($item['initial_balance'], 0, ',', '.') }}</td>
                                             <td class="text-end text-success">Rp {{ number_format($item['income'], 0, ',', '.') }}</td>
@@ -122,7 +128,7 @@
                                             <td class="text-end">Rp {{ number_format($item['balance'], 0, ',', '.') }}</td>
                                             <td class="text-center">
                                                 @if (auth()->user()->role != 'SchoolAdmin')
-                                                    <a href="{{ route('reports.rkas-detail', ['school' => $item['school_name'], 'cashManagement' => $item['cashManagementId']]) }}" class="btn btn-sm btn-info text-white">Lihat Detail</a>
+                                                    <a href="{{ route('reports.rkas-detail', ['school' => $item['school_id'], 'cashManagement' => $item['cashManagementId']]) }}" class="btn btn-sm btn-info text-white">Lihat Detail</a>
                                                 @else
                                                     <a href="{{ route('school-reports.rkas-detail', ['school' => auth()->user()->school_id, 'cashManagement' => $item['cashManagementId']]) }}" class="btn btn-sm btn-info text-white">Lihat Detail</a>
                                                 @endif

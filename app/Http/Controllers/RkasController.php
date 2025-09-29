@@ -38,48 +38,63 @@ class RkasController extends Controller
         return $sources;
     }
 
-    public function global(Request $request, School $school = null)
+    public function global(Request $request, School $schoolParam = null)
     {
-        Log::info('Accessing RKAS Global Report');
-
         $user = auth()->user();
         
+    
+        $schoolIdFilter = $request->input('school');
+        
+        $schoolToFilter = null;
+        
+    
         if ($user->role === 'SchoolAdmin') {
-            $schoolsToProcess = collect([$user->school]);
-        } elseif ($school) {
-            $schoolsToProcess = collect([$school]);
+            $schoolToFilter = $user->school;
+        } 
+    
+        elseif ($schoolParam) {
+            $schoolToFilter = $schoolParam;
+        }
+    
+        elseif ($schoolIdFilter) {
+            $schoolToFilter = School::find($schoolIdFilter);
+        }
+        
+    
+        $schoolsList = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([]);
+        
+    
+        if ($schoolToFilter) {
+            $schoolsToProcess = collect([$schoolToFilter]);
+            $activePeriod = FinancialPeriod::where('school_id', $schoolToFilter->id)->where('is_active', true)->first();
         } else {
+        
             $schoolsToProcess = School::all();
+            $activePeriod = null; 
         }
         
-        if ($schoolsToProcess->isEmpty()) {
-            return view('reports.rkas.global', [
-                'rkasData' => [], 'totalIncome' => 0, 'totalExpense' => 0, 'balance' => 0,
-                'message' => 'Tidak ada sekolah yang terdaftar.'
-            ]);
-        }
-        
+    
         $rkasDataGlobal = [];
         $totalIncomeGlobal = 0;
         $totalExpenseGlobal = 0;
-        $activePeriod = null;
-
+        
         foreach ($schoolsToProcess as $s) {
-            $activePeriod = FinancialPeriod::where('school_id', $s->id)->where('is_active', true)->first();
+            $period = FinancialPeriod::where('school_id', $s->id)->where('is_active', true)->first();
             
-            if ($activePeriod) {
-                $startDate = $request->input('start_date', $activePeriod->start_date);
-                $endDate = $request->input('end_date', $activePeriod->end_date);
+            if ($period) {
+                $startDate = $request->input('start_date', $period->start_date);
+                $endDate = $request->input('end_date', $period->end_date);
 
                 $cashManagements = CashManagement::where('school_id', $s->id)
-                    ->where('financial_period_id', $activePeriod->id)
+                    ->where('financial_period_id', $period->id)
                     ->with('account')
                     ->get();
 
                 foreach ($cashManagements as $cashManagement) {
                     $report = $this->getReportForCashManagement($cashManagement, $startDate, $endDate);
                     
-                    $report['school_name'] = $s->name; 
+                    $report['school_name'] = $s->name;
+                    $report['school_id'] = $s->id;
                     $rkasDataGlobal[] = $report;
                     
                     $totalIncomeGlobal += $report['income'];
@@ -89,17 +104,15 @@ class RkasController extends Controller
         }
         
         $balanceGlobal = $totalIncomeGlobal - $totalExpenseGlobal;
-
-        $schoolsList = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([]);
-
+        
         return view('reports.rkas.global', [
-            'school' => $school,
-            'schools' => $schoolsList,
+            'school' => $schoolToFilter,
+            'schools' => $schoolsList, 
             'rkasData' => $rkasDataGlobal,
             'totalIncome' => $totalIncomeGlobal,
             'totalExpense' => $totalExpenseGlobal,
             'balance' => $balanceGlobal,
-            'activePeriod' => $activePeriod,
+            'activePeriod' => $schoolToFilter ? $activePeriod : null,
         ]);
     }
 
@@ -108,13 +121,13 @@ class RkasController extends Controller
         Log::info("Accessing RKAS Detail Report for CashManagement ID: {$cashManagement->id}");
 
         if ($cashManagement->school_id !== $school->id) {
-            return redirect()->route('school-.rkas.global', $school)->with('error', 'Sumber kas tidak valid untuk sekolah ini.');
+            return redirect()->route('school-rkas.global', $school)->with('error', 'Sumber kas tidak valid untuk sekolah ini.');
         }
 
         $activePeriod = $this->getActivePeriod($school);
 
         if (!$activePeriod || $cashManagement->financial_period_id !== $activePeriod->id) {
-            return redirect()->route('school-.rkas.global', $school)->with('error', 'Periode keuangan tidak aktif atau tidak cocok.');
+            return redirect()->route('school-rkas.global', $school)->with('error', 'Periode keuangan tidak aktif atau tidak cocok.');
         }
 
         $report = $this->getReportForCashManagement(
