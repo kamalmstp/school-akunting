@@ -26,8 +26,9 @@
                 <div class="card-body">
                     <!-- Row start -->
                     <form action="{{ route('reports.rkas-global') }}" method="GET" class="mb-4">
-                        <div class="row gx-3">
+                        
                             @if (auth()->user()->role != 'SchoolAdmin')
+                            <div class="row gx-3">
                                 <div class="col-xl-4 col-md-6 col-12">
                                     <div class="mb-3">
                                         <label for="school_filter" class="form-label">Filter Sekolah</label>
@@ -41,8 +42,9 @@
                                         </select>
                                     </div>
                                 </div>
+                            </div>
                             @endif
-                        </div>
+                        
                     </form>
                 </div>
             </div>
@@ -119,7 +121,11 @@
                                             <td class="text-end text-danger">Rp {{ number_format($item['expense'], 0, ',', '.') }}</td>
                                             <td class="text-end">Rp {{ number_format($item['balance'], 0, ',', '.') }}</td>
                                             <td class="text-center">
-                                                <a href="{{ route('school-reports.rkas-detail', ['school' => auth()->user()->school_id, 'cashManagement' => $item['cashManagementId']]) }}" class="btn btn-sm btn-info text-white">Lihat Detail</a>
+                                                @if (auth()->user()->role != 'SchoolAdmin')
+                                                    <a href="{{ route('reports.rkas-detail', ['school' => $item['school_name'], 'cashManagement' => $item['cashManagementId']]) }}" class="btn btn-sm btn-info text-white">Lihat Detail</a>
+                                                @else
+                                                    <a href="{{ route('school-reports.rkas-detail', ['school' => auth()->user()->school_id, 'cashManagement' => $item['cashManagementId']]) }}" class="btn btn-sm btn-info text-white">Lihat Detail</a>
+                                                @endif
                                             </td>
                                         </tr>
                                     @empty
