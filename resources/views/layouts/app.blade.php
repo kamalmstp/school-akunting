@@ -22,6 +22,8 @@
 
 		<!-- Select2 CSS -->
 		<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+		<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
+	    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/3.0.0/css/responsive.dataTables.min.css">
 
 		<!-- Scrollbar CSS -->
 		<link rel="stylesheet" href="{{ asset('css/OverlayScrollbars.min.css') }}" />
@@ -512,6 +514,10 @@
 		<script src="{{ asset('js/bootstrap.bundle.min.js') }}"></script>
 		<!-- Select2 JS -->
 		<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+		<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+		<script src="https://cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+		<script src="https://cdn.datatables.net/responsive/3.0.0/js/dataTables.responsive.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/js/select2.full.min.js" xintegrity="sha512-H9YQ81rwKth0zWvF/P4Jp8Bv+7k7fP4MvO6z6xWzP5p75B1d5x0M2F8j0M+0qLg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 		<script src="{{ asset('js/moment.min.js') }}"></script>
 
 		<!-- *************
