@@ -18,37 +18,32 @@
 		<link rel="stylesheet" href="{{ asset('css/toastify.css') }}" />
 
 		<style>
-            /* Memastikan elemen dasar mengambil tinggi penuh viewport */
             html, body {
                 height: 100%;
                 min-height: 100vh;
                 margin: 0;
             }
-            /* Memastikan container utama mengambil tinggi penuh dan menggunakan flexbox */
             .page-wrapper {
                 min-height: 100vh;
                 display: flex; 
                 flex-direction: column; 
             }
-            /* Memastikan main-container mengambil sisa tinggi dan mengatur layout horizontal */
             .main-container {
                 flex-grow: 1; 
                 display: flex; 
-                /* height: 100%; tidak perlu jika parent flex-grow: 1 */
+                height: 100%;
             }
-            /* Memastikan sidebar mengambil tinggi penuh */
-            .sidebar-wrapper {
-                height: 100%; 
+            #sidebar, .sidebar-wrapper {
+                height: 100% !important; 
             }
-            /* Memastikan app-container mengambil sisa lebar dan mengatur layout vertikal untuk konten */
+            .sidebarMenuScroll {
+                height: 100% !important;
+                overflow-y: auto !important;
+            }
             .app-container {
                 flex-grow: 1; 
                 display: flex;
                 flex-direction: column;
-            }
-            /* Mendorong footer ke bawah */
-            .app-footer {
-                margin-top: auto;
             }
         </style>
 
