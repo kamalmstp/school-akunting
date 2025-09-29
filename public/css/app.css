@@ -1,3 +1,78 @@
+:root {
+    --app-header-height: 60px; /* Sesuaikan jika tinggi header Anda berbeda */
+}
+
+/* Pastikan semua elemen utama memiliki tinggi penuh untuk menghitung layout */
+html, body {
+    height: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    /* overflow: hidden; Mencegah scroll pada body utama (penting untuk fixed header) */
+}
+
+/* Kontainer utama aplikasi */
+.page-wrapper {
+    height: 100%;
+    overflow: hidden; /* Mencegah scroll ganda di sini */
+}
+
+/* Header harus Fixed */
+.app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    height: var(--app-header-height);
+    /* Tambahkan style tambahan header Anda di sini, misalnya background-color */
+}
+
+/* 1. Main Container (Sidebar + Content) */
+.main-container {
+    display: flex;
+    /* Tinggi sisa viewport setelah dikurangi tinggi header */
+    height: calc(100vh - var(--app-header-height)); 
+    margin-top: var(--app-header-height); /* Offset agar di bawah header fixed */
+    overflow: hidden; /* Kontrol scroll hanya ada di anak-anaknya */
+    width: 100%;
+}
+
+/* 2. Sidebar Wrapper */
+#sidebar, .sidebar-wrapper {
+    /* Mengambil tinggi penuh dari main-container */
+    height: 100% !important; 
+    flex-shrink: 0; 
+    display: flex;
+    flex-direction: column; /* KRITIS: Atur sebagai flex container vertikal */
+}
+
+/* 3. Elemen Menu yang Dapat Di-scroll (SOLUSI UTAMA) */
+.sidebarMenuScroll {
+    /* Memastikan elemen mengambil semua sisa ruang vertikal yang ada */
+    flex-grow: 1; 
+    
+    /* PENTING untuk Flexbox: Memungkinkan elemen untuk di-scroll di dalam batas tingginya */
+    min-height: 0; 
+    
+    /* Memaksa scrollbar bawaan browser muncul jika konten melebihi batas */
+    overflow-y: auto !important; 
+    overflow-x: hidden;
+    
+    /* Opsional: Tambahkan sedikit padding/margin agar scrollbar tidak terlalu mepet */
+    padding-bottom: 20px; 
+}
+
+/* 4. Konten Utama juga harus bisa scroll jika isinya panjang */
+.app-container {
+    flex-grow: 1; 
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; 
+    height: 100%;
+    /* Gunakan padding atas/samping sesuai kebutuhan Anda */
+}
+
 .total-receivable {
     display: flex;
     justify-content: end;
