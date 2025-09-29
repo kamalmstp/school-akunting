@@ -119,6 +119,9 @@
                         <!-- <li>
                             <a href="{{ route('reports.cash-reports') }}" class="rp-eighth">Laporan Kas</a>
                         </li> -->
+                        <li>
+                            <a href="{{ route('reports.rkas-global') }}" class="rp-nineth">Laporan RKAS</a>
+                        </li>
                     </ul>
                 </li>
                 <li class="@if(Route::is('users.index')) active current-page @endif">
