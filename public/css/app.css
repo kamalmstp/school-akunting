@@ -2,6 +2,11 @@
     --app-header-height: 60px; /* Sesuaikan jika tinggi header Anda berbeda */
 }
 
+/* Pastikan ini ada di file CSS Anda */
+.sidebar-menu .treeview.active > .treeview-menu {
+    display: block !important;
+}
+
 /* Pastikan semua elemen utama memiliki tinggi penuh untuk menghitung layout */
 html, body {
     height: 100%;
