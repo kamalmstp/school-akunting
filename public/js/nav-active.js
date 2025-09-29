@@ -1,28 +1,25 @@
 $(document).ready(function() {
     let url = window.location.href;
 
-    if (url.includes('dashboard')) {
-    }
+    $('.treeview').removeClass('active current-page');
+    $('.treeview > ul.treeview-menu').removeClass('menu-open');
+    $('.treeview-menu li a').removeClass('active-sub');
 
-    if (url.includes('schools')) {
-    }
-
-    // --- Data Master ---
-    if (url.includes('teachers') || url.includes('employees') || url.includes('school-majors') || url.includes('students') || url.includes('fund-managements') || url.includes('financial-periods')) {
+    if (url.includes('/teachers') || url.includes('/employees') || url.includes('school-majors') || url.includes('/students') || url.includes('fund-managements') || url.includes('financial-periods') || url.includes('cash-managements')) {
         $('.master').addClass('active current-page');
-        $('.master').find('> a').click(); 
+        $('.master > ul.treeview-menu').addClass('menu-open');
     }
 
-    if (url.includes('teachers') && !url.includes('receivables')) {
+    if (url.includes('/teachers') && !url.includes('-receivables')) {
         $('.m-first').addClass('active-sub');
     }
-    if (url.includes('employees') && !url.includes('receivables')) {
+    if (url.includes('/employees') && !url.includes('-receivables')) {
         $('.m-second').addClass('active-sub');
     }
     if (url.includes('school-majors')) {
         $('.m-third').addClass('active-sub');
     }
-    if (url.includes('students') && !url.includes('receivables') && !url.includes('alumni') && !url.includes('receipts')) {
+    if (url.includes('/students') && !url.includes('-receivables') && !url.includes('-alumni') && !url.includes('-receipts')) {
         $('.m-fourth').addClass('active-sub');
     }
     if (url.includes('fund-managements') || url.includes('cash-managements')) {
@@ -32,11 +29,11 @@ $(document).ready(function() {
         $('.m-sixth').addClass('active-sub');
     }
 
-    // --- Penerimaan (Receivable) ---
-    if (url.includes('receivables') || url.includes('receipts')) {
+    if (url.includes('-receivables') || url.includes('-receipts')) {
         $('.receivable').addClass('active current-page');
-        $('.receivable').find('> a').click();
+        $('.receivable > ul.treeview-menu').addClass('menu-open');
     }
+
     if (url.includes('student-receivables')) {
         $('.p-first').addClass('active-sub');
     }
@@ -46,34 +43,33 @@ $(document).ready(function() {
     if (url.includes('employee-receivables')) {
         $('.p-third').addClass('active-sub');
     }
-    if (url.includes('student-receipts')) {
+    if (url.includes('student-receipts') || url.includes('receipts/filter')) {
         $('.p-fourth').addClass('active-sub');
     }
 
-    // --- Alumni ---
-    if (url.includes('alumni')) {
+    if (url.includes('-alumni')) {
         $('.alumni').addClass('active current-page');
-        $('.alumni').find('> a').click();
+        $('.alumni > ul.treeview-menu').addClass('menu-open');
         $('.a-first').addClass('active-sub');
     }
 
-    // --- Transaksi (Transaction) ---
-    if (url.includes('transactions') || url.includes('fixed-assets')) {
+    if (url.includes('transactions/index') || url.includes('fixed-assets')) {
         $('.transaction').addClass('active current-page');
-        $('.transaction').find('> a').click();
+        $('.transaction > ul.treeview-menu').addClass('menu-open');
     }
-    if (url.includes('transactions') && !url.includes('reports')) { // Pastikan bukan route laporan
+    
+    if (url.includes('transactions/index') && !url.includes('reports')) {
         $('.tr-first').addClass('active-sub');
     }
     if (url.includes('fixed-assets')) {
         $('.tr-second').addClass('active-sub');
     }
 
-    // --- Laporan (Report) ---
-    if (url.includes('reports')) {
+    if (url.includes('/reports/')) {
         $('.report').addClass('active current-page');
-        $('.report').find('> a').click();
+        $('.report > ul.treeview-menu').addClass('menu-open');
     }
+    
     if (url.includes('reports/beginning-balance')) {
         $('.rp-first').addClass('active-sub');
     }
@@ -100,5 +96,17 @@ $(document).ready(function() {
     }
     if (url.includes('reports/rkas-global')) {
         $('.rp-nineth').addClass('active-sub');
+    }
+    
+    if (url.includes('/accounts') && !url.includes('school-accounts')) {
+         $('.sidebar-menu > li:has(a[href*="/accounts"])').addClass('active current-page');
+    }
+    if (url.includes('school-accounts')) {
+         $('.sidebar-menu > li:has(a[href*="school-accounts"])').addClass('active current-page');
+    }
+
+    if (url.endsWith('/dashboard') || url.endsWith('/schools')) {
+        $('.sidebar-menu > li:has(a[href$="/dashboard"])').addClass('active current-page');
+        $('.sidebar-menu > li:has(a[href$="/schools"])').addClass('active current-page');
     }
 });
