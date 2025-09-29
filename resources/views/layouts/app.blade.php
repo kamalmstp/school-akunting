@@ -16,37 +16,80 @@
 	    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/responsive/3.0.0/css/responsive.dataTables.min.css">
 		<link rel="stylesheet" href="{{ asset('css/OverlayScrollbars.min.css') }}" />
 		<link rel="stylesheet" href="{{ asset('css/toastify.css') }}" />
+	<style>
+            /* 1. Definisikan tinggi header agar bisa digunakan untuk perhitungan offset */
+            :root {
+                /* Nilai ini penting dan harus sesuai dengan tinggi visual header Anda */
+                --app-header-height: 60px; 
+            }
 
-		<style>
+            /* 2. Body harus mengaktifkan scroll utama untuk konten utama (jika kontennya panjang) */
             html, body {
                 height: 100%;
                 min-height: 100vh;
                 margin: 0;
             }
+            
+            /* 3. Page wrapper tidak perlu mengatur tinggi, biarkan fixed header bekerja */
             .page-wrapper {
-                min-height: 100vh;
-                display: flex; 
-                flex-direction: column; 
+                /* Nonaktifkan scroll pada wrapper utama, biarkan body atau elemen dalamnya yang scroll */
+                /* height: 100%; <- Hapus ini */
+                /* overflow: hidden; <- Tambahkan ini untuk mencegah scroll ganda/header scroll */
+                overflow: hidden; 
             }
+
+            /* Fix A: Header harus fixed */
+            .app-header {
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                z-index: 1000;
+                height: var(--app-header-height);
+                background-color: #ffffff; /* Tambahkan warna latar belakang */
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            }
+            
+            /* Fix B: Main Container harus di-offset dari header */
             .main-container {
-                flex-grow: 1; 
                 display: flex; 
-                height: 100%;
+                /* Geser ke bawah sebesar tinggi header */
+                padding-top: var(--app-header-height); 
+                /* Mengambil sisa tinggi viewport di bawah header */
+                height: 100vh; 
             }
+
+            /* Fix C: Sidebar Wrapper harus mengambil sisa tinggi main-container */
+            /* Pastikan sidebar tidak menggunakan 'position: fixed' lagi (jika Anda menambahkannya)
+               karena parentnya (.main-container) sudah di-offset */
             #sidebar, .sidebar-wrapper {
-                height: 100% !important; 
+                height: 100% !important; /* Tinggi penuh parent (.main-container) */
+                flex-shrink: 0; /* Pastikan tidak mengecil */
             }
+
+            /* Fix D: Hanya menu sidebar yang boleh scroll */
             .sidebarMenuScroll {
+                /* Tentukan tinggi yang dapat digulir. Ini harusnya sudah dikelola oleh OverlayScrollbars,
+                   tetapi height: 100% penting. */
                 height: 100% !important;
                 overflow-y: auto !important;
             }
+
+            /* Fix E: Konten Utama harus dapat digulir */
             .app-container {
                 flex-grow: 1; 
                 display: flex;
                 flex-direction: column;
+                /* Ini yang memungkinkan konten utama Anda (yield) bisa di-scroll */
+                overflow-y: auto; 
+                height: 100%;
+            }
+
+            /* Tweak: Pastikan footer tetap di bawah konten yang di-scroll */
+            .app-container > .app-footer {
+                margin-top: auto; /* Memastikan footer berada di dasar app-container */
             }
         </style>
-
 	</head>
 
 	<body>
