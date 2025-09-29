@@ -43,48 +43,64 @@ class RkasController extends Controller
         Log::info('Accessing RKAS Global Report');
 
         $user = auth()->user();
-        $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
-        $schoolId = $school ? $school->id : null;
-
-        $activePeriod = $schoolId ? FinancialPeriod::where('school_id', $schoolId)->where('is_active', true)->first() : null;
-
-        if (!$activePeriod) {
+        
+        if ($user->role === 'SchoolAdmin') {
+            $schoolsToProcess = collect([$user->school]);
+        } elseif ($school) {
+            $schoolsToProcess = collect([$school]);
+        } else {
+            $schoolsToProcess = School::all();
+        }
+        
+        if ($schoolsToProcess->isEmpty()) {
             return view('reports.rkas.global', [
-                'school' => $school,
-                'schools' => $schools,
-                'rkasData' => [],
-                'totalIncome' => 0,
-                'totalExpense' => 0,
-                'balance' => 0,
-                'startDate' => null,
-                'endDate' => null,
-                'message' => 'Tidak ada periode keuangan aktif yang ditemukan.'
+                'rkasData' => [], 'totalIncome' => 0, 'totalExpense' => 0, 'balance' => 0,
+                'message' => 'Tidak ada sekolah yang terdaftar.'
             ]);
         }
         
-        $startDate = $request->input('start_date', $activePeriod->start_date);
-        $endDate = $request->input('end_date', $activePeriod->end_date);
+        $rkasDataGlobal = [];
+        $totalIncomeGlobal = 0;
+        $totalExpenseGlobal = 0;
+        $activePeriod = null;
 
-        $cashManagements = CashManagement::where('school_id', $schoolId)
-            ->where('financial_period_id', $activePeriod->id)
-            ->with('account')
-            ->get();
+        foreach ($schoolsToProcess as $s) {
+            $activePeriod = FinancialPeriod::where('school_id', $s->id)->where('is_active', true)->first();
+            
+            if ($activePeriod) {
+                $startDate = $request->input('start_date', $activePeriod->start_date);
+                $endDate = $request->input('end_date', $activePeriod->end_date);
 
-        $rkasData = [];
-        $totalIncome = 0;
-        $totalExpense = 0;
+                $cashManagements = CashManagement::where('school_id', $s->id)
+                    ->where('financial_period_id', $activePeriod->id)
+                    ->with('account')
+                    ->get();
 
-        foreach ($cashManagements as $cashManagement) {
-            $report = $this->getReportForCashManagement($cashManagement, $startDate, $endDate);
-            $rkasData[] = $report;
-            $totalIncome += $report['income'];
-            $totalExpense += $report['expense'];
+                foreach ($cashManagements as $cashManagement) {
+                    $report = $this->getReportForCashManagement($cashManagement, $startDate, $endDate);
+                    
+                    $report['school_name'] = $s->name; 
+                    $rkasDataGlobal[] = $report;
+                    
+                    $totalIncomeGlobal += $report['income'];
+                    $totalExpenseGlobal += $report['expense'];
+                }
+            }
         }
+        
+        $balanceGlobal = $totalIncomeGlobal - $totalExpenseGlobal;
 
-        $balance = $totalIncome - $totalExpense;
+        $schoolsList = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([]);
 
-        return view('reports.rkas.global', compact('school', 'schools', 'rkasData', 'totalIncome', 'totalExpense', 'balance', 'startDate', 'endDate', 'activePeriod'));
+        return view('reports.rkas.global', [
+            'school' => $school,
+            'schools' => $schoolsList,
+            'rkasData' => $rkasDataGlobal,
+            'totalIncome' => $totalIncomeGlobal,
+            'totalExpense' => $totalExpenseGlobal,
+            'balance' => $balanceGlobal,
+            'activePeriod' => $activePeriod,
+        ]);
     }
 
     public function detail(Request $request, School $school, CashManagement $cashManagement)

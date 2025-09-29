@@ -21,6 +21,35 @@
 
 <div class="app-body">
     <div class="row gx-3">
+        <div class="col-xl-12">
+            <div class="card">
+                <div class="card-body">
+                    <!-- Row start -->
+                    <form action="{{ route('reports.rkas-global') }}" method="GET" class="mb-4">
+                        <div class="row gx-3">
+                            @if (auth()->user()->role != 'SchoolAdmin')
+                                <div class="col-xl-4 col-md-6 col-12">
+                                    <div class="mb-3">
+                                        <label for="school_filter" class="form-label">Filter Sekolah</label>
+                                        <select name="school" id="school_filter" class="form-select" onchange="this.form.submit()">
+                                            <option value="">-- Semua Sekolah --</option>
+                                            @foreach($schools as $s)
+                                                <option value="{{ $s->slug }}" {{ $school && $school->slug == $s->slug ? 'selected' : '' }}>
+                                                    {{ $s->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row gx-3">
         <div class="col-xxl-12">
             <div class="card">
                 <div class="card-header">

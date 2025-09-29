@@ -86,14 +86,21 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:SuperAdmin,AdminMonitor'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::resource('schools', SchoolController::class);
-        Route::get('/reports/beginning-balance', [ReportController::class, 'beginningBalance'])->name('reports.beginning-balance');
-        Route::get('/reports/general-journal', [ReportController::class, 'generalJournal'])->name('reports.general-journal');
-        Route::get('/reports/ledger', [ReportController::class, 'ledger'])->name('reports.ledger');
-        Route::get('/reports/trial-balance-before', [ReportController::class, 'trialBalanceBefore'])->name('reports.trial-balance-before');
-        Route::get('/reports/adjusting-entries', [ReportController::class, 'adjustingEntries'])->name('reports.adjusting-entries');
-        Route::get('/reports/trial-balance-after', [ReportController::class, 'trialBalanceAfter'])->name('reports.trial-balance-after');
-        Route::get('/reports/financial-statements', [ReportController::class, 'financialStatements'])->name('reports.financial-statements');
-        Route::get('/reports/cash-reports', [ReportController::class, 'cashReports'])->name('reports.cash-reports');
+        Route::prefix('rkas')->name('rkas.')->group(function () {
+            Route::get('/global-pdf', [RkasController::class, 'printGlobalPdf'])->name('global-pdf');
+        });
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/beginning-balance', [ReportController::class, 'beginningBalance'])->name('beginning-balance');
+            Route::get('/general-journal', [ReportController::class, 'generalJournal'])->name('general-journal');
+            Route::get('/ledger', [ReportController::class, 'ledger'])->name('ledger');
+            Route::get('/trial-balance-before', [ReportController::class, 'trialBalanceBefore'])->name('trial-balance-before');
+            Route::get('/adjusting-entries', [ReportController::class, 'adjustingEntries'])->name('adjusting-entries');
+            Route::get('/trial-balance-after', [ReportController::class, 'trialBalanceAfter'])->name('trial-balance-after');
+            Route::get('/financial-statements', [ReportController::class, 'financialStatements'])->name('financial-statements');
+            Route::get('/cash-reports', [ReportController::class, 'cashReports'])->name('cash-reports');
+            Route::get('/rkas/global', [RkasController::class, 'global'])->name('rkas-global');
+            Route::get('/rkas/detail/{cashManagement}', [RkasController::class, 'detail'])->name('rkas-detail');
+        });
         Route::resource('transactions', TransactionController::class)->only(['index']);
         Route::resource('accounts', AccountController::class)->only(['index']);
         Route::resource('students', StudentController::class)->only(['index']);
@@ -113,92 +120,79 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware(['role:SchoolAdmin', 'school.access'])->group(function () {
         Route::get('/schools/{school}/dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
 
-        Route::resource('schools/{school}/students', StudentController::class)->except(['show'])->names([
-            'index' => 'school-students.index',
-            'create' => 'school-students.create',
-            'store' => 'school-students.store'
-        ]);
-        Route::get('schools/{school}/students/import', [StudentController::class, 'importForm'])->name('school-students.import-form');
-        Route::post('schools/{school}/students/import', [StudentController::class, 'import'])->name('school-students.import');
-
-        Route::resource('schools/{school}/accounts', AccountController::class)->except(['show'])->names([
-            'index' => 'school-accounts.index',
-            'create' => 'school-accounts.create',
-            'store' => 'school-accounts.store'
-        ]);
-        Route::get('schools/{school}/accounts/import', [AccountController::class, 'importForm'])->name('school-accounts.import-form');
-        Route::post('schools/{school}/accounts/import', [AccountController::class, 'import'])->name('school-accounts.import');
-
-        Route::resource('schools/{school}/teachers', TeacherController::class)->except(['show'])->names([
-            'index' => 'school-teachers.index',
-            'create' => 'school-teachers.create',
-            'store' => 'school-teachers.store'
-        ]);
-        Route::get('schools/{school}/teachers/import', [TeacherController::class, 'importForm'])->name('school-teachers.import-form');
-        Route::post('schools/{school}/teachers/import', [TeacherController::class, 'import'])->name('school-teachers.import');
-
-        Route::resource('schools/{school}/employees', EmployeeController::class)->except(['show'])->names([
-            'index' => 'school-employees.index',
-            'create' => 'school-employees.create',
-            'store' => 'school-employees.store'
-        ]);
-        Route::get('schools/{school}/employees/import', [EmployeeController::class, 'importForm'])->name('school-employees.import-form');
-        Route::post('schools/{school}/employees/import', [EmployeeController::class, 'import'])->name('school-employees.import');
-
-        Route::resource('schools/{school}/majors', SchoolMajorController::class)->except(['show', 'edit', 'update', 'destroy'])->names([
-            'index' => 'school-school-majors.index',
-            'create' => 'school-school-majors.create',
-            'store' => 'school-school-majors.store'
-        ]);
-
-        Route::resource('schools/{school}/funds', FundManagementController::class)->except(['show', 'edit', 'update', 'destroy'])->names([
-            'index' => 'school-fund-managements.index',
-            'create' => 'school-fund-managements.create',
-            'store' => 'school-fund-managements.store'
-        ]);
-
-        Route::resource('schools/{school}/transactions', TransactionController::class)->names([
-            'index' => 'school-transactions.index',
-            'create' => 'school-transactions.create',
-            'store' => 'school-transactions.store',
-        ]);
-
-        Route::resource('schools/{school}/student-receivables', StudentReceivableController::class)->names([
-            'index' => 'school-student-receivables.index',
-            'create' => 'school-student-receivables.create',
-            'store' => 'school-student-receivables.store',
-        ]);
-
-        Route::resource('schools/{school}/student-alumni', StudentAlumniController::class)->names([
-            'index' => 'school-student-alumni.index',
-        ]);
-
-        Route::resource('schools/{school}/teacher-receivables', TeacherReceivableController::class)->names([
-            'index' => 'school-teacher-receivables.index',
-            'create' => 'school-teacher-receivables.create',
-            'store' => 'school-teacher-receivables.store',
-        ]);       
-        
-        Route::resource('schools/{school}/employee-receivables', EmployeeReceivableController::class)->names([
-            'index' => 'school-employee-receivables.index',
-            'create' => 'school-employee-receivables.create',
-            'store' => 'school-employee-receivables.store',
-        ]);
-
-        Route::resource('schools/{school}/fixed-assets', FixedAssetController::class)->names([
-            'index' => 'school-fixed-assets.index',
-            'create' => 'school-fixed-assets.create',
-            'store' => 'school-fixed-assets.store',
-        ]);
-
-        Route::resource('schools/{school}/payments', SettingController::class)->except(['show', 'edit', 'update', 'destroy'])->names([
-            'index' => 'school-schedules.index',
-            'create' => 'school-schedules.create',
-            'store' => 'school-schedules.store',
-        ]);
-
         Route::prefix('schools/{school}')->name('school-')->group(function () {
 
+            Route::resource('/students', StudentController::class)->except(['show'])->names([
+                'index' => 'students.index',
+                'create' => 'students.create',
+                'store' => 'students.store'
+            ]);
+            Route::get('/students/import', [StudentController::class, 'importForm'])->name('students.import-form');
+            Route::post('/students/import', [StudentController::class, 'import'])->name('students.import');
+            Route::resource('/accounts', AccountController::class)->except(['show'])->names([
+                'index' => 'accounts.index',
+                'create' => 'accounts.create',
+                'store' => 'accounts.store'
+            ]);
+            Route::get('/accounts/import', [AccountController::class, 'importForm'])->name('accounts.import-form');
+            Route::post('/accounts/import', [AccountController::class, 'import'])->name('accounts.import');
+            Route::resource('/teachers', TeacherController::class)->except(['show'])->names([
+                'index' => 'teachers.index',
+                'create' => 'teachers.create',
+                'store' => 'teachers.store'
+            ]);
+            Route::get('/teachers/import', [TeacherController::class, 'importForm'])->name('teachers.import-form');
+            Route::post('/teachers/import', [TeacherController::class, 'import'])->name('teachers.import');
+            Route::resource('/employees', EmployeeController::class)->except(['show'])->names([
+                'index' => 'employees.index',
+                'create' => 'employees.create',
+                'store' => 'employees.store'
+            ]);
+            Route::get('/employees/import', [EmployeeController::class, 'importForm'])->name('employees.import-form');
+            Route::post('/employees/import', [EmployeeController::class, 'import'])->name('employees.import');
+            Route::resource('/majors', SchoolMajorController::class)->except(['show', 'edit', 'update', 'destroy'])->names([
+                'index' => 'school-majors.index',
+                'create' => 'school-majors.create',
+                'store' => 'school-majors.store'
+            ]);
+            Route::resource('/funds', FundManagementController::class)->except(['show', 'edit', 'update', 'destroy'])->names([
+                'index' => 'fund-managements.index',
+                'create' => 'fund-managements.create',
+                'store' => 'fund-managements.store'
+            ]);
+            Route::resource('/transactions', TransactionController::class)->names([
+                'index' => 'transactions.index',
+                'create' => 'transactions.create',
+                'store' => 'transactions.store',
+            ]);
+            Route::resource('/student-receivables', StudentReceivableController::class)->names([
+                'index' => 'student-receivables.index',
+                'create' => 'student-receivables.create',
+                'store' => 'student-receivables.store',
+            ]);
+            Route::resource('/student-alumni', StudentAlumniController::class)->names([
+                'index' => 'student-alumni.index',
+            ]);
+            Route::resource('/teacher-receivables', TeacherReceivableController::class)->names([
+                'index' => 'teacher-receivables.index',
+                'create' => 'teacher-receivables.create',
+                'store' => 'teacher-receivables.store',
+            ]);       
+            Route::resource('/employee-receivables', EmployeeReceivableController::class)->names([
+                'index' => 'employee-receivables.index',
+                'create' => 'employee-receivables.create',
+                'store' => 'employee-receivables.store',
+            ]);
+            Route::resource('/fixed-assets', FixedAssetController::class)->names([
+                'index' => 'fixed-assets.index',
+                'create' => 'fixed-assets.create',
+                'store' => 'fixed-assets.store',
+            ]);
+            Route::resource('/payments', SettingController::class)->except(['show', 'edit', 'update', 'destroy'])->names([
+                'index' => 'schedules.index',
+                'create' => 'schedules.create',
+                'store' => 'schedules.store',
+            ]);
             Route::prefix('reports')->name('reports.')->group(function (){
                 Route::get('/beginning-balance', [ReportController::class, 'beginningBalance'])->name('beginning-balance');
                 Route::get('/general-journal', [ReportController::class, 'generalJournal'])->name('general-journal');
@@ -211,7 +205,6 @@ Route::middleware(['auth'])->group(function () {
                 Route::get('/rkas/global', [RkasController::class, 'global'])->name('rkas-global');
                 Route::get('/rkas/detail/{cashManagement}', [RkasController::class, 'detail'])->name('rkas-detail');
             });
-
             Route::prefix('rkas')->name('rkas.')->group(function () {
                 Route::get('/global-pdf', [RkasController::class, 'printGlobalPdf'])->name('global-pdf');
             });
@@ -296,8 +289,6 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/schools/{school}/funds/{fund_management}', [FundManagementController::class, 'update'])->name('school-fund-managements.update');
         Route::delete('/schools/{school}/funds/{fund_management}', [FundManagementController::class, 'destroy'])->name('school-fund-managements.destroy');
 
-        
-        
         Route::get('/schools/{school}/students/{student}/edit', [StudentController::class, 'edit'])->name('school-students.edit');
         Route::put('/schools/{school}/students/{student}', [StudentController::class, 'update'])->name('school-students.update');
         Route::delete('/schools/{school}/students/{student}', [StudentController::class, 'destroy'])->name('school-students.destroy');
