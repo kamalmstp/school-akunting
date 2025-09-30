@@ -43,44 +43,66 @@ class RkasController extends Controller
         Log::info('Accessing RKAS Global Report');
 
         $user = auth()->user();
-        $school = $this->resolveSchool($user, $school);
-        // Baris ini menangani AdminMonitor/SuperAdmin atau SchoolAdmin
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
-        $schoolId = $school ? $school->id : null;
-        $activePeriod = $school ? $this->getActivePeriod($school) : null;
+        
+        $schoolToFilter = $this->resolveSchool($user, $school);
+        
+        $schoolsList = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([]);
 
-        $rkasData = [];
-        $totalIncome = 0;
-        $totalExpense = 0;
+        $schoolsToProcess = collect();
+        $activePeriod = null;
 
-        if ($activePeriod) {
-            $startDate = $request->input('start_date', $activePeriod->start_date);
-            $endDate = $request->input('end_date', $activePeriod->end_date);
+        if ($schoolToFilter) {
+            $schoolsToProcess = collect([$schoolToFilter]);
+            $activePeriod = $this->getActivePeriod($schoolToFilter);
+        } elseif (in_array($user->role, ['SuperAdmin', 'AdminMonitor'])) {
+            $schoolsToProcess = School::all();
+        } else {
+            $schoolsToProcess = collect([]);
+        }
+        
+        $rkasDataGlobal = [];
+        $totalIncomeGlobal = 0;
+        $totalExpenseGlobal = 0;
+        
+        foreach ($schoolsToProcess as $s) {
+            $period = $this->getActivePeriod($s);
+            
+            if ($period) {
+                $startDate = $request->input('start_date', $period->start_date);
+                $endDate = $request->input('end_date', $period->end_date);
 
-            $cashManagements = CashManagement::where('school_id', $schoolId)
-                ->where('financial_period_id', $activePeriod->id)
-                ->with('account')
-                ->get();
+                $cashManagements = CashManagement::where('school_id', $s->id)
+                    ->where('financial_period_id', $period->id)
+                    ->with('account')
+                    ->get();
 
-            foreach ($cashManagements as $cashManagement) {
-                $report = $this->getReportForCashManagement($cashManagement, $startDate, $endDate);
-                $rkasData[] = $report;
-                $totalIncome += $report['income'];
-                $totalExpense += $report['expense'];
+                foreach ($cashManagements as $cashManagement) {
+                    $report = $this->getReportForCashManagement($cashManagement, $startDate, $endDate);
+                    
+                    $report['school_name'] = $s->name;
+                    $report['school_id'] = $s->id; 
+                    
+                    $rkasDataGlobal[] = $report;
+                    
+                    $totalIncomeGlobal += $report['income'];
+                    $totalExpenseGlobal += $report['expense'];
+                }
             }
         }
 
-        $balance = $totalIncome - $totalExpense;
+        $balanceGlobal = $totalIncomeGlobal - $totalExpenseGlobal;
         
-        return view('reports.rkas.global', compact(
-            'school',
-            'schools',
-            'rkasData',
-            'totalIncome',
-            'totalExpense',
-            'balance',
-            'activePeriod'
-        ));
+        $finalActivePeriod = $schoolToFilter ? $activePeriod : null;
+        
+        return view('reports.rkas.global', [
+            'school' => $schoolToFilter, 
+            'schools' => $schoolsList, 
+            'rkasData' => $rkasDataGlobal,
+            'totalIncome' => $totalIncomeGlobal,
+            'totalExpense' => $totalExpenseGlobal,
+            'balance' => $balanceGlobal,
+            'activePeriod' => $finalActivePeriod, 
+        ]);
     }
 
     public function detail(Request $request, School $school, CashManagement $cashManagement)
@@ -121,15 +143,20 @@ class RkasController extends Controller
 
     protected function resolveSchool($user, $school)
     {
-        if ($user->role === 'SchoolAdmin' && !$school) {
+        if ($user->role === 'SchoolAdmin' && $user->school_id) {
             return $user->school;
         }
-
-        if ($school) {
+        
+        $schoolIdFilter = request('school');
+        if (in_array($user->role, ['SuperAdmin', 'AdminMonitor']) && $schoolIdFilter) {
+            return School::find($schoolIdFilter);
+        }
+        
+        if ($school instanceof School) {
             return $school;
         }
 
-        return School::first();
+        return null; 
     }
 
     protected function getReportForCashManagement_old(CashManagement $cashManagement, $startDate, $endDate)
