@@ -120,10 +120,6 @@ class RkasController extends Controller
     {
         Log::info("Accessing RKAS Detail Report for CashManagement ID: {$cashManagement->id}");
 
-        if ($cashManagement->school_id !== $school->id) {
-            return redirect()->route('school-rkas.global', $school)->with('error', 'Sumber kas tidak valid untuk sekolah ini.');
-        }
-
         $activePeriod = $this->getActivePeriod($school);
 
         if (!$activePeriod || $cashManagement->financial_period_id !== $activePeriod->id) {
