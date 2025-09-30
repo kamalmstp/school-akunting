@@ -38,44 +38,58 @@ class RkasController extends Controller
         return $sources;
     }
 
+    // RkasController.php
 
 public function global(Request $request, School $schoolParam = null)
 {
     $user = auth()->user();
     $schoolIdFilter = $request->input('school');
     $schoolToFilter = null;
+    $schoolsToProcess = collect(); // Default: kosong
 
+    // 1. Prioritas Model Binding ($schoolParam)
     if ($schoolParam) {
         $schoolToFilter = $schoolParam;
-    } elseif ($schoolIdFilter) {
+        $schoolsToProcess = collect([$schoolToFilter]);
+    } 
+    // 2. Prioritas Filter Dropdown (AdminMonitor/SuperAdmin)
+    elseif ($schoolIdFilter) {
         $schoolToFilter = School::find($schoolIdFilter);
-    } elseif ($user->role === 'SchoolAdmin' && $user->school_id) {
+        if ($schoolToFilter) {
+            $schoolsToProcess = collect([$schoolToFilter]);
+        }
+    } 
+    // 3. Default SchoolAdmin (Jika SchoolAdmin mengakses tanpa parameter/filter)
+    elseif ($user->role === 'SchoolAdmin') {
+        // Asumsi user model memiliki school_id atau relasi 'school'
         $schoolToFilter = School::find($user->school_id);
+        if ($schoolToFilter) {
+            $schoolsToProcess = collect([$schoolToFilter]);
+        }
+    } 
+    // 4. Default Global View (AdminMonitor/SuperAdmin tanpa filter)
+    elseif (in_array($user->role, ['SuperAdmin', 'AdminMonitor'])) {
+        $schoolsToProcess = School::all();
     }
 
     $schoolsList = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([]);
-
-    if ($schoolToFilter) {
-        $schoolsToProcess = collect([$schoolToFilter]);
-        $activePeriod = FinancialPeriod::where('school_id', $schoolToFilter->id)->where('is_active', true)->first();
-    } else {        
-        $schoolsToProcess = School::all();
-        $activePeriod = null; 
-    }
     
     $rkasDataGlobal = [];
     $totalIncomeGlobal = 0;
     $totalExpenseGlobal = 0;
-    
+    $activePeriod = null; 
+
     foreach ($schoolsToProcess as $s) {
         $period = FinancialPeriod::where('school_id', $s->id)->where('is_active', true)->first();
         
         if ($period) {
-            $startDate = $request->input('start_date', $period->start_date);
-            $endDate = $request->input('end_date', $period->end_date);
+            $activePeriod = $period; // Digunakan untuk mendapatkan tanggal default
+
+            $startDate = $request->input('start_date', $activePeriod->start_date);
+            $endDate = $request->input('end_date', $activePeriod->end_date);
 
             $cashManagements = CashManagement::where('school_id', $s->id)
-                ->where('financial_period_id', $period->id)
+                ->where('financial_period_id', $activePeriod->id)
                 ->with('account')
                 ->get();
 
@@ -101,7 +115,9 @@ public function global(Request $request, School $schoolParam = null)
         'totalIncome' => $totalIncomeGlobal,
         'totalExpense' => $totalExpenseGlobal,
         'balance' => $balanceGlobal,
-        'activePeriod' => $activePeriod,
+        'activePeriod' => $activePeriod, // Mengirimkan periode dari satu-satunya/sekolah yang diproses
+        'startDate' => $startDate ?? null,
+        'endDate' => $endDate ?? null,
     ]);
 }
 
