@@ -41,39 +41,30 @@ class RkasController extends Controller
     public function global(Request $request, School $schoolParam = null)
     {
         $user = auth()->user();
-        
     
         $schoolIdFilter = $request->input('school');
-        
         $schoolToFilter = null;
-        
     
         if ($user->role === 'SchoolAdmin') {
-            $schoolToFilter = $user->school;
+            $schoolToFilter = School::find($user->school_id);
         } 
-    
         elseif ($schoolParam) {
             $schoolToFilter = $schoolParam;
         }
-    
         elseif ($schoolIdFilter) {
             $schoolToFilter = School::find($schoolIdFilter);
         }
-        
     
         $schoolsList = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([]);
-        
-    
+
         if ($schoolToFilter) {
             $schoolsToProcess = collect([$schoolToFilter]);
             $activePeriod = FinancialPeriod::where('school_id', $schoolToFilter->id)->where('is_active', true)->first();
-        } else {
-        
+        } else {        
             $schoolsToProcess = School::all();
             $activePeriod = null; 
         }
         
-    
         $rkasDataGlobal = [];
         $totalIncomeGlobal = 0;
         $totalExpenseGlobal = 0;
