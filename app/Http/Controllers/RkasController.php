@@ -38,7 +38,6 @@ class RkasController extends Controller
         return $sources;
     }
 
-    // RkasController.php
 
 public function global(Request $request, School $schoolParam = null)
 {
@@ -51,7 +50,6 @@ public function global(Request $request, School $schoolParam = null)
     } elseif ($schoolIdFilter) {
         $schoolToFilter = School::find($schoolIdFilter);
     } elseif ($user->role === 'SchoolAdmin' && $user->school_id) {
-        // Fallback jika SchoolAdmin tidak memiliki schoolParam (walaupun route seharusnya menyediakan)
         $schoolToFilter = School::find($user->school_id);
     }
 
@@ -103,7 +101,7 @@ public function global(Request $request, School $schoolParam = null)
         'totalIncome' => $totalIncomeGlobal,
         'totalExpense' => $totalExpenseGlobal,
         'balance' => $balanceGlobal,
-        'activePeriod' => $schoolToFilter ? $activePeriod : null,
+        'activePeriod' => $activePeriod,
     ]);
 }
 
