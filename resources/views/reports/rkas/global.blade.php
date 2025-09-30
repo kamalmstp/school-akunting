@@ -130,7 +130,7 @@
                                                 @if (auth()->user()->role != 'SchoolAdmin')
                                                     <a href="{{ route('reports.rkas-detail', ['school' => $item['school_id'], 'cashManagement' => $item['cashManagementId']]) }}" class="btn btn-sm btn-info text-white">Lihat Detail</a>
                                                 @else
-                                                    <a href="{{ route('school-reports.rkas-detail', ['school' => $item['school_id'], 'cashManagement' => $item['cashManagementId']]) }}" class="btn btn-sm btn-info text-white">Lihat Detail</a>
+                                                    <a href="{{ route('school-reports.rkas-detail', ['school' => auth()->user()->school_id, 'cashManagement' => $item['cashManagementId']]) }}" class="btn btn-sm btn-info text-white">Lihat Detail</a>
                                                 @endif
                                             </td>
                                         </tr>
