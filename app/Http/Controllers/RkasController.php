@@ -38,87 +38,128 @@ class RkasController extends Controller
         return $sources;
     }
 
-    // RkasController.php
+    public function global(Request $request, School $schoolParam = null)
+    {
+        $user = auth()->user();
+        $schoolIdFilter = $request->input('school');
+        $schoolToFilter = null;
+        $schoolsToProcess = collect();
+        $activePeriod = null; 
+        
+        if ($schoolParam) {
+            $schoolToFilter = $schoolParam;
+        } elseif ($schoolIdFilter) {
+            $schoolToFilter = School::find($schoolIdFilter);
+        } elseif ($user->role === 'SchoolAdmin' && $user->school_id) {
+            $schoolToFilter = School::find($user->school_id);
+        }
 
-public function global(Request $request, School $schoolParam = null)
+        if ($schoolToFilter) {
+            $schoolsToProcess = collect([$schoolToFilter]);
+            $activePeriod = FinancialPeriod::where('school_id', $schoolToFilter->id)->where('is_active', true)->first();
+        } elseif (in_array($user->role, ['SuperAdmin', 'AdminMonitor'])) {
+            $schoolsToProcess = School::all();
+        }
+
+        $schoolsList = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([]);
+        
+        $rkasDataGlobal = [];
+        $totalIncomeGlobal = 0;
+        $totalExpenseGlobal = 0;
+        $startDate = null;
+        $endDate = null;
+        $finalActivePeriod = $activePeriod;
+
+        foreach ($schoolsToProcess as $s) {
+            $period = FinancialPeriod::where('school_id', $s->id)->where('is_active', true)->first();
+            
+            if ($period) {
+                $startDate = $request->input('start_date', $period->start_date);
+                $endDate = $request->input('end_date', $period->end_date);
+
+                $cashManagements = CashManagement::where('school_id', $s->id)
+                    ->where('financial_period_id', $period->id)
+                    ->with('account')
+                    ->get();
+
+                foreach ($cashManagements as $cashManagement) {
+                    $report = $this->getReportForCashManagement($cashManagement, $startDate, $endDate);
+                    
+                    $report['school_name'] = $s->name;
+                    $report['school_id'] = $s->id;
+                    $rkasDataGlobal[] = $report;
+                    
+                    $totalIncomeGlobal += $report['income'];
+                    $totalExpenseGlobal += $report['expense'];
+                }
+            }
+        }
+        
+        $balanceGlobal = $totalIncomeGlobal - $totalExpenseGlobal;
+        
+        return view('reports.rkas.global', [
+            'school' => $schoolToFilter,
+            'schools' => $schoolsList, 
+            'rkasData' => $rkasDataGlobal,
+            'totalIncome' => $totalIncomeGlobal,
+            'totalExpense' => $totalExpenseGlobal,
+            'balance' => $balanceGlobal,
+            'activePeriod' => $finalActivePeriod, 
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+        ]);
+    }
+
+public function printGlobalPdf2(Request $request, School $schoolParam = null)
 {
     $user = auth()->user();
     $schoolIdFilter = $request->input('school');
-    $schoolToFilter = null;
-    $schoolsToProcess = collect(); // Default: kosong
+    $school = null;
 
-    // 1. Prioritas Model Binding ($schoolParam)
     if ($schoolParam) {
-        $schoolToFilter = $schoolParam;
-        $schoolsToProcess = collect([$schoolToFilter]);
-    } 
-    // 2. Prioritas Filter Dropdown (AdminMonitor/SuperAdmin)
-    elseif ($schoolIdFilter) {
-        $schoolToFilter = School::find($schoolIdFilter);
-        if ($schoolToFilter) {
-            $schoolsToProcess = collect([$schoolToFilter]);
-        }
-    } 
-    // 3. Default SchoolAdmin (Jika SchoolAdmin mengakses tanpa parameter/filter)
-    elseif ($user->role === 'SchoolAdmin') {
-        // Asumsi user model memiliki school_id atau relasi 'school'
-        $schoolToFilter = School::find($user->school_id);
-        if ($schoolToFilter) {
-            $schoolsToProcess = collect([$schoolToFilter]);
-        }
-    } 
-    // 4. Default Global View (AdminMonitor/SuperAdmin tanpa filter)
-    elseif (in_array($user->role, ['SuperAdmin', 'AdminMonitor'])) {
-        $schoolsToProcess = School::all();
+        $school = $schoolParam;
+    } elseif ($schoolIdFilter) {
+        $school = School::find($schoolIdFilter);
+    } elseif ($user->role === 'SchoolAdmin' && $user->school_id) {
+        $school = School::find($user->school_id);
     }
 
-    $schoolsList = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([]);
+    $rkasData = [];
+    $totalIncome = 0;
+    $totalExpense = 0;
+    $balance = 0;
+    $activePeriod = null;
     
-    $rkasDataGlobal = [];
-    $totalIncomeGlobal = 0;
-    $totalExpenseGlobal = 0;
-    $activePeriod = null; 
+    if ($school) {
+        $activePeriod = FinancialPeriod::where('school_id', $school->id)->where('is_active', true)->first();
+    }
 
-    foreach ($schoolsToProcess as $s) {
-        $period = FinancialPeriod::where('school_id', $s->id)->where('is_active', true)->first();
-        
-        if ($period) {
-            $activePeriod = $period; // Digunakan untuk mendapatkan tanggal default
+    if ($activePeriod) {
+        $startDate = $activePeriod->start_date;
+        $endDate = $activePeriod->end_date;
 
-            $startDate = $request->input('start_date', $activePeriod->start_date);
-            $endDate = $request->input('end_date', $activePeriod->end_date);
+        $cashManagements = CashManagement::where('school_id', $school->id)
+            ->where('financial_period_id', $activePeriod->id)
+            ->with('account')
+            ->get();
 
-            $cashManagements = CashManagement::where('school_id', $s->id)
-                ->where('financial_period_id', $activePeriod->id)
-                ->with('account')
-                ->get();
-
-            foreach ($cashManagements as $cashManagement) {
-                $report = $this->getReportForCashManagement($cashManagement, $startDate, $endDate);
-                
-                $report['school_name'] = $s->name;
-                $report['school_id'] = $s->id;
-                $rkasDataGlobal[] = $report;
-                
-                $totalIncomeGlobal += $report['income'];
-                $totalExpenseGlobal += $report['expense'];
-            }
+        foreach ($cashManagements as $cashManagement) {
+            $report = $this->getReportForCashManagement($cashManagement, $startDate, $endDate);
+            $rkasData[] = $report;
+            $totalIncome += $report['income'];
+            $totalExpense += $report['expense'];
         }
+
+        $balance = $totalIncome - $totalExpense;
     }
     
-    $balanceGlobal = $totalIncomeGlobal - $totalExpenseGlobal;
-    
-    return view('reports.rkas.global', [
-        'school' => $schoolToFilter,
-        'schools' => $schoolsList, 
-        'rkasData' => $rkasDataGlobal,
-        'totalIncome' => $totalIncomeGlobal,
-        'totalExpense' => $totalExpenseGlobal,
-        'balance' => $balanceGlobal,
-        'activePeriod' => $activePeriod, // Mengirimkan periode dari satu-satunya/sekolah yang diproses
-        'startDate' => $startDate ?? null,
-        'endDate' => $endDate ?? null,
-    ]);
+    $data = compact('school', 'rkasData', 'totalIncome', 'totalExpense', 'balance', 'activePeriod');
+
+    $pdf = Pdf::loadView('reports.rkas.pdf.global', $data);
+    $pdf->setPaper('a4', 'landscape');
+
+    $filename = "RKAS-Global-" . Str::slug($school->name ?? 'Sekolah') . "-" . date('Ymd') . ".pdf";
+    return $pdf->download($filename);
 }
 
     public function detail(Request $request, School $school, CashManagement $cashManagement)
