@@ -283,48 +283,6 @@ class ReportController extends Controller
         }
     }
 
-    public function generalJournal_old(Request $request, School $school = null)
-    {
-        Log::info('Accessing General Journal', ['request' => $request->all()]);
-        $user = auth()->user();
-        $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
-
-        $activePeriod = null;
-        if ($school) {
-            $activePeriod = FinancialPeriod::where('school_id', $school->id)
-                ->where('is_active', true)
-                ->first();
-        }
-
-        $startDate = $request->input('start_date');
-        $endDate = $request->input('end_date');
-
-        if (!$startDate && $activePeriod) {
-            $startDate = $activePeriod->start_date->toDateString();
-        }
-        if (!$endDate && $activePeriod) {
-            $endDate = $activePeriod->end_date->toDateString();
-        }
-
-        $schoolIds = $schools->pluck('id');
-
-        $transactions = Transaction::whereIn('school_id', $schoolIds)
-            ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
-            ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
-            ->with(['school', 'account'])
-            ->orderBy('date')
-            ->orderBy('id')
-            ->get()
-            ->groupBy('school_id');
-
-        if ($request->has('export') && $request->export === 'excel') {
-            return $this->exportGeneralJournal($transactions, $school, $startDate, $endDate);
-        }
-
-        return view('reports.general-journal', compact('school', 'schools', 'transactions', 'startDate', 'endDate', 'activePeriod'));
-    }
-
     protected function printGeneralJournalPdf(Collection $transactionsBySchool, ?School $school, ?string $startDate, ?string $endDate, ?FinancialPeriod $activePeriod)
     {
         $totalDebit = 0;
@@ -514,6 +472,19 @@ class ReportController extends Controller
         }
     }
 
+    protected function printLedgerPdf($school, $schools, $accounts, $startDate, $endDate, $accountType, $account, $singleAccount)
+    {
+        $data = compact('school', 'schools', 'accounts', 'startDate', 'endDate', 'accountType', 'account', 'singleAccount');
+        
+        $pdf = Pdf::loadView('reports.pdf.ledger-pdf', $data);
+        $pdf->setPaper('a4', 'landscape');
+        
+        $schoolName = $school ? \Str::slug($school->name) : 'Semua-Sekolah';
+        $fileName = "Buku-Besar-{$schoolName}-" . date('Ymd') . ".pdf";
+        
+        return $pdf->download($fileName);
+    }
+
     public function ledger(Request $request, School $school = null)
     {
         Log::info('Accessing Ledger', ['request' => $request->all()]);
@@ -531,7 +502,6 @@ class ReportController extends Controller
 
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
-
         if (!$startDate && $activePeriod) {
             $startDate = $activePeriod->start_date->toDateString();
         }
@@ -542,7 +512,7 @@ class ReportController extends Controller
         $account = $request->get('account');
         $accountType = $request->get('account_type');
         $singleAccount = Account::find($account);
-
+        
         if ($schoolIds->isEmpty() || !$activePeriod) {
              return view('reports.ledger', compact('school', 'schools', 'startDate', 'endDate', 'accountType', 'account', 'singleAccount'))->with(['accounts' => collect()]);
         }
@@ -554,6 +524,16 @@ class ReportController extends Controller
                 ->get()
                 ->keyBy('account_id');
         }
+
+        $transactionsBeforeReportStart = Transaction::select('account_id', DB::raw('SUM(debit - credit) as prior_sum'))
+            ->whereIn('school_id', $schoolIds)
+            ->whereBetween('date', [
+                $activePeriod->start_date->toDateString(),
+                Carbon::parse($startDate)->subDay()->toDateString()
+            ])
+            ->groupBy('account_id')
+            ->get()
+            ->keyBy('account_id');
 
         $paymentDetails = StudentReceivables::whereIn('school_id', $schoolIds)
             ->with(['student', 'student_receivable_details' => fn($q) => $q->orderBy('created_at')])
@@ -587,19 +567,12 @@ class ReportController extends Controller
                 CAST(COALESCE(SUBSTRING_INDEX(code, '-', 3), '0') AS INTEGER)
             ")
             ->get()
-            ->map(function ($account) use ($startDate, $schoolIds, $paymentDetails, $paymentTeacherDetails, $paymentEmployeeDetails, $activePeriod, $initialBalances) {
+            ->map(function ($account) use ($startDate, $schoolIds, $paymentDetails, $paymentTeacherDetails, $paymentEmployeeDetails, $activePeriod, $initialBalances, $transactionsBeforeReportStart) {
                 
                 $initialAmount = optional($initialBalances->get($account->id))->amount ?? 0;
-                
-                $transactionsBeforeReportStart = Transaction::where('account_id', $account->id)
-                    ->whereIn('school_id', $schoolIds)
-                    ->whereBetween('date', [
-                        $activePeriod->start_date->toDateString(),
-                        Carbon::parse($startDate)->subDay()->toDateString()
-                    ])
-                    ->sum(DB::raw('debit - credit'));
+                $priorSum = optional($transactionsBeforeReportStart->get($account->id))->prior_sum ?? 0;
 
-                $openingBalance = $initialAmount + $transactionsBeforeReportStart;
+                $openingBalance = $initialAmount + $priorSum;
                 $openingBalance = $account->normal_balance === 'Debit' ? $openingBalance : -$openingBalance;
 
                 $transactions = $account->transactions->map(function ($transaction) use ($account, $paymentDetails, $paymentTeacherDetails, $paymentEmployeeDetails) {
@@ -638,10 +611,10 @@ class ReportController extends Controller
                     'closing_balance' => $closingBalance,
                 ];
             })->filter(fn($item) => $item['transactions']->isNotEmpty() || $item['opening_balance'] != 0 || $item['closing_balance'] != 0)
-            ->groupBy(fn($item) => $item['account']->transactions->first()->school_id ?? 0);
+            ->groupBy(fn($item) => $item['account']->transactions->first()->school_id ?? $school->id ?? 0); 
 
-        if ($request->has('export') && $request->export === 'excel') {
-            return $this->exportLedger($accounts, $school, $startDate, $endDate);
+        if ($request->input('export') == 'pdf') {
+            return $this->printLedgerPdf($school, $schools, $accounts, $startDate, $endDate, $accountType, $account, $singleAccount);
         }
 
         return view('reports.ledger', compact('school', 'schools', 'accounts', 'startDate', 'endDate', 'accountType', 'account', 'singleAccount'));

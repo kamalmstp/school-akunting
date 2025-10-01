@@ -1,48 +1,75 @@
+@php
+    // Helper function untuk memformat Rupiah
+    function formatRupiah($amount) {
+        return number_format($amount, 0, ',', '.');
+    }
+
+    // Ambil data untuk sekolah yang sedang dipilih
+    $schoolId = $school->id ?? 0;
+    $ledgerData = $accounts->get($schoolId);
+    $currentSchool = $school ?? (isset($schools) ? $schools->first() : null);
+
+    // Tentukan URL logo (asumsi $school memiliki properti 'logo')
+    $logoUrl = isset($currentSchool->logo) && !empty($currentSchool->logo) ? $currentSchool->logo : 'images/placeholder-logo.png';
+
+    // Fungsi helper untuk memformat angka dan menambahkan keterangan D/K
+    $formatBalance = function ($balance, $normalBalance) {
+        $formatted = formatRupiah(abs($balance));
+        if ($balance === 0) {
+            return '-';
+        } elseif ($balance > 0) {
+            return $normalBalance === 'Debit' ? "Rp {$formatted} (D)" : "Rp {$formatted} (K)";
+        } else { // $balance < 0
+            return $normalBalance === 'Debit' ? "Rp {$formatted} (K)" : "Rp {$formatted} (D)";
+        }
+    };
+@endphp
+
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Laporan Buku Besar - {{ $school->name }}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Buku Besar - {{ $currentSchool->name ?? 'Laporan Gabungan' }}</title>
     <style>
+        /* Styling CSS untuk PDF */
         body {
             font-family: sans-serif;
             font-size: 10pt;
+            margin: 0; /* Mengatur margin kustom di .wrapper */
+        }
+        .wrapper {
+            margin: 0.5in; /* Margin standar untuk cetak */
+        }
+        h2, h3 {
             margin: 0;
             padding: 0;
-        }
-        .header {
             text-align: center;
-            margin-bottom: 20px;
         }
-        .header h3 {
-            margin: 0;
+        h2 {
             font-size: 14pt;
+            margin-bottom: 5px;
         }
-        .header p {
-            margin: 2px 0;
+        h3 {
+            font-size: 12pt;
+            margin-bottom: 5px;
+        }
+        p {
+            margin: 0 0 4px 0;
+            text-align: center;
             font-size: 10pt;
-        }
-        .info-box {
-            border: 1px solid #000;
-            padding: 8px;
-            margin-bottom: 15px;
-            font-size: 9pt;
-        }
-        .info-box p {
-            margin: 0;
-            line-height: 1.5;
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 9pt;
-            /* Memastikan tabel tidak terpotong di tengah akun */
-            page-break-inside: auto; 
+            margin-top: 15px;
+            page-break-inside: auto;
         }
         th, td {
             border: 1px solid #000;
             padding: 5px 8px;
-            text-align: left;
             vertical-align: top;
+            text-align: left;
+            font-size: 9pt;
         }
         th {
             background-color: #f2f2f2;
@@ -51,125 +78,197 @@
         }
         .text-right { text-align: right; }
         .text-center { text-align: center; }
-        .account-header {
-            margin-top: 15px;
-            margin-bottom: 5px;
-            padding: 5px 0;
+        .text-bold { font-weight: bold; }
+        
+        /* Styling Laporan Buku Besar */
+        .account-header td {
+            background-color: #e6e6fa; /* Lavender */
+            font-size: 10pt;
             font-weight: bold;
-            font-size: 11pt;
-            background-color: #e0e0e0;
-            border: 1px solid #000;
-            padding-left: 10px;
+            text-align: left;
+        }
+        .opening-balance td, .closing-balance td {
+            background-color: #ffe0b2; /* Light Orange/Peach */
+            font-weight: bold;
         }
         .page-break {
             page-break-after: always;
         }
+        .kop-table td {
+            border: none;
+            padding: 0;
+        }
+
+        .footer-signatures {
+            margin-top: 50px;
+            width: 100%;
+        }
+        .footer-signatures table {
+            width: 100%;
+            border: none;
+        }
+        .footer-signatures td {
+            border: none;
+            width: 50%;
+            padding: 10px;
+            vertical-align: top;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-
+<div class="wrapper">
+    <!-- KOP SURAT -->
     <div class="header">
-        <h3>LAPORAN BUKU BESAR</h3>
-        <p><strong>{{ strtoupper($school->name) }}</strong></p>
-        <p>{{ $school->address ?? 'Alamat Sekolah' }}</p>
+        <table class="kop-table" style="border: none;">
+            <tr style="border: none;">
+                <td style="width: 15%; text-align: center;">
+                    <!-- Gambar Logo (pastikan path $logoUrl dapat diakses DomPDF) -->
+                    <img src="{{ $logoUrl }}"
+                        alt="Logo Sekolah"
+                        style="width: 80px; height: 80px; display: block; margin: 0 auto;">
+                </td>
+                <td style="text-align: center; width: 70%;">
+                    <h2>LAPORAN BUKU BESAR</h2>
+                    <h3>{{ strtoupper($currentSchool->name ?? 'LAPORAN GABUNGAN') }}</h3>
+                    <p>{{ $currentSchool->address ?? 'Laporan ini mencakup semua sekolah yang difilter' }}</p>
+                </td>
+                <td style="width: 15%;"></td>
+            </tr>
+        </table>
+        
         <hr style="border: 1px solid #000; margin: 10px 0;">
     </div>
-
-    <div class="info-box">
-        <p><strong>Periode:</strong> {{ \Carbon\Carbon::parse($activePeriod->start_date)->isoFormat('D MMMM Y') }} s/d {{ \Carbon\Carbon::parse($activePeriod->end_date)->isoFormat('D MMMM Y') }}</p>
-    </div>
-
-    @php $isFirstAccount = true; @endphp
-    @forelse ($ledgerData as $accountData)
-        @if (!$isFirstAccount)
-            {{-- Tambahkan pemisah halaman di antara setiap akun --}}
-            <div class="page-break"></div> 
+    
+    <div style="text-align: center; margin-bottom: 10px; font-size: 10pt;">
+        <p><strong>Periode:</strong> {{ \Carbon\Carbon::parse($startDate)->isoFormat('D MMMM Y') }} s/d {{ \Carbon\Carbon::parse($endDate)->isoFormat('D MMMM Y') }}</p>
+        @if ($singleAccount)
+            <p><strong>Filter Akun:</strong> ({{ $singleAccount->code }}) - {{ $singleAccount->name }}</p>
+        @elseif ($accountType)
+            <p><strong>Filter Tipe Akun:</strong> {{ $accountType }}</p>
         @endif
-        
-        @php
-            $isFirstAccount = false;
-            // Mendapatkan saldo awal, atau 0 jika tidak ada
-            $initialBalance = $accountData['initial_balance'] ?? 0;
-            $runningBalance = $initialBalance;
-        @endphp
+    </div>
+    <!-- END KOP SURAT -->
 
-        <div class="account-header">
-            Nama Akun: {{ $accountData['account_name'] }} ({{ $accountData['account_code'] }})
-        </div>
+    @if (!$ledgerData)
+        <div style="text-align: center; margin-top: 50px;">Tidak ada data Buku Besar yang ditemukan untuk periode dan filter ini.</div>
+    @else
+        @foreach ($ledgerData as $item)
+            @php
+                $account = $item['account'];
+                $openingBalance = $item['opening_balance'];
+                $transactions = $item['transactions'];
+                $closingBalance = $item['closing_balance'];
+                $currentBalance = $openingBalance;
+                $normalBalance = $account->normal_balance;
+            @endphp
 
-        <table>
-            <thead>
-                <tr>
-                    <th width="10%">Tanggal</th>
-                    <th width="35%">Keterangan</th>
-                    <th width="10%">Ref Jurnal</th>
-                    <th width="15%">Debet</th>
-                    <th width="15%">Kredit</th>
-                    <th width="15%">Saldo</th>
-                </tr>
-            </thead>
-            <tbody>
-                {{-- Saldo Awal --}}
-                <tr>
-                    <td class="text-center" colspan="4">SALDO AWAL ({{ \Carbon\Carbon::parse($activePeriod->start_date)->format('d/m/Y') }})</td>
-                    <td class="text-center">-</td>
-                    <td class="text-right">Rp {{ number_format($initialBalance, 0, ',', '.') }}</td>
-                </tr>
-
-                {{-- Transaksi --}}
-                @forelse ($accountData['transactions'] as $transaction)
-                    @php
-                        $debit = (float)($transaction['debit'] ?? 0);
-                        $credit = (float)($transaction['credit'] ?? 0);
-                        // Saldo berjalan: Saldo lama + Debet - Kredit
-                        $runningBalance = $runningBalance + $debit - $credit;
-                    @endphp
-                    <tr>
-                        <td class="text-center">{{ \Carbon\Carbon::parse($transaction['date'])->format('d/m/Y') }}</td>
-                        <td>{{ $transaction['description'] }}</td>
-                        <td class="text-center">{{ $transaction['journal_ref'] ?? '-' }}</td>
-                        <td class="text-right">Rp {{ number_format($debit, 0, ',', '.') }}</td>
-                        <td class="text-right">Rp {{ number_format($credit, 0, ',', '.') }}</td>
-                        <td class="text-right">Rp {{ number_format($runningBalance, 0, ',', '.') }}</td>
+            <table>
+                <thead>
+                    <tr class="account-header">
+                        <td colspan="6">
+                            ({{ $account->code }}) - {{ $account->name }} (Normal Balance: {{ $normalBalance }})
+                        </td>
                     </tr>
-                @empty
                     <tr>
-                        <td colspan="6" class="text-center">Tidak ada transaksi yang tercatat untuk akun ini dalam periode berjalan.</td>
+                        <th style="width: 8%;">Tanggal</th>
+                        <th style="width: 10%;">Nomor Bukti</th>
+                        <th style="width: 35%;">Keterangan</th>
+                        <th style="width: 15%;">Debit</th>
+                        <th style="width: 15%;">Kredit</th>
+                        <th style="width: 17%;">Saldo Berjalan</th>
                     </tr>
-                @endforelse
+                </thead>
+                <tbody>
+                    <!-- Saldo Awal -->
+                    <tr class="opening-balance">
+                        <td class="text-center">{{ \Carbon\Carbon::parse($startDate)->subDay()->isoFormat('D MMM Y') }}</td>
+                        <td class="text-center bold" colspan="2">SALDO AWAL</td>
+                        <td class="text-right"></td>
+                        <td class="text-right"></td>
+                        <td class="text-right bold">
+                            @if ($openingBalance !== 0)
+                                {{ $formatBalance($openingBalance, $normalBalance) }}
+                            @else
+                                -
+                            @endif
+                        </td>
+                    </tr>
 
-                {{-- Saldo Akhir --}}
-                <tr>
-                    <td colspan="5" class="text-right" style="font-weight: bold; background-color: #f9ff99;">SALDO AKHIR</td>
-                    <td class="text-right" style="font-weight: bold; background-color: #f9f9f9;">Rp {{ number_format($runningBalance, 0, ',', '.') }}</td>
-                </tr>
-            </tbody>
-        </table>
-    @empty
-        <p class="text-center">Tidak ada data Buku Besar yang ditemukan untuk periode ini.</p>
-    @endforelse
+                    <!-- Detail Transaksi -->
+                    @foreach ($transactions as $tData)
+                        @php
+                            $transaction = $tData['transaction'];
 
-    {{-- Tanda Tangan hanya di akhir dokumen --}}
+                            // Perhitungan Saldo Berjalan (mutasi)
+                            $mutasi = $normalBalance === 'Debit' 
+                                ? $transaction->debit - $transaction->credit
+                                : $transaction->credit - $transaction->debit;
+                            
+                            $currentBalance += $mutasi;
+                            
+                            // Keterangan Tambahan untuk Piutang
+                            $keteranganTambahan = '';
+                            if ($tData['student_receivable']) {
+                                $keteranganTambahan = " (Siswa: {$tData['student_receivable']->student->full_name})";
+                            } elseif ($tData['teacher_receivable']) {
+                                $keteranganTambahan = " (Guru: {$tData['teacher_receivable']->teacher->full_name})";
+                            } elseif ($tData['employee_receivable']) {
+                                $keteranganTambahan = " (Karyawan: {$tData['employee_receivable']->employee->full_name})";
+                            }
+                        @endphp
+                        <tr>
+                            <td class="text-center">{{ \Carbon\Carbon::parse($transaction->date)->isoFormat('D MMM Y') }}</td>
+                            <td class="text-center">{{ $transaction->transaction_no }}</td>
+                            <td>
+                                {{ $transaction->description }}{{ $keteranganTambahan }}
+                            </td>
+                            <td class="text-right">Rp {{ formatRupiah($transaction->debit) }}</td>
+                            <td class="text-right">Rp {{ formatRupiah($transaction->credit) }}</td>
+                            <td class="text-right">
+                                {{ $formatBalance($currentBalance, $normalBalance) }}
+                            </td>
+                        </tr>
+                    @endforeach
+
+                    <!-- Saldo Akhir -->
+                    <tr class="closing-balance">
+                        <td class="text-center bold" colspan="3">SALDO AKHIR</td>
+                        <td class="text-right" colspan="2"></td>
+                        <td class="text-right bold">
+                            {{ $formatBalance($closingBalance, $normalBalance) }}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+            @if (!$loop->last)
+                <!-- <div class="page-break"></div> -->
+                 <br><br>
+            @endif
+        @endforeach
+    @endif
+
     <div class="footer-signatures">
         <table>
             <tr>
                 <td class="text-center">
-                    <p>{{ $school->city ?? 'Kota' }}, {{ \Carbon\Carbon::now()->isoFormat('D MMMM Y') }}</p>
+                    <p></p>
                     <p>Mengetahui,</p>
                     <br><br><br><br>
-                    <p>( ..................................................... )</p>
+                    <p>({{ $school->kepsek ?? 'Nama' }})</p>
                     <p>Kepala Sekolah</p>
                 </td>
                 <td class="text-center">
-                    <p></p>
-                    <p>Dibuat oleh,</p>
+                    <p>{{ $school->city ?? 'Kota' }}, {{ \Carbon\Carbon::now()->isoFormat('D MMMM Y') }}</p>
+                    <p>Dibuat Oleh,</p>
                     <br><br><br><br>
-                    <p>( ..................................................... )</p>
+                    <p>({{ $school->bendahara ?? 'Nama' }})</p>
                     <p>Bendahara</p>
                 </td>
             </tr>
         </table>
     </div>
-
+</div>
 </body>
 </html>

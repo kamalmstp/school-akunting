@@ -59,25 +59,25 @@
                             </div>
                             <div class="row gx-3">
                                 @php
-                                    $routeName = auth()->user()->role != 'SchoolAdmin' ? 'reports.general-journal' : 'school-reports.general-journal';
+                                    $routeName = auth()->user()->role != 'SchoolAdmin' ? 'reports.ledger' : 'school-reports.ledger';
                                     $currentQuery = request()->query();
                                     $routeParams = $currentQuery;
                                     if (auth()->user()->role === 'SchoolAdmin' && $school) {   
                                         $routeParams = array_merge(['school' => $school->id], $currentQuery);
+                                        unset($routeParams['school']); 
                                     }
                                     $pdfUrl = route($routeName, array_merge($routeParams, ['export' => 'pdf']));
-                                    $excelUrl = route($routeName, array_merge($routeParams, ['export' => 'excel']));
                                     $resetUrl = auth()->user()->role != 'SchoolAdmin' 
-                                                ? route('reports.general-journal') 
-                                                : route('school-reports.general-journal', ['school' => $school->id ?? null]);
+                                                ? route('reports.ledger') 
+                                                : route('school-reports.ledger', ['school' => $school->id ?? null]);
                                 @endphp
-                                <div class="col-xl-4 col-md-6 col-12">
-                                    <button type="submit" class="btn btn-primary">Tampilkan</button>
-                                    <a href="{{ auth()->user()->role != 'SchoolAdmin' ? route('reports.general-journal') : route('school-reports.general-journal', $school) }}" class="btn btn-danger">Reset</a>
-                                    <a href="{{ $pdfUrl }}" class="btn btn-success" target="_blank">
-                                        <i class="fas fa-file-pdf"></i> Cetak PDF
+                                <div class="col-xl-12 col-md-12 col-12">
+                                    <button type="submit" class="btn btn-primary me-2">Tampilkan</button>
+                                    <a href="{{ $resetUrl }}" class="btn btn-danger me-2">Reset</a>
+                                    
+                                    <a href="{{ $pdfUrl }}" class="btn btn-warning text-dark" target="_blank">
+                                        <i class="fas fa-file-pdf me-1"></i> Cetak PDF
                                     </a>
-                                    <!-- <a href="{{ route('general-journal', array_merge(['school' => $school ? $school->id : request()->query('school_id')], request()->except('school_id'), ['export' => 'excel'])) }}" class="btn btn-success">Export Excel</a> -->
                                 </div>
                             </div>
                         </form>

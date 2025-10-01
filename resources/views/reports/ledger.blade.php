@@ -69,6 +69,17 @@
                                 <div class="col-xl-4 col-md-6 col-12">
                                     <button type="submit" class="btn btn-primary">Tampilkan</button>
                                     <a href="{{ auth()->user()->role != 'SchoolAdmin' ? route('reports.ledger') : route('school-reports.ledger', $school) }}" class="btn btn-danger">Reset</a>
+                                    @php
+                                        $currentParams = request()->all();
+                                        $pdfRouteName = auth()->user()->role != 'SchoolAdmin' ? 'reports.ledger' : 'school-reports.ledger';
+                                        $routeParams = auth()->user()->role == 'SchoolAdmin' && $school ? ['school' => $school->id] : [];
+                                        
+                                        $pdfUrl = route($pdfRouteName, $routeParams + $currentParams + ['export' => 'pdf']);
+                                    @endphp
+
+                                    <a href="{{ $pdfUrl }}" class="btn btn-success" target="_blank">
+                                        <i class="fas fa-file-pdf"></i> Cetak PDF
+                                    </a>
                                 </div>
                             </div>
                         </form>
