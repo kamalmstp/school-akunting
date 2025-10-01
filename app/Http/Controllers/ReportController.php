@@ -514,15 +514,13 @@ class ReportController extends Controller
         }
     }
 
-    /**
-     * Laporan Buku Besar
-     */
     public function ledger(Request $request, School $school = null)
     {
         Log::info('Accessing Ledger', ['request' => $request->all()]);
         $user = auth()->user();
         $school = $this->resolveSchool($user, $school);
         $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+        $schoolIds = $school ? collect([$school->id]) : collect();
 
         $activePeriod = null;
         if ($school) {
@@ -544,7 +542,10 @@ class ReportController extends Controller
         $account = $request->get('account');
         $accountType = $request->get('account_type');
         $singleAccount = Account::find($account);
-        $schoolIds = $schools->pluck('id');
+
+        if ($schoolIds->isEmpty() || !$activePeriod) {
+             return view('reports.ledger', compact('school', 'schools', 'startDate', 'endDate', 'accountType', 'account', 'singleAccount'))->with(['accounts' => collect()]);
+        }
 
         $initialBalances = collect();
         if ($activePeriod) {
