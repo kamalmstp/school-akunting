@@ -2,31 +2,33 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\School;
-use App\Models\Account;
-use App\Models\Transaction;
-use App\Models\StudentReceivables;
-use App\Models\TeacherReceivable;
-use App\Models\EmployeeReceivable;
-use App\Models\BeginningBalance;
-use App\Models\FinancialPeriod;
-use App\Models\InitialBalance;
-use App\Models\CashManagement;
-use Illuminate\Http\Request;
-use Carbon\Carbon;
 use Artisan;
+use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\WithTitle;
-
-use Maatwebsite\Excel\Concerns\WithEvents;
-use Maatwebsite\Excel\Concerns\WithStyles;
+use App\Models\{
+    School,
+    Account,
+    Transaction,
+    StudentReceivables,
+    TeacherReceivable,
+    EmployeeReceivable,
+    BeginningBalance,
+    FinancialPeriod,
+    InitialBalance,
+    CashManagement
+};
+use Maatwebsite\Excel\Concerns\{
+    FromCollection,
+    WithHeadings,
+    WithTitle,
+    WithEvents,
+    WithStyles
+};
 use Maatwebsite\Excel\Events\AfterSheet;
+use Maatwebsite\Excel\Facades\Excel;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
-
-use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -39,9 +41,6 @@ class ReportController extends Controller
         $this->middleware('school.access')->only(['dashboard', 'beginningBalance', 'generalJournal', 'ledger', 'profitLoss', 'balanceSheet']);
     }
 
-    /**
-     * Export Beginning Balance to Excel
-     */
     protected function exportBeginningBalance($transactions, $school, $date, $totalDebit, $totalCredit, $transactionsBySchool = null)
     {
         Log::info('Exporting Beginning Balance', ['school_id' => $school?->id, 'date' => $date->format('Y-m-d'), 'transaction_count' => $transactions->count()]);
@@ -122,9 +121,6 @@ class ReportController extends Controller
         }
     }
 
-    /**
-     * Laporan Saldo Awal
-     */
     public function beginningBalance(Request $request, School $school = null)
     {
         Log::info('Accessing Beginning Balance', ['request' => $request->all()]);
@@ -139,7 +135,6 @@ class ReportController extends Controller
         $endOfPreviousMonth = $date->subMonth()->endOfMonth();
 
         if ($schoolId) {
-            // Sekolah spesifik
             $transactions = Transaction::join('accounts', 'transactions.account_id', '=', 'accounts.id')
                 ->where('transactions.school_id', $schoolId)
                 ->where('transactions.date', '<=', $endOfPreviousMonth)
@@ -177,7 +172,6 @@ class ReportController extends Controller
 
             return view('reports.beginning-balance', compact('school', 'schools', 'date', 'transactions', 'totalDebit', 'totalCredit'));
         } else {
-            // Tanpa filter sekolah
             $transactionsBySchool = [];
             $allTransactions = collect();
 
@@ -233,9 +227,6 @@ class ReportController extends Controller
         }
     }
 
-    /**
-     * Export General Journal to Excel
-     */
     protected function exportGeneralJournal($transactions, $school, $startDate, $endDate)
     {
         Log::info('Exporting General Journal', ['school_id' => $school?->id, 'start_date' => $startDate, 'end_date' => $endDate]);
@@ -269,7 +260,7 @@ class ReportController extends Controller
                                 $transaction->credit,
                             ]);
                         }
-                        $data->push([]); // Empty row for separation
+                        $data->push([]);
                     }
                     return $data;
                 }
@@ -290,9 +281,6 @@ class ReportController extends Controller
         }
     }
 
-    /**
-     * Laporan Jurnal Umum
-     */
     public function generalJournal(Request $request, School $school = null)
     {
         Log::info('Accessing General Journal', ['request' => $request->all()]);
@@ -300,7 +288,6 @@ class ReportController extends Controller
         $school = $this->resolveSchool($user, $school);
         $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
 
-        // Dapatkan periode keuangan aktif untuk sekolah yang sedang login/dipilih
         $activePeriod = null;
         if ($school) {
             $activePeriod = FinancialPeriod::where('school_id', $school->id)
@@ -311,7 +298,6 @@ class ReportController extends Controller
         $startDate = $request->input('start_date');
         $endDate = $request->input('end_date');
 
-        // Gunakan periode aktif sebagai default jika tidak ada input tanggal
         if (!$startDate && $activePeriod) {
             $startDate = $activePeriod->start_date->toDateString();
         }
@@ -337,9 +323,6 @@ class ReportController extends Controller
         return view('reports.general-journal', compact('school', 'schools', 'transactions', 'startDate', 'endDate', 'activePeriod'));
     }
 
-    /**
-     * Export Ledger to Excel
-     */
     protected function exportLedger($accounts, $school, $startDate, $endDate)
     {
         Log::info('Exporting Ledger', ['school_id' => $school?->id, 'start_date' => $startDate, 'end_date' => $endDate]);

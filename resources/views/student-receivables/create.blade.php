@@ -134,7 +134,7 @@
 
                                         <div class="mb-3" id="show_pembayaran" style="display:none">
                                             <label for="persen_bayar" class="form-label">Pembayaran (%)</label>
-                                            <input type="number" step="1" min="0" max="100" class="form-control" id="persen_bayar" name="persen_bayar" value="0">
+                                            <input type="number" max="100" class="form-control" id="persen_bayar" name="persen_bayar" value="100">
                                         </div>
 
                                         <div class="mb-3">

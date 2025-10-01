@@ -7,7 +7,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Laporan Detail RKAS - {{ $school_data->name }}</title>
+    <title>Laporan Jurnal Umum - {{ $school->name }}</title>
     <style>
         body {
             font-family: sans-serif;
@@ -18,10 +18,6 @@
         .header {
             text-align: center;
             margin-bottom: 20px;
-        }
-        .header table {
-            text-align: center;
-            border: 0px;
         }
         .header h3 {
             margin: 0;
@@ -51,6 +47,7 @@
             border: 1px solid #000;
             padding: 5px 8px;
             text-align: left;
+            vertical-align: top;
         }
         th {
             background-color: #f2f2f2;
@@ -104,58 +101,57 @@
     </div>
 
     <div class="info-box">
-        <p><strong>Nama Laporan:</strong> {{ $title }}</p>
-        <p><strong>Sekolah:</strong> {{ $school_data->name }}</p>
         <p><strong>Periode:</strong> {{ \Carbon\Carbon::parse($activePeriod->start_date)->isoFormat('D MMMM Y') }} s/d {{ \Carbon\Carbon::parse($activePeriod->end_date)->isoFormat('D MMMM Y') }}</p>
     </div>
 
     <table>
         <thead>
             <tr>
-                <th width="5%" rowspan="2">No.</th>
-                <th width="10%" rowspan="2">Tanggal</th>
-                <th width="40%" rowspan="2">Uraian / Keterangan</th>
-                <th width="25%" colspan="2">Transaksi</th>
-                <th width="20%" rowspan="2">Saldo</th>
-            </tr>
-            <tr>
-                <th>Pemasukan</th>
-                <th>Pengeluaran</th>
+                <th width="10%">Tanggal</th>
+                <th width="35%">Keterangan (Uraian)</th>
+                <th width="10%">Ref/Akun ID</th>
+                <th width="35%" colspan="2">Akun</th>
+                <th width="15%">Debet</th>
+                <th width="15%">Kredit</th>
             </tr>
         </thead>
         <tbody>
-            <tr>
-                <td colspan="5"><strong>SALDO AWAL KAS</strong></td>
-                <td class="text-right"><strong>Rp {{ number_format($initialBalance, 0, ',', '.') }}</strong></td>
-            </tr>
-
-            @php $currentBalance = $initialBalance; @endphp
-            @forelse ($transactions as $index => $item)
-                @php
-                    $debit = (float)($item['debit'] ?? 0);
-                    $credit = (float)($item['credit'] ?? 0);
-                    $currentBalance = $currentBalance + $debit - $credit;
-                @endphp
+            @php $currentDate = null; @endphp
+            @forelse ($journalEntries as $entry)
                 <tr>
-                    <td class="text-center">{{ $index + 1 }}</td>
-                    <td class="text-center">{{ \Carbon\Carbon::parse($item['date'])->format('d/m/Y') }}</td>
-                    <td>{{ $item['description'] }}</td>
-                    <td class="text-right">Rp {{ number_format($debit, 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format($credit, 0, ',', '.') }}</td>
-                    <td class="text-right">Rp {{ number_format($currentBalance, 0, ',', '.') }}</td>
+                    {{-- Hanya tampilkan tanggal pada baris pertama transaksi --}}
+                    <td class="text-center">
+                        @if ($currentDate !== $entry->date)
+                            {{ \Carbon\Carbon::parse($entry->date)->format('d/m/Y') }}
+                            @php $currentDate = $entry->date; @endphp
+                        @endif
+                    </td>
+                    <td>{{ $entry->description }}</td>
+                    <td class="text-center">{{ $entry->account_code ?? 'REF' }}</td> {{-- Asumsi ada account_code --}}
+
+                    @if ($entry->debit > 0)
+                        {{-- Baris Debet --}}
+                        <td colspan="2">{{ $entry->account_name }}</td> {{-- Asumsi ada account_name --}}
+                        <td class="text-right">Rp {{ number_format($entry->debit, 0, ',', '.') }}</td>
+                        <td class="text-right">Rp 0</td>
+                    @else
+                        {{-- Baris Kredit (Biasanya diberi indentasi) --}}
+                        <td style="padding-left: 20px;" colspan="2">{{ $entry->account_name }}</td>
+                        <td class="text-right">Rp 0</td>
+                        <td class="text-right">Rp {{ number_format($entry->credit, 0, ',', '.') }}</td>
+                    @endif
                 </tr>
             @empty
                 <tr>
-                    <td colspan="6" class="text-center">Tidak ada transaksi yang tercatat dalam periode ini.</td>
+                    <td colspan="7" class="text-center">Tidak ada transaksi Jurnal Umum yang tercatat dalam periode ini.</td>
                 </tr>
             @endforelse
         </tbody>
         <tfoot>
             <tr class="totals-row">
-                <td colspan="3" class="text-center">JUMLAH TOTAL</td>
+                <td colspan="5" class="text-center">JUMLAH TOTAL</td>
                 <td class="text-right">Rp {{ number_format($totalDebit, 0, ',', '.') }}</td>
                 <td class="text-right">Rp {{ number_format($totalCredit, 0, ',', '.') }}</td>
-                <td class="text-right">Rp {{ number_format($finalBalance, 0, ',', '.') }}</td>
             </tr>
         </tfoot>
     </table>
@@ -163,26 +159,19 @@
     <div class="footer-signatures">
         <table>
             <tr>
-                <td>
-                    <p>Menyetujui,</p>
-                    <p>Ketua Majelis Dikdasmen Kota {{$school_data->city ?? 'Nama Kota'}}</p>
+                <td class="text-center">
+                    <p>{{ $school->city ?? 'Kota' }}, {{ \Carbon\Carbon::now()->isoFormat('D MMMM Y') }}</p>
+                    <p>Mengetahui,</p>
                     <br><br><br><br>
                     <p>( ..................................................... )</p>
-                    <p>{{ $school_data->dikdasmen ?? 'Nama' }}</p>
+                    <p>Kepala Sekolah</p>
                 </td>
                 <td class="text-center">
                     <p></p>
-                    <p>Kepala Sekolah</p>
+                    <p>Dibuat oleh,</p>
                     <br><br><br><br>
                     <p>( ..................................................... )</p>
-                    <p>{{ $school_data->kepsek ?? 'Kepala Sekolah' }}</p>
-                </td>
-                <td class="text-center">
-                    <p>{{ $school_data->city ?? 'Kota'}}, {{ \Carbon\Carbon::now()->isoFormat('D MMMM Y') }}</p>
-                    <p>Bendahara,</p>
-                    <br><br><br><br>
-                    <p>( ..................................................... )</p>
-                    <p>{{ $school_data->bendahara ?? 'Bendahara' }}</p>
+                    <p>Bendahara</p>
                 </td>
             </tr>
         </table>
