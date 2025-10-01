@@ -25,6 +25,7 @@ class RkasController extends Controller
         Log::info('Resolving School', ['user_id' => $user->id, 'role' => $user->role, 'school_id' => $school?->id, 'request_school_id' => request()->get('school_id')]);
         if ($user->role !== 'SchoolAdmin') {
             if (!$school) {
+                // Check if a school filter ID is provided in the query string
                 $reqSchool = request()->input('school');
                 $school = School::when($reqSchool, fn($q) => $q->where('id', $reqSchool))->first();
             }
@@ -37,22 +38,35 @@ class RkasController extends Controller
         return $school;
     }
 
+    // MEMODIFIKASI METHOD GLOBAL UNTUK MENGHANDLE VIEW DAN PDF
     public function global(Request $request, School $school = null)
     {
-        $type = $request->input('type', 'view');
+        // Mendapatkan parameter 'type' dari URL (cth: .../global?type=pdf)
+        $type = $request->input('type', 'view'); // Default ke 'view'
 
-        Log::info('Accessing RKAS Global Report');
+        Log::info("Accessing RKAS Global Report as $type");
 
         $user = auth()->user();
 
+        // 1. Resolve school
         $school = $this->resolveSchool($user, $school);
         $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
-        $schoolId = $school ? [$school->id] : $schools->pluck('id');
+        
+        // Tentukan ID sekolah yang digunakan (Array of IDs)
+        $schoolIds = $school ? [$school->id] : $schools->pluck('id')->toArray();
+        
+        // MENDAPATKAN SEMUA PERIODE AKTIF YANG RELEVAN
+        $activePeriods = FinancialPeriod::whereIn('school_id', $schoolIds)
+                                      ->where('is_active', true)
+                                      ->get();
 
-        $activePeriod = $schoolId ? FinancialPeriod::where('school_id', $schoolId)->where('is_active', true)->first() : null;
+        // Gunakan periode aktif pertama yang ditemukan untuk konsistensi default tanggal
+        $firstActivePeriod = $activePeriods->first();
 
-        if (!$activePeriod) {
-
+        // --------------------------------------------------------------------------------
+        // INI ADALAH KASUS DIMANA TIDAK ADA PERIODE AKTIF SAMA SEKALI
+        // --------------------------------------------------------------------------------
+        if (!$firstActivePeriod) {
             $data = [
                 'school' => $school,
                 'schools' => $schools,
@@ -62,17 +76,33 @@ class RkasController extends Controller
                 'balance' => 0,
                 'startDate' => null,
                 'endDate' => null,
+                'activePeriod' => null,
             ];
 
+            if ($type === 'pdf') {
+                 // Jika tidak ada data aktif, kembalikan PDF kosong atau error
+                $pdf = Pdf::loadView('reports.rkas.pdf.global', $data);
+                $pdf->setPaper('a4', 'landscape');
+                $filename = "RKAS-Global-Kosong-" . date('Ymd') . ".pdf";
+                return $pdf->download($filename);
+            }
+            
             $data['message'] = 'Tidak ada periode keuangan aktif yang ditemukan.';
             return view('reports.rkas.global', $data);
         }
         
-        $startDate = $request->input('start_date', $activePeriod->start_date);
-        $endDate = $request->input('end_date', $activePeriod->end_date);
+        // --------------------------------------------------------------------------------
+        // LOGIKA PENGUMPULAN DATA RKAS
+        // --------------------------------------------------------------------------------
+        $startDate = $request->input('start_date', $firstActivePeriod->start_date);
+        $endDate = $request->input('end_date', $firstActivePeriod->end_date);
+        
+        // Ambil ID dari semua periode aktif yang ditemukan
+        $activePeriodIds = $activePeriods->pluck('id')->toArray();
 
-        $cashManagements = CashManagement::where('school_id', $schoolId)
-            ->where('financial_period_id', $activePeriod->id)
+        // Mengambil CashManagement yang relevan
+        $cashManagements = CashManagement::whereIn('school_id', $schoolIds)
+            ->whereIn('financial_period_id', $activePeriodIds)
             ->with('account')
             ->get();
 
@@ -88,67 +118,38 @@ class RkasController extends Controller
         }
 
         $balance = $totalIncome - $totalExpense;
-
+        
+        // Compact semua variabel yang dibutuhkan
+        $activePeriod = $firstActivePeriod; 
         $data = compact('school', 'schools', 'rkasData', 'totalIncome', 'totalExpense', 'balance', 'startDate', 'endDate', 'activePeriod');
 
+        // --------------------------------------------------------------------------------
+        // KEMBALIKAN OUTPUT (VIEW atau PDF)
+        // --------------------------------------------------------------------------------
         if ($type === 'pdf') {
             $pdf = Pdf::loadView('reports.rkas.pdf.global', $data);
             $pdf->setPaper('a4', 'landscape');
 
-            $filename = "RKAS-Global-" . Str::slug($school->name ?? 'Sekolah') . "-" . date('Ymd') . ".pdf";
+            // Filename menggunakan nama sekolah yang difilter, atau 'Semua-Sekolah'
+            $filename = "RKAS-Global-" . Str::slug($school->name ?? 'Semua-Sekolah') . "-" . date('Ymd') . ".pdf";
             return $pdf->download($filename);
         }
 
         return view('reports.rkas.global', $data);
     }
 
-    public function printGlobalPdf(Request $request, School $school = null)
-    {
-        $user = auth()->user();
-        $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
-        $schoolId = $school ? [$school->id] : $schools->pluck('id');
-
-        $activePeriod = $schoolId ? FinancialPeriod::where('school_id', $schoolId)->where('is_active', true)->first() : null;
-
-        $rkasData = [];
-        $totalIncome = 0;
-        $totalExpense = 0;
-        $balance = 0;
-        
-        if ($activePeriod) {
-            $startDate = $activePeriod->start_date;
-            $endDate = $activePeriod->end_date;
-
-            $cashManagements = CashManagement::where('school_id', $schoolId)
-                ->where('financial_period_id', $activePeriod->id)
-                ->with('account')
-                ->get();
-
-            foreach ($cashManagements as $cashManagement) {
-                $report = $this->getReportForCashManagement($cashManagement, $startDate, $endDate);
-                $rkasData[] = $report;
-                $totalIncome += $report['income'];
-                $totalExpense += $report['expense'];
-            }
-
-            $balance = $totalIncome - $totalExpense;
-        }
-        
-        $data = compact('school', 'rkasData', 'totalIncome', 'totalExpense', 'balance', 'activePeriod');
-
-        $pdf = Pdf::loadView('reports.rkas.pdf.global', $data);
-        $pdf->setPaper('a4', 'landscape');
-
-        $filename = "RKAS-Global-" . Str::slug($school->name ?? 'Sekolah') . "-" . date('Ymd') . ".pdf";
-        return $pdf->download($filename);
-    }
+    // METODE printGlobalPdf DIHAPUS
 
     public function detail(Request $request, School $school, CashManagement $cashManagement)
     {
         Log::info("Accessing RKAS Detail Report for CashManagement ID: {$cashManagement->id}");
 
         $activePeriod = FinancialPeriod::where('id', $cashManagement->financial_period_id)->first();
+
+        // FIX: Add null check for $activePeriod
+        if (!$activePeriod) {
+             return redirect()->back()->with('error', 'Periode keuangan yang terkait dengan Cash Management ini tidak ditemukan.');
+        }
 
         $report = $this->getReportForCashManagement(
             $cashManagement, 
@@ -241,10 +242,15 @@ class RkasController extends Controller
 
     public function printDetailPdf(School $school, CashManagement $cashManagement)
     {
-        $activePeriod = $this->getActivePeriod($school);
+        // Resolve school for proper authorization checks before proceeding
+        $user = auth()->user();
+        $school = $this->resolveSchool($user, $school);
+        
+        // Get the specific period associated with this Cash Management record
+        $activePeriod = FinancialPeriod::where('id', $cashManagement->financial_period_id)->first();
 
-        if (!$activePeriod || $cashManagement->financial_period_id !== $activePeriod->id) {
-             return redirect()->back()->with('error', 'Periode keuangan tidak aktif atau tidak cocok.');
+        if (!$activePeriod) {
+             return redirect()->back()->with('error', 'Periode keuangan terkait tidak ditemukan.');
         }
 
         $report = $this->getReportForCashManagement(

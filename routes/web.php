@@ -100,6 +100,7 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/cash-reports', [ReportController::class, 'cashReports'])->name('cash-reports');
             Route::get('/rkas/global', [RkasController::class, 'global'])->name('rkas-global');
             Route::get('/rkas/detail/{cashManagement}', [RkasController::class, 'detail'])->name('rkas-detail');
+            Route::get('/rkas/global-pdf', [RkasController::class, 'printGlobalPdf'])->name('rkas-global-pdf');
         });
         Route::resource('transactions', TransactionController::class)->only(['index']);
         Route::resource('accounts', AccountController::class)->only(['index']);

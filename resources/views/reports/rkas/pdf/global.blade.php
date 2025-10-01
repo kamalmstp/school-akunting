@@ -69,8 +69,12 @@
         }
 
         .kop-surat-table .text-col {
-            width: 85%;
+            width: 70%;
             text-align: center;
+        }
+        .kop-surat-table .right-col {
+            width: 15%;
+            text-align:center;
         }
 
         .kop-surat-table p {
@@ -151,6 +155,9 @@
                     <p style="font-size: 0.8rem; font-weight: bold;">LAPORAN KEGIATAN DAN ANGGARAN SEKOLAH</p>
                     <p style="font-size: 1.2rem; font-weight: bold; text-transform: uppercase;">{{ $school->name ?? 'NAMA SEKOLAH' }}</p>
                     <p style="font-size: 1rem;">{{ $activePeriod->name ?? 'TAHUN PELAJARAN' }}</p>
+                </td>
+                <td class="right-col">
+
                 </td>
             </tr>
         </table>
@@ -233,14 +240,14 @@
                     <p class="signature-label no-margin">Ketua Majelis Dikdasmen Kota {{ $signerData['city'] ?? 'Mojokerto' }}</p>
                     <div class="signature-space"></div>
                     <p class="signature-name">{{ $signerData['ketuaMajelisName'] ?? 'Nama Ketua Majelis' }}</p>
-                    <p class="no-margin" style="font-size: 0.75rem;">NIP. {{ $signerData['ketuaMajelisNip'] ?? '1234567890' }}</p>
+                    <p class="no-margin" style="font-size: 0.75rem;"></p>
                 </td>
                 <td>
                     <p class="signature-label no-margin">{{ $signerData['city'] ?? 'Mojokerto' }}, {{ $tanggalLaporan }}</p>
                     <p class="signature-label no-margin">Kepala Sekolah</p>
                     <div class="signature-space"></div>
-                    <p class="signature-name">{{ $signerData['kepalaSekolahName'] ?? 'Nama Kepala Sekolah' }}</p>
-                    <p class="no-margin" style="font-size: 0.75rem;">NIP. {{ $signerData['kepalaSekolahNip'] ?? '1234567890' }}</p>
+                    <p class="signature-name">{{ $school->kepsek ?? 'Nama Kepala Sekolah' }}</p>
+                    <p class="no-margin" style="font-size: 0.75rem;">{{ $school->nopeg_kepsek }}</p>
                 </td>
             </tr>
         </table>

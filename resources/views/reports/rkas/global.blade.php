@@ -20,36 +20,37 @@
 <!-- App body starts -->
 
 <div class="app-body">
+    @if (auth()->user()->role != 'SchoolAdmin')
     <div class="row gx-3">
         <div class="col-xl-12">
             <div class="card">
                 <div class="card-body">
                     <!-- Row start -->
-                    <form action="{{ route('reports.rkas-global') }}" method="GET" class="mb-4">
-                        
-                            @if (auth()->user()->role != 'SchoolAdmin')
-                            <div class="row gx-3">
-                                <div class="col-xl-4 col-md-6 col-12">
-                                    <div class="mb-3">
-                                        <label for="school_filter" class="form-label">Filter Sekolah</label>
-                                        <select name="school" id="school_filter" class="form-select" onchange="this.form.submit()">
-                                            <option value="">-- Semua Sekolah --</option>
-                                            @foreach($schools as $s)
-                                                <option value="{{ $s->id }}" {{ (int)request('school') === $s->id ? 'selected' : '' }}>
-                                                    {{ $s->name }}
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                    </div>
+                    <form method="GET" class="mb-4">
+                        <div class="row gx-3">
+                            <div class="col-xl-4 col-md-6 col-12">
+                                <div class="mb-3">
+                                    <label for="schoolFilter" class="form-label">Filter Sekolah</label>
+                                    <select name="school" class="form-select" id="schoolFilter">
+                                        @foreach($schools as $s)
+                                            <option value="{{ $s->id }}" {{ $school && $school->id == $s->id ? 'selected' : '' }}>{{ $s->name }}</option>
+                                        @endforeach
+                                    </select>
                                 </div>
                             </div>
-                            @endif
-                        
+                        </div>							
+                        <div class="row gx-3">
+                            <div class="col-xl-4 col-md-6 col-12">
+                                <button type="submit" class="btn btn-primary">Tampilkan</button>
+                                <a href="" class="btn btn-danger">Reset</a>
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
+    @endif
 
     <div class="row gx-3">
         <div class="col-xxl-12">
@@ -57,15 +58,27 @@
                 <div class="card-header">
                     <div class="d-flex justify-content-between">
                         <h5 class="card-title">Laporan RKAS Global</h5> <br>
-                        
-                        @if(auth()->user()->school_id)
-                            <a href="{{ route('school-rkas.global-pdf', ['school' => auth()->user()->school_id]) }}" target="_blank" class="btn btn-success" title="Cetak PDF">
+                    @if (!empty($rkasData))
+                        @php
+                            $isSchoolAdmin = auth()->user()->role == 'SchoolAdmin';
+                            $routeName = $isSchoolAdmin ? 'school-reports.rkas-global' : 'reports.rkas-global';
+                            $params = request()->query();
+                            $params['type'] = 'pdf';
+                            
+                            if ($isSchoolAdmin) {
+                                $params['school'] = auth()->user()->school_id;
+                            }
+                            
+                            $printUrl = route($routeName, $params);
+                        @endphp
+                        <a href="{{ $printUrl }}" 
+                                target="_blank" class="btn btn-success" title="Cetak PDF">
                                 <span class="d-lg-block d-none">Cetak PDF</span>
                                 <span class="d-sm-block d-lg-none">
-                                    <i class="bi bi-file-earmark-pdf-fill"></i>
+                                    <i class="bi bi-file-pdf"></i>
                                 </span>
                             </a>
-                        @endif
+                    @endif
                     </div>
                 </div>
                 <div class="card-body">
@@ -104,9 +117,6 @@
                                     <tr>
                                         <th>#</th>
                                         <th>Sumber Dana</th>
-                                        @if (!$school && auth()->user()->role != 'SchoolAdmin')
-                                            <td>Sekolah</td>
-                                        @endif
                                         <th class="text-end">Saldo Awal</th>
                                         <th class="text-end">Pendapatan</th>
                                         <th class="text-end">Pengeluaran</th>
@@ -118,9 +128,6 @@
                                     @forelse($rkasData as $index => $item)
                                         <tr>
                                             <td>{{ $index + 1 }}</td>
-                                            @if (!$school && auth()->user()->role != 'SchoolAdmin')
-                                                <td>{{ $item['school_name'] }}</td>
-                                            @endif
                                             <td>{{ $item['name'] }}</td>
                                             <td class="text-end">Rp {{ number_format($item['initial_balance'], 0, ',', '.') }}</td>
                                             <td class="text-end text-success">Rp {{ number_format($item['income'], 0, ',', '.') }}</td>
@@ -128,7 +135,7 @@
                                             <td class="text-end">Rp {{ number_format($item['balance'], 0, ',', '.') }}</td>
                                             <td class="text-center">
                                                 @if (auth()->user()->role != 'SchoolAdmin')
-                                                    <a href="{{ route('reports.rkas-detail', ['school' => $item['school_id'], 'cashManagement' => $item['cashManagementId']]) }}" class="btn btn-sm btn-info text-white">Lihat Detail</a>
+                                                    <a href="{{ route('reports.rkas-detail', ['school' => $school->id, 'cashManagement' => $item['cashManagementId']]) }}" class="btn btn-sm btn-info text-white">Lihat Detail</a>
                                                 @else
                                                     <a href="{{ route('school-reports.rkas-detail', ['school' => auth()->user()->school_id, 'cashManagement' => $item['cashManagementId']]) }}" class="btn btn-sm btn-info text-white">Lihat Detail</a>
                                                 @endif

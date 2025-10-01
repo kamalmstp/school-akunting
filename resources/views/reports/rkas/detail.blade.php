@@ -10,7 +10,7 @@
                 <a href="{{ auth()->user()->role != 'SchoolAdmin' ? route('dashboard') : route('dashboard.index', auth()->user()->school_id) }}" class="text-decoration-none">Dashboard</a>
             </li>
             <li class="breadcrumb-item">
-                <a href="{{ route('school-reports.rkas-global', ['school' => $school->id]) }}" class="text-decoration-none">Laporan RKAS</a>
+                <a href="{{ auth()->user()->role != 'SchoolAdmin' ? route('reports.rkas-global') : route('school-reports.rkas-global', ['school' => $school->id]) }}" class="text-decoration-none">Laporan RKAS</a>
             </li>
             <li class="breadcrumb-item active" aria-current="page">Detail Kas</li>
         </ol>
@@ -115,7 +115,7 @@
                         </div>
                     </div>
                     <div class="card-footer text-center">
-                        <a href="{{ route('school-reports.rkas-global', ['school' => $school->id]) }}" class="btn btn-primary">
+                        <a href="{{ auth()->user()->role != 'SchoolAdmin' ? route('reports.rkas-global') : route('school-reports.rkas-global', ['school' => $school->id]) }}" class="btn btn-primary">
                             &larr; Kembali ke Ringkasan Global
                         </a>
                     </div>
