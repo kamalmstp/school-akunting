@@ -58,27 +58,27 @@
                 <div class="card-header">
                     <div class="d-flex justify-content-between">
                         <h5 class="card-title">Laporan RKAS Global</h5> <br>
-                    @if (!empty($rkasData))
-                        @php
-                            $isSchoolAdmin = auth()->user()->role == 'SchoolAdmin';
-                            $routeName = $isSchoolAdmin ? 'school-reports.rkas-global' : 'reports.rkas-global';
-                            $params = request()->query();
-                            $params['type'] = 'pdf';
-                            
-                            if ($isSchoolAdmin) {
-                                $params['school'] = auth()->user()->school_id;
-                            }
-                            
-                            $printUrl = route($routeName, $params);
-                        @endphp
-                        <a href="{{ $printUrl }}" 
+                        @if (!empty($rkasData))
+                            @php
+                                $isSchoolAdmin = auth()->user()->role == 'SchoolAdmin';
+                                $routeName = $isSchoolAdmin ? 'school-reports.rkas-global' : 'reports.rkas-global';
+                                $params = request()->query();
+                                $params['type'] = 'pdf';
+                                
+                                if ($isSchoolAdmin) {
+                                    $params['school'] = auth()->user()->school_id;
+                                }
+                                
+                                $printUrl = route($routeName, $params);
+                            @endphp
+                            <a href="{{ $printUrl }}" 
                                 target="_blank" class="btn btn-success" title="Cetak PDF">
                                 <span class="d-lg-block d-none">Cetak PDF</span>
                                 <span class="d-sm-block d-lg-none">
                                     <i class="bi bi-file-pdf"></i>
                                 </span>
                             </a>
-                    @endif
+                        @endif
                     </div>
                 </div>
                 <div class="card-body">

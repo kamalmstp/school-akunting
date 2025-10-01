@@ -146,9 +146,11 @@ class RkasController extends Controller
 
     public function detail(Request $request, School $school, CashManagement $cashManagement)
     {
+        $type = $request->input('type', 'view');
         Log::info("Accessing RKAS Detail Report for CashManagement ID: {$cashManagement->id}");
 
         $activePeriod = FinancialPeriod::where('id', $cashManagement->financial_period_id)->first();
+        $school_data = School::where('id', $cashManagement->school_id)->first();
 
         $report = $this->getReportForCashManagement(
             $cashManagement, 
@@ -163,16 +165,28 @@ class RkasController extends Controller
         $totalCredit = $report['expense'];
         $finalBalance = $report['balance'];
 
-        return view('reports.rkas.detail', compact(
+        $data = compact(
             'school', 
+            'school_data',
             'activePeriod',
+            'cashManagement',
             'title',
             'initialBalance',
             'transactions',
             'totalDebit',
             'totalCredit',
             'finalBalance'
-        ));
+        );
+
+        if ($type === 'pdf') {
+            $pdf = Pdf::loadView('reports.rkas.pdf.detail', $data);
+            $pdf->setPaper('a4', 'landscape');
+
+            $filename = "RKAS-Detail-" . Str::slug($cashManagement->name) . "-" . date('Ymd') . ".pdf";
+            return $pdf->download($filename);
+        }
+
+        return view('reports.rkas.detail', $data);
     }
 
     protected function getReportForCashManagement_old(CashManagement $cashManagement, $startDate, $endDate)

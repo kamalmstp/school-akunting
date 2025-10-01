@@ -24,16 +24,37 @@
             <div class="col-xxl-12">
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="card-title">{{ $title }}</h5>
-                        <p class="card-text">
-                            Periode: {{ optional($activePeriod)->name ?? 'Tidak Ada Periode Aktif' }} 
-                            ({{ optional($activePeriod)->start_date ? \Carbon\Carbon::parse($activePeriod->start_date)->format('d M Y') : '' }} - 
-                            {{ optional($activePeriod)->end_date ? \Carbon\Carbon::parse($activePeriod->end_date)->format('d M Y') : '' }})
-                        </p>
+                        <div class="d-flex justify-content-between">
+                            <h5 class="card-title">{{ $title }}</h5>
+                            @php
+                                $isSchoolAdmin = auth()->user()->role == 'SchoolAdmin';
+                                $routeName = $isSchoolAdmin ? 'school-reports.rkas-detail' : 'reports.rkas-detail';
+                                
+                                $routeParams = [
+                                    'school' => $school->id, 
+                                    'cashManagement' => $cashManagement->id,
+                                    'type' => 'pdf'
+                                ];
+                                $printUrl = route($routeName, $routeParams);
+                            @endphp
+                            <a href="{{ $printUrl }}" 
+                                target="_blank" class="btn btn-success" title="Cetak PDF">
+                                <span class="d-lg-block d-none">Cetak PDF</span>
+                                <span class="d-sm-block d-lg-none">
+                                    <i class="bi bi-file-pdf"></i>
+                                </span>
+                            </a>
+                        </div>
                     </div>
                     <div class="card-body">
                         
-                        <!-- Ringkasan Saldo -->
+                        <div class="row">
+                            <!-- <p class="card-text">
+                                Periode: {{ optional($activePeriod)->name ?? 'Tidak Ada Periode Aktif' }} 
+                                ({{ optional($activePeriod)->start_date ? \Carbon\Carbon::parse($activePeriod->start_date)->format('d M Y') : '' }} - 
+                                {{ optional($activePeriod)->end_date ? \Carbon\Carbon::parse($activePeriod->end_date)->format('d M Y') : '' }})
+                            </p> -->
+                        </div>
                         <div class="row mb-4 gx-3">
                             <div class="col-md-3 col-sm-6 mb-3">
                                 <div class="card p-3 bg-light border-start border-3 border-info shadow-sm">

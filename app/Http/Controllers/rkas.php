@@ -38,7 +38,6 @@ class RkasController extends Controller
         return $school;
     }
 
-    // MEMODIFIKASI METHOD GLOBAL UNTUK MENGHANDLE VIEW DAN PDF
     public function global(Request $request, School $school = null)
     {
         // Mendapatkan parameter 'type' dari URL (cth: .../global?type=pdf)
@@ -138,19 +137,24 @@ class RkasController extends Controller
         return view('reports.rkas.global', $data);
     }
 
-    // METODE printGlobalPdf DIHAPUS
-
+    // MEMODIFIKASI METHOD DETAIL UNTUK MENGHANDLE VIEW DAN PDF
     public function detail(Request $request, School $school, CashManagement $cashManagement)
     {
-        Log::info("Accessing RKAS Detail Report for CashManagement ID: {$cashManagement->id}");
+        $type = $request->input('type', 'view'); // Default ke 'view'
+        Log::info("Accessing RKAS Detail Report for CashManagement ID: {$cashManagement->id} as $type");
 
+        $user = auth()->user();
+        // 1. Resolve school untuk otorisasi
+        $school = $this->resolveSchool($user, $school); 
+
+        // Ambil periode keuangan terkait (bukan hanya yang aktif)
         $activePeriod = FinancialPeriod::where('id', $cashManagement->financial_period_id)->first();
 
-        // FIX: Add null check for $activePeriod
         if (!$activePeriod) {
              return redirect()->back()->with('error', 'Periode keuangan yang terkait dengan Cash Management ini tidak ditemukan.');
         }
 
+        // 2. Kumpulkan data laporan
         $report = $this->getReportForCashManagement(
             $cashManagement, 
             $activePeriod->start_date,
@@ -163,8 +167,8 @@ class RkasController extends Controller
         $totalDebit = $report['income'];
         $totalCredit = $report['expense'];
         $finalBalance = $report['balance'];
-
-        return view('reports.rkas.detail', compact(
+        
+        $data = compact(
             'school', 
             'activePeriod',
             'title',
@@ -173,7 +177,19 @@ class RkasController extends Controller
             'totalDebit',
             'totalCredit',
             'finalBalance'
-        ));
+        );
+
+        // 3. Output berdasarkan tipe
+        if ($type === 'pdf') {
+            $pdf = Pdf::loadView('reports.rkas.pdf.detail', $data);
+            $pdf->setPaper('a4', 'landscape');
+
+            $filename = "RKAS-Detail-" . Str::slug($cashManagement->name) . "-" . date('Ymd') . ".pdf";
+            return $pdf->download($filename);
+        }
+
+        // Default: Kembali ke view
+        return view('reports.rkas.detail', $data);
     }
 
     protected function getReportForCashManagement_old(CashManagement $cashManagement, $startDate, $endDate)
@@ -240,47 +256,5 @@ class RkasController extends Controller
         ];
     }
 
-    public function printDetailPdf(School $school, CashManagement $cashManagement)
-    {
-        // Resolve school for proper authorization checks before proceeding
-        $user = auth()->user();
-        $school = $this->resolveSchool($user, $school);
-        
-        // Get the specific period associated with this Cash Management record
-        $activePeriod = FinancialPeriod::where('id', $cashManagement->financial_period_id)->first();
-
-        if (!$activePeriod) {
-             return redirect()->back()->with('error', 'Periode keuangan terkait tidak ditemukan.');
-        }
-
-        $report = $this->getReportForCashManagement(
-            $cashManagement, 
-            $activePeriod->start_date, 
-            $activePeriod->end_date
-        );
-        
-        $title = "Laporan Jurnal Kas: " . $cashManagement->name;
-        $initialBalance = $report['initial_balance'];
-        $transactions = collect($report['items']); 
-        $totalDebit = $report['income'];
-        $totalCredit = $report['expense'];
-        $finalBalance = $report['balance'];
-
-        $data = compact(
-            'school', 
-            'activePeriod',
-            'title',
-            'initialBalance',
-            'transactions',
-            'totalDebit',
-            'totalCredit',
-            'finalBalance'
-        );
-
-        $pdf = Pdf::loadView('reports.rkas.pdf.detail', $data);
-        $pdf->setPaper('a4', 'landscape');
-
-        $filename = "RKAS-Detail-" . Str::slug($cashManagement->name) . "-" . date('Ymd') . ".pdf";
-        return $pdf->download($filename);
-    }
+    // METODE printDetailPdf DIHAPUS KARENA SUDAH DIGABUNGKAN KE DETAIL
 }
