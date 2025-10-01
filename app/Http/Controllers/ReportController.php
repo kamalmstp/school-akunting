@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Artisan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use App\Models\{
     School,
@@ -31,6 +32,7 @@ use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class ReportController extends Controller
@@ -281,7 +283,7 @@ class ReportController extends Controller
         }
     }
 
-    public function generalJournal(Request $request, School $school = null)
+    public function generalJournal_old(Request $request, School $school = null)
     {
         Log::info('Accessing General Journal', ['request' => $request->all()]);
         $user = auth()->user();
@@ -320,6 +322,79 @@ class ReportController extends Controller
             return $this->exportGeneralJournal($transactions, $school, $startDate, $endDate);
         }
 
+        return view('reports.general-journal', compact('school', 'schools', 'transactions', 'startDate', 'endDate', 'activePeriod'));
+    }
+
+    protected function printGeneralJournalPdf(Collection $transactionsBySchool, ?School $school, ?string $startDate, ?string $endDate, ?FinancialPeriod $activePeriod)
+    {
+        $totalDebit = 0;
+        $totalCredit = 0;
+
+        foreach ($transactionsBySchool as $schoolId => $transactions) {
+            foreach ($transactions as $transaction) {
+                $totalDebit += $transaction->debit;
+                $totalCredit += $transaction->credit;
+            }
+        }
+        
+        $data = compact('school', 'startDate', 'endDate', 'transactionsBySchool', 'totalDebit', 'totalCredit', 'activePeriod');
+        
+        $pdf = Pdf::loadView('reports.pdf.general-journal-pdf', $data);
+        $pdf->setPaper('a4', 'landscape');
+        
+        $schoolName = $school ? \Str::slug($school->name) : 'Semua-Sekolah';
+        $fileName = "Jurnal-Umum-{$schoolName}-" . date('Ymd') . ".pdf";
+        
+        return $pdf->download($fileName);
+    }
+
+    public function generalJournal(Request $request, School $school = null)
+    {
+        Log::info('Accessing General Journal', ['request' => $request->all()]);
+        $user = auth()->user();
+        $school = $this->resolveSchool($user, $school);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+
+        $activePeriod = null;
+        if ($school) {
+            $activePeriod = FinancialPeriod::where('school_id', $school->id)
+                ->where('is_active', true)
+                ->first();
+        }
+
+        $startDate = $request->input('start_date');
+        $endDate = $request->input('end_date');
+
+        if (!$startDate && $activePeriod) {
+            $startDate = $activePeriod->start_date->toDateString();
+        }
+        if (!$endDate && $activePeriod) {
+            $endDate = $activePeriod->end_date->toDateString();
+        }
+
+        if ($school) {
+            $schoolIds = [$school->id];
+        } else {
+            $schoolIds = $schools->pluck('id');
+        }
+
+        $transactions = Transaction::whereIn('school_id', $schoolIds)
+            ->when($startDate, fn($q) => $q->whereDate('date', '>=', $startDate))
+            ->when($endDate, fn($q) => $q->whereDate('date', '<=', $endDate))
+            ->with(['school', 'account'])
+            ->orderBy('date')
+            ->orderBy('id')
+            ->get()
+            ->groupBy('school_id');
+
+        if ($request->has('export')) {
+            if ($request->export === 'excel') {
+                return $this->exportGeneralJournal($transactions, $school, $startDate, $endDate);
+            } elseif ($request->export === 'pdf') {
+                return $this->printGeneralJournalPdf($transactions, $school, $startDate, $endDate, $activePeriod);
+            }
+        }
+        
         return view('reports.general-journal', compact('school', 'schools', 'transactions', 'startDate', 'endDate', 'activePeriod'));
     }
 
