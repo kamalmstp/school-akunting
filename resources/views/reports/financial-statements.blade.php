@@ -39,8 +39,19 @@
                             </div>
                             <div class="row gx-3">
                                 <div class="col-xl-4 col-md-6 col-12">
+                                    @php
+                                        $currentParams = request()->all();
+
+                                        $pdfRouteName = auth()->user()->role != 'SchoolAdmin' ? 'reports.financial-statements' : 'school-reports.financial-statements';
+                                        $routeParams = auth()->user()->role == 'SchoolAdmin' && $school ? ['school' => $school->id] : [];
+                                        $pdfUrl = route($pdfRouteName, $routeParams + $currentParams + ['export' => 'pdf']);
+                                    @endphp
+                                    
                                     <button type="submit" class="btn btn-primary">Tampilkan</button>
                                     <a href="{{ auth()->user()->role != 'SchoolAdmin' ? route('reports.financial-statements') : route('school-reports.financial-statements', $school) }}" class="btn btn-danger">Reset</a>
+                                    <a href="{{ $pdfUrl }}" class="btn btn-success" target="_blank">
+                                        <i class="fas fa-file-pdf"></i> Cetak PDF
+                                    </a>
                                     <!-- <a href="{{ route('financial-statements', array_merge(['school' => $school ? $school->id : request()->query('school_id')], request()->except('school_id'), ['export' => 'excel'])) }}" class="btn btn-success">Export Excel</a> -->
                                 </div>
                             </div>

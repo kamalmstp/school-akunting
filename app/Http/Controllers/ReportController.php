@@ -620,302 +620,21 @@ class ReportController extends Controller
         return view('reports.ledger', compact('school', 'schools', 'accounts', 'startDate', 'endDate', 'accountType', 'account', 'singleAccount'));
     }
 
-    public function trialBalance(Request $request, School $school = null)
+    protected function printFinancialStatementsPdf($school, $profitLoss, $balanceSheet, $date, $activePeriod)
     {
-        Log::info('Accessing Trial Balance', ['request' => $request->all()]);
-        $user = auth()->user();
-        $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
-        $schoolId = $school ? $school->id : null;
+        Log::info('Printing Financial Statements PDF', ['school_id' => $school?->id ]);
+        
+        $data = compact('school', 'balanceSheet', 'profitLoss', 'date', 'activePeriod');
+        // dd($data);
+        $pdf = Pdf::loadView('reports.pdf.financial-statement-pdf', $data);
+        $pdf->setPaper('a4', 'landscape');
 
-        $activePeriod = null;
-        if ($schoolId) {
-            $activePeriod = FinancialPeriod::where('school_id', $schoolId)->where('is_active', true)->first();
-        }
+        $schoolName = $school ? Str::slug($school->name) : 'laporan-gabungan';
+        $fileName = "laporan-keuangan-{$schoolName}". date('Ymd') .".pdf";
 
-        $startDate = $request->input('start_date', optional($activePeriod)->start_date ?? now()->startOfMonth()->toDateString());
-        $endDate = $request->input('end_date', optional($activePeriod)->end_date ?? now()->endOfMonth()->toDateString());
-
-        $initialBalances = InitialBalance::where('school_id', $schoolId)
-            ->where('financial_period_id', optional($activePeriod)->id)
-            ->get()
-            ->keyBy('account_id');
-
-        $transactions = Transaction::where('school_id', $schoolId)
-            ->whereBetween('date', [$startDate, $endDate])
-            ->get()
-            ->groupBy('account_id');
-
-        $trialBalance = collect();
-        $accounts = Account::orderBy('code')->get();
-
-        foreach ($accounts as $account) {
-            $initialBalance = optional($initialBalances->get($account->id))->amount ?? 0;
-            $accountTransactions = $transactions->get($account->id) ?? collect();
-
-            $debit = $accountTransactions->sum('debit');
-            $credit = $accountTransactions->sum('credit');
-
-            $totalDebit = $initialBalance + $debit;
-            $totalCredit = $credit;
-
-            if ($account->normal_balance === 'Kredit') {
-                $totalDebit = $debit;
-                $totalCredit = $initialBalance + $credit;
-            }
-
-            if ($totalDebit > 0 || $totalCredit > 0) {
-                $trialBalance->push([
-                    'code' => $account->code,
-                    'name' => $account->name,
-                    'debit' => $totalDebit,
-                    'credit' => $totalCredit,
-                ]);
-            }
-        }
-
-        $totalDebit = $trialBalance->sum('debit');
-        $totalCredit = $trialBalance->sum('credit');
-
-        if ($request->has('export') && $request->export === 'excel') {
-            return $this->exportTrialBalance($trialBalance, $school, $startDate, $endDate);
-        }
-
-        return view('reports.trial-balance', compact('school', 'schools', 'trialBalance', 'startDate', 'endDate', 'totalDebit', 'totalCredit'));
+        return $pdf->download($fileName);
     }
 
-    /**
-     * Neraca Saldo Awal (Belum Disesuaikan)
-     */
-    public function trialBalanceBefore(Request $request, School $school = null)
-    {
-        Log::info('Accessing Trial Balance Before', ['request' => $request->all()]);
-        $user = auth()->user();
-        $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
-        $schoolIds = $school ? [$school->id] : $schools->pluck('id');
-
-        $date = Carbon::parse($request->input('date', now()->endOfMonth()))->toDateString();
-
-        $trialBalance = $this->calculateTrialBalance($schoolIds, $date, false);
-
-        if ($request->has('export') && $request->input('export') === 'excel') {
-            return $this->exportTrialBalance($trialBalance, $school, $date, 'Before');
-        }
-
-        return view('reports.trial-balance-before', compact('school', 'schools', 'date', 'trialBalance'));
-    }
-
-    /**
-     * Jurnal Penyesuaian
-     */
-    public function adjustingEntries(Request $request, School $school = null)
-    {
-        Log::info('Accessing Adjusting Entries', ['request' => $request->all()]);
-        $user = auth()->user();
-        $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
-
-        $startDate = Carbon::parse($request->input('start_date', now()->startOfMonth()))->toDateString();
-        $endDate = Carbon::parse($request->input('end_date', now()->endOfMonth()))->toDateString();
-        $schoolId = $request->input('school');
-
-        $query = Transaction::with(['school', 'account'])
-            ->where('type', 'adjustment')
-            ->when($schoolId, function ($q) use ($schoolId) {
-                $q->where('school_id', $schoolId);
-            })
-            ->when($user->role === 'SchoolAdmin', function ($q) use ($user) {
-                $q->where('school_id', $user->school_id);
-            })
-            ->whereBetween('date', [$startDate, $endDate]);
-
-        $transactions = $query->orderBy('date')->paginate(10);
-
-        if ($request->has('export') && $request->export === 'excel') {
-            return $this->exportAdjustingEntries($transactions, $school, $startDate, $endDate);
-        }
-
-        return view('reports.adjusting-entries', compact('school', 'schools', 'startDate', 'endDate', 'transactions'));
-    }
-
-    /**
-     * Export Jurnal Penyesuaian
-     */
-    protected function exportAdjustingEntries($transactions, $school, $startDate, $endDate)
-    {
-        $schoolName = $school ? Str::slug($school->name) : 'Semua_Sekolah';
-        $fileName = "Jurnal_Penyesuaian_{$startDate}_{$endDate}_{$schoolName}.xlsx";
-
-        try {
-            return Excel::download(new class($transactions) implements FromCollection, WithHeadings, WithTitle {
-                protected $transactions;
-
-                public function __construct($transactions)
-                {
-                    $this->transactions = $transactions;
-                }
-
-                public function collection()
-                {
-                    return $this->transactions->map(function ($transaction) {
-                        return [
-                            Carbon::parse($transaction->date)->format('d-m-Y'),
-                            $transaction->school->name,
-                            $transaction->account->code . ' - ' . $transaction->account->name,
-                            $transaction->description ?? '-',
-                            $transaction->debit,
-                            $transaction->credit,
-                        ];
-                    })->prepend(['Tanggal', 'Sekolah', 'Akun', 'Deskripsi', 'Pemasukan', 'Pengeluaran']);
-                }
-
-                public function headings(): array
-                {
-                    return [];
-                }
-
-                public function title(): string
-                {
-                    return 'Jurnal Penyesuaian';
-                }
-            }, $fileName);
-        } catch (\Exception $e) {
-            Log::error('Failed to export Adjusting Entries', ['error' => $e->getMessage()]);
-            return redirect()->back()->with('error', 'Gagal mengekspor ke Excel: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Neraca Saldo Akhir (Sudah Disesuaikan)
-     */
-    public function trialBalanceAfter(Request $request, School $school = null)
-    {
-        Log::info('Accessing Trial Balance After', ['request' => $request->all()]);
-        $user = auth()->user();
-        $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
-        $schoolIds = $school ? [$school->id] : $schools->pluck('id');
-
-        $date = Carbon::parse($request->input('date', now()->endOfMonth()))->toDateString();
-
-        $trialBalance = $this->calculateTrialBalance($schoolIds, $date, true);
-
-        if ($request->has('export') && $request->export === 'excel') {
-            return $this->exportTrialBalance($trialBalance, $school, $date, 'After');
-        }
-
-        return view('reports.trial-balance-after', compact('school', 'schools', 'date', 'trialBalance'));
-    }
-
-    /**
-     * Calculate Trial Balance
-     */
-    protected function calculateTrialBalance($schoolIds, $date, $includeAdjustments)
-    {
-        $transactions = Transaction::with(['school', 'account'])
-            ->whereIn('school_id', $schoolIds)
-            ->where('date', '<=', $date)
-            ->when(!$includeAdjustments, function ($q) {
-                $q->where('type', '!=', 'adjustment');
-            })
-            ->get()
-            ->groupBy('school_id');
-
-        $trialBalance = collect();
-
-        foreach ($schoolIds as $schoolId) {
-            $school = School::find($schoolId);
-            $accounts = [];
-
-            $schoolTransactions = $transactions->get($schoolId, collect());
-            foreach ($schoolTransactions as $transaction) {
-                $account = $transaction->account;
-                if (!isset($accounts[$account->id])) {
-                    $accounts[$account->id] = [
-                        'school' => $school,
-                        'account' => $account,
-                        'debit' => 0,
-                        'credit' => 0,
-                    ];
-                }
-                $accounts[$account->id]['debit'] += $transaction->debit;
-                $accounts[$account->id]['credit'] += $transaction->credit;
-            }
-
-            // Filter akun dengan debit atau kredit tidak nol, lalu konversi ke koleksi
-            $schoolAccounts = collect($accounts)
-                ->filter(function ($item) {
-                    return $item['debit'] != 0 || $item['credit'] != 0;
-                })
-                ->values();
-
-            if ($schoolAccounts->isNotEmpty()) {
-                $trialBalance->push($schoolAccounts);
-            }
-        }
-
-        return $trialBalance;
-    }
-
-    /**
-     * Export Neraca Saldo
-     */
-    protected function exportTrialBalance($trialBalance, $school, $date, $type)
-    {
-        $type = $type == 'Before' ? 'Awal' : 'Akhir';
-        $schoolName = $school ? Str::slug($school->name) : 'Semua_Sekolah';
-        $fileName = "Neraca_Saldo_{$type}_{$date}_{$schoolName}.xlsx";
-
-        try {
-            return Excel::download(new class($trialBalance, $schoolName, $type) implements FromCollection, WithHeadings, WithTitle {
-                protected $trialBalance;
-                protected $schoolName;
-                protected $type;
-
-                public function __construct($trialBalance, $schoolName, $type)
-                {
-                    $this->trialBalance = $trialBalance;
-                    $this->schoolName = $schoolName;
-                    $this->type = $type;
-                }
-
-                public function collection()
-                {
-                    $data = collect();
-                    foreach ($this->trialBalance as $schoolAccounts) {
-                        foreach ($schoolAccounts as $item) {
-                            $data->push([
-                                $this->schoolName,
-                                $item['account']->code . '-' . $item['account']->name,
-                                $item['debit'],
-                                $item['credit'],
-                            ]);
-                        }
-                        $data->push([]);
-                    }
-                    return $data;
-                }
-
-                public function headings(): array
-                {
-                    return ['Sekolah', 'Akun', 'Pemasukan', 'Pengeluaran'];
-                }
-
-                public function title(): string
-                {
-                    return "Neraca Saldo " . $this->type;
-                }
-            }, $fileName);
-        } catch (\Exception $e) {
-            Log::error("Failed to export Trial Balance {$type}", ['error' => $e->getMessage()]);
-            return redirect()->back()->with('error', 'Gagal mengekspor ke Excel: ' . $e->getMessage());
-        }
-    }
-
-    /**
-     * Laporan Keuangan (Laba Rugi dan Neraca)
-     */
     public function financialStatements(Request $request, School $school = null)
     {
         Log::info('Accessing Financial Statements', ['request' => $request->all()]);
@@ -936,16 +655,15 @@ class ReportController extends Controller
         $profitLoss = $this->calculateProfitLoss($schoolIds, $date);
         $balanceSheet = $this->calculateBalanceSheet($schoolIds, $date);
 
-        if ($request->has('export') && $request->export === 'excel') {
+        if ($request->input('export') === 'pdf') {
+            return $this->printFinancialStatementsPdf($school, $profitLoss, $balanceSheet, $date, $activePeriod);
+        } elseif ($request->input('export') === 'excel') {
             return $this->exportFinancialStatements($profitLoss, $balanceSheet, $school, $date);
         }
 
         return view('reports.financial-statements', compact('school', 'schools', 'date', 'profitLoss', 'balanceSheet'));
     }
 
-    /**
-     * Calculate Laba Rugi
-     */
     protected function calculateProfitLoss($schoolIds, $date)
     {
         $transactions = Transaction::with(['school', 'account'])
@@ -987,9 +705,6 @@ class ReportController extends Controller
         return $profitLoss;
     }
 
-    /**
-     * Calculate Neraca
-     */
     protected function calculateBalanceSheet($schoolIds, $date)
     {
         $trialBalance = $this->calculateTrialBalance($schoolIds, $date, true);
@@ -1035,10 +750,7 @@ class ReportController extends Controller
 
         return $balanceSheet;
     }
-
-    /**
-     * Export Laporan Keuangan
-     */
+    
     protected function exportFinancialStatements($profitLoss, $balanceSheet, $school, $date)
     {
         $schoolName = $school ? Str::slug($school->name) : 'Semua_Sekolah';
@@ -1144,6 +856,281 @@ class ReportController extends Controller
             }, $fileName);
         } catch (\Exception $e) {
             Log::error('Failed to export Financial Statements', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Gagal mengekspor ke Excel: ' . $e->getMessage());
+        }
+    }
+
+    public function trialBalance(Request $request, School $school = null)
+    {
+        Log::info('Accessing Trial Balance', ['request' => $request->all()]);
+        $user = auth()->user();
+        $school = $this->resolveSchool($user, $school);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+        $schoolId = $school ? $school->id : null;
+
+        $activePeriod = null;
+        if ($schoolId) {
+            $activePeriod = FinancialPeriod::where('school_id', $schoolId)->where('is_active', true)->first();
+        }
+
+        $startDate = $request->input('start_date', optional($activePeriod)->start_date ?? now()->startOfMonth()->toDateString());
+        $endDate = $request->input('end_date', optional($activePeriod)->end_date ?? now()->endOfMonth()->toDateString());
+
+        $initialBalances = InitialBalance::where('school_id', $schoolId)
+            ->where('financial_period_id', optional($activePeriod)->id)
+            ->get()
+            ->keyBy('account_id');
+
+        $transactions = Transaction::where('school_id', $schoolId)
+            ->whereBetween('date', [$startDate, $endDate])
+            ->get()
+            ->groupBy('account_id');
+
+        $trialBalance = collect();
+        $accounts = Account::orderBy('code')->get();
+
+        foreach ($accounts as $account) {
+            $initialBalance = optional($initialBalances->get($account->id))->amount ?? 0;
+            $accountTransactions = $transactions->get($account->id) ?? collect();
+
+            $debit = $accountTransactions->sum('debit');
+            $credit = $accountTransactions->sum('credit');
+
+            $totalDebit = $initialBalance + $debit;
+            $totalCredit = $credit;
+
+            if ($account->normal_balance === 'Kredit') {
+                $totalDebit = $debit;
+                $totalCredit = $initialBalance + $credit;
+            }
+
+            if ($totalDebit > 0 || $totalCredit > 0) {
+                $trialBalance->push([
+                    'code' => $account->code,
+                    'name' => $account->name,
+                    'debit' => $totalDebit,
+                    'credit' => $totalCredit,
+                ]);
+            }
+        }
+
+        $totalDebit = $trialBalance->sum('debit');
+        $totalCredit = $trialBalance->sum('credit');
+
+        if ($request->has('export') && $request->export === 'excel') {
+            return $this->exportTrialBalance($trialBalance, $school, $startDate, $endDate);
+        }
+
+        return view('reports.trial-balance', compact('school', 'schools', 'trialBalance', 'startDate', 'endDate', 'totalDebit', 'totalCredit'));
+    }
+
+    public function trialBalanceBefore(Request $request, School $school = null)
+    {
+        Log::info('Accessing Trial Balance Before', ['request' => $request->all()]);
+        $user = auth()->user();
+        $school = $this->resolveSchool($user, $school);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+        $schoolIds = $school ? [$school->id] : $schools->pluck('id');
+
+        $date = Carbon::parse($request->input('date', now()->endOfMonth()))->toDateString();
+
+        $trialBalance = $this->calculateTrialBalance($schoolIds, $date, false);
+
+        if ($request->has('export') && $request->input('export') === 'excel') {
+            return $this->exportTrialBalance($trialBalance, $school, $date, 'Before');
+        }
+
+        return view('reports.trial-balance-before', compact('school', 'schools', 'date', 'trialBalance'));
+    }
+
+    public function adjustingEntries(Request $request, School $school = null)
+    {
+        Log::info('Accessing Adjusting Entries', ['request' => $request->all()]);
+        $user = auth()->user();
+        $school = $this->resolveSchool($user, $school);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+
+        $startDate = Carbon::parse($request->input('start_date', now()->startOfMonth()))->toDateString();
+        $endDate = Carbon::parse($request->input('end_date', now()->endOfMonth()))->toDateString();
+        $schoolId = $request->input('school');
+
+        $query = Transaction::with(['school', 'account'])
+            ->where('type', 'adjustment')
+            ->when($schoolId, function ($q) use ($schoolId) {
+                $q->where('school_id', $schoolId);
+            })
+            ->when($user->role === 'SchoolAdmin', function ($q) use ($user) {
+                $q->where('school_id', $user->school_id);
+            })
+            ->whereBetween('date', [$startDate, $endDate]);
+
+        $transactions = $query->orderBy('date')->paginate(10);
+
+        if ($request->has('export') && $request->export === 'excel') {
+            return $this->exportAdjustingEntries($transactions, $school, $startDate, $endDate);
+        }
+
+        return view('reports.adjusting-entries', compact('school', 'schools', 'startDate', 'endDate', 'transactions'));
+    }
+
+    protected function exportAdjustingEntries($transactions, $school, $startDate, $endDate)
+    {
+        $schoolName = $school ? Str::slug($school->name) : 'Semua_Sekolah';
+        $fileName = "Jurnal_Penyesuaian_{$startDate}_{$endDate}_{$schoolName}.xlsx";
+
+        try {
+            return Excel::download(new class($transactions) implements FromCollection, WithHeadings, WithTitle {
+                protected $transactions;
+
+                public function __construct($transactions)
+                {
+                    $this->transactions = $transactions;
+                }
+
+                public function collection()
+                {
+                    return $this->transactions->map(function ($transaction) {
+                        return [
+                            Carbon::parse($transaction->date)->format('d-m-Y'),
+                            $transaction->school->name,
+                            $transaction->account->code . ' - ' . $transaction->account->name,
+                            $transaction->description ?? '-',
+                            $transaction->debit,
+                            $transaction->credit,
+                        ];
+                    })->prepend(['Tanggal', 'Sekolah', 'Akun', 'Deskripsi', 'Pemasukan', 'Pengeluaran']);
+                }
+
+                public function headings(): array
+                {
+                    return [];
+                }
+
+                public function title(): string
+                {
+                    return 'Jurnal Penyesuaian';
+                }
+            }, $fileName);
+        } catch (\Exception $e) {
+            Log::error('Failed to export Adjusting Entries', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Gagal mengekspor ke Excel: ' . $e->getMessage());
+        }
+    }
+
+    public function trialBalanceAfter(Request $request, School $school = null)
+    {
+        Log::info('Accessing Trial Balance After', ['request' => $request->all()]);
+        $user = auth()->user();
+        $school = $this->resolveSchool($user, $school);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+        $schoolIds = $school ? [$school->id] : $schools->pluck('id');
+
+        $date = Carbon::parse($request->input('date', now()->endOfMonth()))->toDateString();
+
+        $trialBalance = $this->calculateTrialBalance($schoolIds, $date, true);
+
+        if ($request->has('export') && $request->export === 'excel') {
+            return $this->exportTrialBalance($trialBalance, $school, $date, 'After');
+        }
+
+        return view('reports.trial-balance-after', compact('school', 'schools', 'date', 'trialBalance'));
+    }
+
+    protected function calculateTrialBalance($schoolIds, $date, $includeAdjustments)
+    {
+        $transactions = Transaction::with(['school', 'account'])
+            ->whereIn('school_id', $schoolIds)
+            ->where('date', '<=', $date)
+            ->when(!$includeAdjustments, function ($q) {
+                $q->where('type', '!=', 'adjustment');
+            })
+            ->get()
+            ->groupBy('school_id');
+
+        $trialBalance = collect();
+
+        foreach ($schoolIds as $schoolId) {
+            $school = School::find($schoolId);
+            $accounts = [];
+
+            $schoolTransactions = $transactions->get($schoolId, collect());
+            foreach ($schoolTransactions as $transaction) {
+                $account = $transaction->account;
+                if (!isset($accounts[$account->id])) {
+                    $accounts[$account->id] = [
+                        'school' => $school,
+                        'account' => $account,
+                        'debit' => 0,
+                        'credit' => 0,
+                    ];
+                }
+                $accounts[$account->id]['debit'] += $transaction->debit;
+                $accounts[$account->id]['credit'] += $transaction->credit;
+            }
+
+            // Filter akun dengan debit atau kredit tidak nol, lalu konversi ke koleksi
+            $schoolAccounts = collect($accounts)
+                ->filter(function ($item) {
+                    return $item['debit'] != 0 || $item['credit'] != 0;
+                })
+                ->values();
+
+            if ($schoolAccounts->isNotEmpty()) {
+                $trialBalance->push($schoolAccounts);
+            }
+        }
+
+        return $trialBalance;
+    }
+
+    protected function exportTrialBalance($trialBalance, $school, $date, $type)
+    {
+        $type = $type == 'Before' ? 'Awal' : 'Akhir';
+        $schoolName = $school ? Str::slug($school->name) : 'Semua_Sekolah';
+        $fileName = "Neraca_Saldo_{$type}_{$date}_{$schoolName}.xlsx";
+
+        try {
+            return Excel::download(new class($trialBalance, $schoolName, $type) implements FromCollection, WithHeadings, WithTitle {
+                protected $trialBalance;
+                protected $schoolName;
+                protected $type;
+
+                public function __construct($trialBalance, $schoolName, $type)
+                {
+                    $this->trialBalance = $trialBalance;
+                    $this->schoolName = $schoolName;
+                    $this->type = $type;
+                }
+
+                public function collection()
+                {
+                    $data = collect();
+                    foreach ($this->trialBalance as $schoolAccounts) {
+                        foreach ($schoolAccounts as $item) {
+                            $data->push([
+                                $this->schoolName,
+                                $item['account']->code . '-' . $item['account']->name,
+                                $item['debit'],
+                                $item['credit'],
+                            ]);
+                        }
+                        $data->push([]);
+                    }
+                    return $data;
+                }
+
+                public function headings(): array
+                {
+                    return ['Sekolah', 'Akun', 'Pemasukan', 'Pengeluaran'];
+                }
+
+                public function title(): string
+                {
+                    return "Neraca Saldo " . $this->type;
+                }
+            }, $fileName);
+        } catch (\Exception $e) {
+            Log::error("Failed to export Trial Balance {$type}", ['error' => $e->getMessage()]);
             return redirect()->back()->with('error', 'Gagal mengekspor ke Excel: ' . $e->getMessage());
         }
     }
