@@ -64,23 +64,54 @@
                         </h6>
                         <h6 class="d-flex align-items-center mb-3">
                             <i class="bi bi-map fs-2 me-2"></i>
-                            <span>{{ auth()->user()->school_id ? auth()->user()->school->address : '-' }}</span>
+                            <span>{{ auth()->user()->school_id ? auth()->user()->school->city.' - ' : ' ' }} {{ auth()->user()->school_id ? auth()->user()->school->address : '-' }}</span>
                         </h6>
+
+
                     </div>
                 </div>
             </div>
             @if (auth()->user()->school_id)
             <div class="col-xxl-3 col-sm-6 col-12 order-xxl-1 order-xl-2 order-lg-2 order-md-2 order-sm-2">
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h5 class="card-title">Logo Sekolah</h5>
+                <div class="card shadow-sm mb-3">
+                    <!-- Header -->
+                    <div class="card-header ">
+                        <h5 class="card-title mb-0">Infomasi Lainnya</h5>
                     </div>
-                    <div class="card-body">
+
+                    <!-- Body -->
+                    <div class="card-body text-center">
+                        <!-- Logo -->
                         @if(auth()->user()->school->logo)
-                        <div class="mb-2">
-                            <img src="{{ asset('/' . auth()->user()->school->logo) }}" alt="Logo Sekolah" style="max-height: 100px;">
-                        </div>
+                            <div class="mb-3">
+                                <img src="{{ asset('/' . auth()->user()->school->logo) }}" 
+                                    alt="Logo Sekolah" 
+                                    class="img-fluid rounded shadow-sm" 
+                                    style="max-height: 120px;">
+                            </div>
+                        @else
+                            <div class="mb-3">
+                                <span class="badge bg-secondary">Belum ada logo</span>
+                            </div>
                         @endif
+
+                        <hr>
+
+                        <!-- Info Sekolah -->
+                        <div class="text-start">
+                            <p class="mb-2">
+                                <strong>Ketua Majelis Dikdasmen:</strong><br>
+                                <span>{{ auth()->user()->school->dikdasmen ?? '-' }}</span>
+                            </p>
+                            <p class="mb-2">
+                                <strong>Kepala Sekolah:</strong><br>
+                                <span>{{ auth()->user()->school->kepsek ?? '-' }}</span>
+                            </p>
+                            <p class="mb-0">
+                                <strong>Bendahara:</strong><br>
+                                <span>{{ auth()->user()->school->bendahara ?? '-' }}</span>
+                            </p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -150,73 +181,162 @@
         <!-- Row end -->
 
     </div>
-    <!-- App body ends -->
+
     <!-- Profil Modal -->
 	<div class="modal fade" id="profilModal" tabindex="-1" aria-hidden="true">
-		<div class="modal-dialog">
-			<div class="modal-content">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
                 <form action="{{ route('users.edit-profile', auth()->user()) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
+
+                    <!-- Header -->
                     <div class="modal-header">
                         <h5 class="modal-title">Edit Profil</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
                     </div>
+
+                    <!-- Body -->
                     <div class="modal-body">
                         <input type="hidden" name="school_id" value="{{ auth()->user()->school_id }}">
-                        <div class="mb-3">
-                            <label for="name" class="form-label">Nama</label>
-                            <input type="text" class="form-control @error('name') is-invalid @enderror" id="name" name="name" value="{{ auth()->user()->name }}">
-                            <input type="hidden" name="form_source" value="edit-user-{{ auth()->user()->id }}">
-                            @error('name')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" value="{{ auth()->user()->email }}">
-                            @error('email')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="mb-3">
-                            <label for="phone" class="form-label">Telepon</label>
-                            <input type="text" class="form-control @error('phone') is-invalid @enderror" id="phone" name="phone" value="{{ auth()->user()->phone }}">
-                            @error('phone')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        @if (auth()->user()->school_id)
-                        <div class="mb-3">
-                            <label for="address" class="form-label">Alamat</label>
-                            <textarea class="form-control @error('address', auth()->user()->school->address) is-invalid @enderror" id="address" name="address">{{ old('address') }}</textarea>
-                            @error('address')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-                        <div class="mb-3">
-                            <label for="logo" class="form-label">Upload Logo Sekolah (Maks. 2MB)</label>
-                            @if(auth()->user()->school->logo)
-                            <div class="mb-2">
-                                <img src="{{ asset('/' . auth()->user()->school->logo) }}" alt="Logo Sekolah" style="max-height: 100px;">
+                        <input type="hidden" name="form_source" value="edit-user-{{ auth()->user()->id }}">
+
+                        <div class="row g-3">
+                            <!-- Nama -->
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Nama</label>
+                                <input type="text" 
+                                    class="form-control @error('name') is-invalid @enderror" 
+                                    id="name" 
+                                    name="name" 
+                                    value="{{ old('name', auth()->user()->name) }}">
+                                @error('name')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
                             </div>
+
+                            <!-- Email -->
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" 
+                                    class="form-control @error('email') is-invalid @enderror" 
+                                    id="email" 
+                                    name="email" 
+                                    value="{{ old('email', auth()->user()->email) }}">
+                                @error('email')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            <!-- Telepon -->
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">Telepon</label>
+                                <input type="text" 
+                                    class="form-control @error('phone') is-invalid @enderror" 
+                                    id="phone" 
+                                    name="phone" 
+                                    value="{{ old('phone', auth()->user()->phone) }}">
+                                @error('phone')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+
+                            @if (auth()->user()->school_id)
+                                <!-- Kota -->
+                                <div class="col-md-6">
+                                    <label for="city" class="form-label">Kota</label>
+                                    <input type="text" 
+                                        class="form-control @error('city') is-invalid @enderror" 
+                                        id="city" 
+                                        name="city" 
+                                        value="{{ old('city', auth()->user()->school->city ?? '') }}">
+                                    @error('city')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <!-- Ketua Majelis -->
+                                <div class="col-md-6">
+                                    <label for="dikdasmen" class="form-label">Nama Ketua Majelis Dikdasmen</label>
+                                    <input type="text" 
+                                        class="form-control @error('dikdasmen') is-invalid @enderror" 
+                                        id="dikdasmen" 
+                                        name="dikdasmen" 
+                                        value="{{ old('dikdasmen', auth()->user()->school->dikdasmen ?? '') }}">
+                                    @error('dikdasmen')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <!-- Kepala Sekolah -->
+                                <div class="col-md-6">
+                                    <label for="kepsek" class="form-label">Nama Kepala Sekolah</label>
+                                    <input type="text" 
+                                        class="form-control @error('kepsek') is-invalid @enderror" 
+                                        id="kepsek" 
+                                        name="kepsek" 
+                                        value="{{ old('kepsek', auth()->user()->school->kepsek ?? '') }}">
+                                    @error('kepsek')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <!-- Bendahara -->
+                                <div class="col-md-6">
+                                    <label for="bendahara" class="form-label">Nama Bendahara</label>
+                                    <input type="text" 
+                                        class="form-control @error('bendahara') is-invalid @enderror" 
+                                        id="bendahara" 
+                                        name="bendahara" 
+                                        value="{{ old('bendahara', auth()->user()->school->bendahara ?? '') }}">
+                                    @error('bendahara')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <!-- Alamat (full width) -->
+                                <div class="col-12">
+                                    <label for="address" class="form-label">Alamat</label>
+                                    <textarea class="form-control @error('address') is-invalid @enderror" 
+                                            id="address" 
+                                            name="address">{{ old('address', auth()->user()->school->address) }}</textarea>
+                                    @error('address')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
+
+                                <!-- Logo (full width) -->
+                                <div class="col-12">
+                                    <label for="logo" class="form-label">Upload Logo Sekolah (Maks. 2MB)</label>
+                                    @if(auth()->user()->school->logo)
+                                        <div class="mb-2">
+                                            <img src="{{ asset('/' . auth()->user()->school->logo) }}" 
+                                                alt="Logo Sekolah" 
+                                                style="max-height: 100px;">
+                                        </div>
+                                    @endif
+                                    <input type="file" 
+                                        class="form-control @error('logo') is-invalid @enderror" 
+                                        id="logo" 
+                                        name="logo" 
+                                        accept="image/*">
+                                    @error('logo')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                </div>
                             @endif
-                            <input type="file" class="form-control @error('logo') is-invalid @enderror" id="logo" name="logo" accept="image/*">
-                            @error('logo')
-                            <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
                         </div>
-                        @endif
                     </div>
+
+                    <!-- Footer -->
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">
-                            Batal
-                        </button>
+                        <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-primary">Simpan</button>
                     </div>
                 </form>
-			</div>
-		</div>
-	</div>
+            </div>
+        </div>
+    </div>
 @endsection
 @section('js')
 	<script>

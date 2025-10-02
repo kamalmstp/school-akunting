@@ -198,20 +198,12 @@ class UserController extends Controller
         if ($request->school_id) {
             $school = School::find($request->school_id);
             if ($request->hasFile('logo')) {
-                // Hapus logo lama jika ada
                 if ($school->logo && file_exists(public_path($school->logo))) {
                     unlink(public_path($school->logo));
                 }
-
                 $logoFile = $request->file('logo');
-
-                // Buat nama file random dengan ekstensi asli
                 $filename = Str::random(40) . '.' . $logoFile->getClientOriginalExtension();
-
-                // Simpan ke folder public/images/schools
                 $logoFile->move(public_path('images/schools'), $filename);
-
-                // Simpan path ke DB
                 $logoPath = 'images/schools/' . $filename;
             } else {
                 $logoPath = $school->logo;
@@ -221,8 +213,12 @@ class UserController extends Controller
                 'name' => $request->name,
                 'email' => $request->email,
                 'phone' => $request->phone,
+                'city' => $request->city,
                 'address' => $request->address,
                 'logo' => $logoPath,
+                'kepsek' => $request->kepsek,
+                'bendahara' => $request->bendahara,
+                'dikdasmen' => $request->dikdasmen,
             ]);
         }
 

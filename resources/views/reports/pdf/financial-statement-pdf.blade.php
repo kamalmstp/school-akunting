@@ -1,20 +1,13 @@
 @php
-    // Helper function untuk memformat Rupiah
     function formatRupiah($amount) {
         return number_format($amount, 0, ',', '.');
     }
 
-    // Ambil data tunggal dari koleksi yang dijamin hanya berisi 1 item
-    // Ini adalah array tunggal yang berisi semua data Neraca dan model School
     $item = $balanceSheet->first(); 
-    // Ini adalah array tunggal yang berisi semua data Laba Rugi
     $profitLossItem = $profitLoss->first(); 
-
-    // Tentukan sekolah yang sedang dicetak (diambil dari parameter controller, atau dari item data sebagai fallback)
     $currentSchool = $school ?? $item['school'] ?? null;
     $currentSchoolName = $currentSchool->name ?? 'NAMA SEKOLAH';
     
-    // Perhitungan Neraca: Gabungkan semua kategori Aset menjadi satu daftar untuk tampilan.
     $assets = collect()
         ->merge($item['currentAssets'] ?? collect())
         ->merge($item['fixAssets'] ?? collect())
@@ -23,30 +16,24 @@
     $liabilities = $item['liabilities'] ?? collect();
     $equity = $item['equity'] ?? collect();
 
-    // Hitung total dari masing-masing bagian
     $totalAssets = $assets->sum('balance');
     $totalLiabilities = $liabilities->sum('balance');
     $totalEquity = $equity->sum('balance');
     
-    // Perhitungan Laba Rugi
     $revenues = $profitLossItem['revenues'] ?? collect();
     $expenses = $profitLossItem['expenses'] ?? collect();
 
-    // Hitung total Laba Rugi
     $totalRevenue = $revenues->sum('amount');
     $totalExpense = $expenses->sum('amount');
 
-    // Tentukan path gambar logo.
     $logoPath = isset($currentSchool->logo) && !empty($currentSchool->logo) ? $currentSchool->logo : 'images/account3';
 
-    // FIX LOGIKA PATH LOGO UNTUK DOMPDF (Memaksa Path Absolut)
     if (strpos($logoPath, 'http') === false && function_exists('public_path')) {
         $logoUrl = public_path($logoPath);
     } else {
         $logoUrl = $logoPath;
     }
 
-    // Laba Bersih
     $netIncome = $totalRevenue - $totalExpense; 
     $netIncomeText = $netIncome >= 0 ? 'LABA BERSIH' : 'RUGI BERSIH';
 @endphp
@@ -57,7 +44,6 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <title>Laporan Keuangan - {{ $currentSchoolName }}</title>
     <style>
-        /* CSS DISAMAKAN PERSIS DENGAN JURNAL UMUM PDF */
         body {
             font-family: sans-serif;
             font-size: 10pt;
@@ -148,9 +134,6 @@
 
 <div class="content">
 
-    <!-- ========================================================= -->
-    <!-- START: LOGO DAN NAMA SEKOLAH (GLOBAL HEADER) -->
-    <!-- ========================================================= -->
     <div class="header" style="margin-bottom: 10px;">
         <table style="border: none;">
             <tr style="border: none;">
@@ -164,9 +147,9 @@
                     <h3>{{ strtoupper($currentSchoolName) }}</h3>
                     <p>Periode: 
                         @if(isset($startDate) && isset($endDate) && $startDate && $endDate)
-                            {{ \Carbon\Carbon::parse($startDate)->isoFormat('D MMMM Y') }} s/d {{ \Carbon\Carbon::parse($endDate)->isoFormat('D MMMM Y') }}
+                            {{ \Carbon\Carbon::parse($startDate)->locale('id')->isoFormat('D MMMM Y') }} s/d {{ \Carbon\Carbon::parse($endDate)->locale('id')->isoFormat('D MMMM Y') }}
                         @else
-                            Sampai Tanggal: {{ \Carbon\Carbon::parse($date)->isoFormat('D MMMM Y') }}
+                            Sampai Tanggal: {{ \Carbon\Carbon::parse($date)->locale('id')->isoFormat('D MMMM Y') }}
                         @endif
                     </p>
                 </td>
@@ -175,13 +158,7 @@
         </table>
         <hr style="border: 1px solid #000; margin: 10px 0;">
     </div>
-    <!-- ========================================================= -->
-    <!-- END: LOGO DAN NAMA SEKOLAH (GLOBAL HEADER) -->
-    <!-- ========================================================= -->
-        
-    <!-- ========================================================= -->
-    <!-- 1. BAGIAN LAPORAN LABA RUGI (PROFIT & LOSS) -->
-    <!-- ========================================================= -->
+
     <div class="header">
         <h2 style="font-size: 14pt; margin-bottom: 5px;">LAPORAN LABA RUGI (PROFIT & LOSS)</h2>
     </div>
@@ -235,28 +212,20 @@
         </thead>
     </table>
     
-    <!-- Tidak ada page break otomatis jika P&L dan Neraca bisa muat di satu halaman -->
     <div class="page-break"></div> 
-    
-    <!-- ========================================================= -->
-    <!-- 2. BAGIAN LAPORAN NERACA (BALANCE SHEET) -->
-    <!-- ========================================================= -->
-    
+
     <div class="header">
         <h2 style="font-size: 14pt; margin-bottom: 5px;">LAPORAN NERACA (BALANCE SHEET)</h2>
-        <p>Per Tanggal: {{ \Carbon\Carbon::parse($date)->isoFormat('D MMMM Y') }}</p>
+        <p>Per Tanggal: {{ \Carbon\Carbon::parse($date)->locale('id')->isoFormat('D MMMM Y') }}</p>
         <hr style="border: 1px solid #000; margin: 10px 0;">
     </div>
     
-    <!-- Tabel utama untuk layout 2 kolom Neraca -->
     <table style="border: none; margin-bottom: 0px;">
         <tr style="border: none;">
-            <!-- KOLOM KIRI: ASET -->
             <td style="border: none; width: 50%; padding-right: 15px;">
                 <h3 class="section-title" style="margin-top: 0px;">A. ASET (ASSETS)</h3>
                 <table>
                     <tbody>
-                        {{-- Assets sudah digabungkan di bagian PHP sebelumnya --}}
                         @forelse ($assets as $asset)
                             <tr>
                                 <td>{{ $asset['account']->name }}</td>
@@ -275,7 +244,6 @@
                 </table>
             </td>
 
-            <!-- KOLOM KANAN: KEWAJIBAN DAN EKUITAS -->
             <td style="border: none; width: 50%; padding-left: 15px;">
                 <h3 class="section-title" style="margin-top: 0px;">B. KEWAJIBAN (LIABILITIES)</h3>
                 <table>
@@ -311,7 +279,6 @@
                     </tbody>
                     <tfoot>
                         <tr class="summary-row">
-                            <!-- Ekuitas di Neraca harus ditambahkan Laba/Rugi Bersih -->
                             <td>TOTAL EKUITAS (Termasuk {{ $netIncomeText }})</td>
                             <td class="text-right">Rp {{ formatRupiah($totalEquity + $netIncome) }}</td>
                         </tr>
@@ -320,10 +287,8 @@
             </td>
         </tr>
     </table>
-    <!-- END Tabel utama untuk layout 2 kolom Neraca -->
-    
+
     <div style="clear: both; margin-top: 30px;">
-        <!-- Total Penyeimbang -->
         <table style="width: 100%;">
             <thead>
                 <tr class="total-final">
@@ -342,7 +307,6 @@
         </p>
     </div>
     
-    <!-- START: FOOTER SIGNATURE BLOCK -->
     @php
         $signatureSchool = $currentSchool;
     @endphp
@@ -357,7 +321,7 @@
                     <p style="font-size: 9pt;">Kepala Sekolah</p>
                 </td>
                 <td class="text-center" style="width: 50%;">
-                    <p style="margin-bottom: 5px;">{{ $signatureSchool->city ?? 'Kota' }}, {{ \Carbon\Carbon::parse($date)->isoFormat('D MMMM Y') }}</p>
+                    <p style="margin-bottom: 5px;">{{ $signatureSchool->city ?? 'Kota' }}, {{ \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y') }}</p>
                     <p style="margin-bottom: 5px;">Dibuat Oleh,</p>
                     <br><br><br><br>
                     <p style="text-decoration: underline; margin-bottom: 5px;">({{ $signatureSchool->bendahara ?? 'Nama Bendahara' }})</p>
@@ -366,7 +330,6 @@
             </tr>
         </table>
     </div>
-    <!-- END: FOOTER SIGNATURE BLOCK -->
 
 </div>
 </body>

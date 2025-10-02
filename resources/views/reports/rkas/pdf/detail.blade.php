@@ -106,7 +106,7 @@
     <div class="info-box">
         <p><strong>Nama Laporan:</strong> {{ $title }}</p>
         <p><strong>Sekolah:</strong> {{ $school_data->name }}</p>
-        <p><strong>Periode:</strong> {{ \Carbon\Carbon::parse($activePeriod->start_date)->isoFormat('D MMMM Y') }} s/d {{ \Carbon\Carbon::parse($activePeriod->end_date)->isoFormat('D MMMM Y') }}</p>
+        <p><strong>Periode:</strong> {{ \Carbon\Carbon::parse($activePeriod->start_date)->locale('id')->isoFormat('D MMMM Y') }} s/d {{ \Carbon\Carbon::parse($activePeriod->end_date)->locale('id')->isoFormat('D MMMM Y') }}</p>
     </div>
 
     <table>
@@ -138,7 +138,7 @@
                 @endphp
                 <tr>
                     <td class="text-center">{{ $index + 1 }}</td>
-                    <td class="text-center">{{ \Carbon\Carbon::parse($item['date'])->format('d/m/Y') }}</td>
+                    <td class="text-center">{{ \Carbon\Carbon::parse($item['date'])->locale('id')->format('d/m/Y') }}</td>
                     <td>{{ $item['description'] }}</td>
                     <td class="text-right">Rp {{ number_format($debit, 0, ',', '.') }}</td>
                     <td class="text-right">Rp {{ number_format($credit, 0, ',', '.') }}</td>
@@ -167,20 +167,19 @@
                     <p>Menyetujui,</p>
                     <p>Ketua Majelis Dikdasmen Kota {{$school_data->city ?? 'Nama Kota'}}</p>
                     <br><br><br><br>
-                    <p>( ..................................................... )</p>
-                    <p>{{ $school_data->dikdasmen ?? 'Nama' }}</p>
+                    <p>{{ $school_data->dikdasmen ?? 'Nama Ketua Majelis' }}</p>
                 </td>
                 <td class="text-center">
                     <p></p>
                     <p>Kepala Sekolah</p>
                     <br><br><br><br>
-                    <p>({{ $school_data->kepsek ?? 'Kepala Sekolah' }})</p>
+                    <p>({{ $school_data->kepsek ?? 'Nama Kepala Sekolah' }})</p>
                 </td>
                 <td class="text-center">
-                    <p>{{ $school_data->city ?? 'Mojokerto'}}, {{ \Carbon\Carbon::now()->isoFormat('D MMMM Y') }}</p>
+                    <p>{{ $school_data->city ?? 'Mojokerto'}}, {{ \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y') }}</p>
                     <p>Bendahara,</p>
                     <br><br><br><br>
-                    <p>({{ $school_data->bendahara ?? 'Bendahara' }})</p>
+                    <p>({{ $school_data->bendahara ?? 'Nama Bendahara' }})</p>
                 </td>
             </tr>
         </table>

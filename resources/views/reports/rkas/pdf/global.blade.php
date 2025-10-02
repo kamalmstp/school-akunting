@@ -1,11 +1,11 @@
 @php
     $signerData = $signerData ?? [
-        'ketuaMajelisName' => 'Nama Ketua Majelis', 'ketuaMajelisNip' => '1234567890',
-        'kepalaSekolahName' => 'Nama Kepala Sekolah', 'kepalaSekolahNip' => '1234567890',
-        'city' => 'Mojokerto'
+        'ketuaMajelisName' => $school->dikdasmen,
+        'kepalaSekolahName' => $school->kepsek,
+        'city' => $school->city
     ];
 
-    $tanggalLaporan = \Carbon\Carbon::now()->isoFormat('D MMMM YYYY');
+    $tanggalLaporan = \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM YYYY');
     $maxItems = count($rkasData);
     $rowsToDisplay = max($maxItems, 6);
     $totalBelanjaAkhir = $totalIncome;
@@ -237,17 +237,17 @@
             <tr>
                 <td>
                     <p class="signature-label">Menyetujui,</p>
-                    <p class="signature-label no-margin">Ketua Majelis Dikdasmen Kota {{ $signerData['city'] ?? 'Mojokerto' }}</p>
+                    <p class="signature-label no-margin">Ketua Majelis Dikdasmen Kota {{ $signerData['city'] ?? 'Nama Kota' }}</p>
                     <div class="signature-space"></div>
                     <p class="signature-name">{{ $signerData['ketuaMajelisName'] ?? 'Nama Ketua Majelis' }}</p>
                     <p class="no-margin" style="font-size: 0.75rem;"></p>
                 </td>
                 <td>
-                    <p class="signature-label no-margin">{{ $signerData['city'] ?? 'Mojokerto' }}, {{ $tanggalLaporan }}</p>
+                    <p class="signature-label no-margin">{{ $signerData['city'] ?? 'Nama Kota' }}, {{ $tanggalLaporan }}</p>
                     <p class="signature-label no-margin">Kepala Sekolah</p>
                     <div class="signature-space"></div>
                     <p class="signature-name">{{ $school->kepsek ?? 'Nama Kepala Sekolah' }}</p>
-                    <p class="no-margin" style="font-size: 0.75rem;">{{ $school->nopeg_kepsek }}</p>
+                    <p class="no-margin" style="font-size: 0.75rem;"></p>
                 </td>
             </tr>
         </table>

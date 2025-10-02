@@ -127,11 +127,11 @@
 											@if(auth()->user()->role != 'AdminMonitor')
 												<td>
 													<a href="{{ route('school-students.edit', [$student->school, $student]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
-													<form action="{{ route('school-students.destroy', [$student->school, $student]) }}" method="POST" style="display:inline;">
+													<!-- <form action="{{ route('school-students.destroy', [$student->school, $student]) }}" method="POST" style="display:inline;">
 														@csrf
 														@method('DELETE')
 														<button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus siswa ini?')">Hapus</button>
-													</form>
+													</form> -->
 												</td>
 											@endif
                                         </tr>

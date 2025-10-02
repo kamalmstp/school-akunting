@@ -141,7 +141,7 @@
     </div>
     
     <div style="text-align: center; margin-bottom: 10px; font-size: 10pt;">
-        <p><strong>Periode:</strong> {{ \Carbon\Carbon::parse($startDate)->isoFormat('D MMMM Y') }} s/d {{ \Carbon\Carbon::parse($endDate)->isoFormat('D MMMM Y') }}</p>
+        <p><strong>Periode:</strong> {{ \Carbon\Carbon::parse($startDate)->locale('id')->isoFormat('D MMMM Y') }} s/d {{ \Carbon\Carbon::parse($endDate)->locale('id')->isoFormat('D MMMM Y') }}</p>
         @if ($singleAccount)
             <p><strong>Filter Akun:</strong> ({{ $singleAccount->code }}) - {{ $singleAccount->name }}</p>
         @elseif ($accountType)
@@ -182,7 +182,7 @@
                 <tbody>
                     <!-- Saldo Awal -->
                     <tr class="opening-balance">
-                        <td class="text-center">{{ \Carbon\Carbon::parse($startDate)->subDay()->isoFormat('D MMM Y') }}</td>
+                        <td class="text-center">{{ \Carbon\Carbon::parse($startDate)->locale('id')->subDay()->isoFormat('D MMM Y') }}</td>
                         <td class="text-center bold" colspan="2">SALDO AWAL</td>
                         <td class="text-right"></td>
                         <td class="text-right"></td>
@@ -218,7 +218,7 @@
                             }
                         @endphp
                         <tr>
-                            <td class="text-center">{{ \Carbon\Carbon::parse($transaction->date)->isoFormat('D MMM Y') }}</td>
+                            <td class="text-center">{{ \Carbon\Carbon::parse($transaction->date)->locale('id')->isoFormat('D MMM Y') }}</td>
                             <td class="text-center">{{ $transaction->transaction_no }}</td>
                             <td>
                                 {{ $transaction->description }}{{ $keteranganTambahan }}
@@ -256,14 +256,14 @@
                     <p></p>
                     <p>Mengetahui,</p>
                     <br><br><br><br>
-                    <p>({{ $school->kepsek ?? 'Nama' }})</p>
+                    <p>({{ $school->kepsek ?? 'Nama Kepala Sekolah' }})</p>
                     <p>Kepala Sekolah</p>
                 </td>
                 <td class="text-center">
-                    <p>{{ $school->city ?? 'Mojokerto' }}, {{ \Carbon\Carbon::now()->isoFormat('D MMMM Y') }}</p>
+                    <p>{{ $school->city ?? 'Nama Kota' }}, {{ \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y') }}</p>
                     <p>Dibuat Oleh,</p>
                     <br><br><br><br>
-                    <p>({{ $school->bendahara ?? 'Nama' }})</p>
+                    <p>({{ $school->bendahara ?? 'Nama Bendahara' }})</p>
                     <p>Bendahara</p>
                 </td>
             </tr>

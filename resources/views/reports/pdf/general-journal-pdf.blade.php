@@ -102,7 +102,7 @@
     </div>
     
     <div style="text-align: center; margin-bottom: 10px; font-size: 10pt;">
-        <p><strong>Periode:</strong> {{ \Carbon\Carbon::parse($startDate)->isoFormat('D MMMM Y') }} s/d {{ \Carbon\Carbon::parse($endDate)->isoFormat('D MMMM Y') }}</p>
+        <p><strong>Periode:</strong> {{ \Carbon\Carbon::parse($startDate)->locale('id')->isoFormat('D MMMM Y') }} s/d {{ \Carbon\Carbon::parse($endDate)->locale('id')->isoFormat('D MMMM Y') }}</p>
     </div>
 
     <table style="width: 100%">
@@ -131,7 +131,7 @@
                     
                     <tr>
                         <td class="text-center">{{ $rowNumber++ }}</td>
-                        <td class="text-center">{{ \Carbon\Carbon::parse($transaction->date)->isoFormat('D/MM/Y') }}</td>
+                        <td class="text-center">{{ \Carbon\Carbon::parse($transaction->date)->locale('id')->isoFormat('D/MM/Y') }}</td>
                         <td class="text-center">{{ $transaction->account->code.' - '.$transaction->account->name ?? 'N/A' }}</td>
                         <td>{{ $transaction->description }}</td>
                         <td class="text-right">
@@ -173,14 +173,14 @@
                     <p></p>
                     <p>Mengetahui,</p>
                     <br><br><br><br>
-                    <p>({{ $school->kepsek ?? 'Nama' }})</p>
+                    <p>({{ $school->kepsek ?? 'Nama Kepala Sekolah' }})</p>
                     <p>Kepala Sekolah</p>
                 </td>
                 <td class="text-center">
-                    <p>{{ $school->city ?? 'Mojokerto' }}, {{ \Carbon\Carbon::now()->isoFormat('D MMMM Y') }}</p>
+                    <p>{{ $school->city ?? 'Nama Kota' }}, {{ \Carbon\Carbon::now()->locale('id')->isoFormat('D MMMM Y') }}</p>
                     <p>Dibuat Oleh,</p>
                     <br><br><br><br>
-                    <p>({{ $school->bendahara ?? 'Nama' }})</p>
+                    <p>({{ $school->bendahara ?? 'Nama Bendahara' }})</p>
                     <p>Bendahara</p>
                 </td>
             </tr>
