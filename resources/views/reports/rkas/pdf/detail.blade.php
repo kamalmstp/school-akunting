@@ -174,15 +174,13 @@
                     <p></p>
                     <p>Kepala Sekolah</p>
                     <br><br><br><br>
-                    <p>( ..................................................... )</p>
-                    <p>{{ $school_data->kepsek ?? 'Kepala Sekolah' }}</p>
+                    <p>({{ $school_data->kepsek ?? 'Kepala Sekolah' }})</p>
                 </td>
                 <td class="text-center">
-                    <p>{{ $school_data->city ?? 'Kota'}}, {{ \Carbon\Carbon::now()->isoFormat('D MMMM Y') }}</p>
+                    <p>{{ $school_data->city ?? 'Mojokerto'}}, {{ \Carbon\Carbon::now()->isoFormat('D MMMM Y') }}</p>
                     <p>Bendahara,</p>
                     <br><br><br><br>
-                    <p>( ..................................................... )</p>
-                    <p>{{ $school_data->bendahara ?? 'Bendahara' }}</p>
+                    <p>({{ $school_data->bendahara ?? 'Bendahara' }})</p>
                 </td>
             </tr>
         </table>

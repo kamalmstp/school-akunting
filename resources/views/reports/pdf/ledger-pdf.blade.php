@@ -260,7 +260,7 @@
                     <p>Kepala Sekolah</p>
                 </td>
                 <td class="text-center">
-                    <p>{{ $school->city ?? 'Kota' }}, {{ \Carbon\Carbon::now()->isoFormat('D MMMM Y') }}</p>
+                    <p>{{ $school->city ?? 'Mojokerto' }}, {{ \Carbon\Carbon::now()->isoFormat('D MMMM Y') }}</p>
                     <p>Dibuat Oleh,</p>
                     <br><br><br><br>
                     <p>({{ $school->bendahara ?? 'Nama' }})</p>
