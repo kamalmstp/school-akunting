@@ -6,8 +6,7 @@ Requirements :
 2. Laravel ^10.0
 3. Bootstrap 5.3
 
-ALTER TABLE `schools` CHANGE `bendahara` `bendahara` VARCHAR(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL;
-ALTER TABLE `schools` ADD `city` VARCHAR(20) NULL DEFAULT NULL AFTER `name`;
+
 
 Revisi :
 
@@ -27,3 +26,10 @@ Revisi :
 [v] Menu Kelola siswa fitur hapus dihide
 [x] Menu Kelola Dana (AdminMonitor)
 [x] Menu Kelola Periode (AdminMonitor)
+
+* Tambah Role Baru
+[x] Role Pengawas mirip dg AdminMonitor
+
+* Saldo Awal
+[v] Memilah akun yang dapat diisi saldo awal
+[v] Pagination, Search, Datatables di saldo awal

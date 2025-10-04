@@ -35,7 +35,7 @@
                         @csrf
                         @method('PUT')
                         <div class="table-responsive">
-                            <table class="table align-middle" style="min-width: max-content;">
+                            <table id="initialBalancesTableEdit" class="table table-striped" style="min-width: max-content;">
                                 <thead>
                                     <tr>
                                         <th>No</th>
@@ -84,14 +84,8 @@
         rupiahInputs.forEach(input => {
             input.addEventListener('keyup', function(e) {
                 let value = e.target.value.replace(/\./g, '');
-                
-                // Allow only digits
                 value = value.replace(/\D/g, '');
-
-                // Update the hidden input with the clean number
                 e.target.nextElementSibling.value = value;
-                
-                // Format the visible input with thousands separator
                 let formattedValue = '';
                 if (value) {
                     formattedValue = new Intl.NumberFormat('id-ID').format(value);
@@ -100,6 +94,21 @@
             });
         });
     });
+</script>
+
+@endsection
+
+@section('js')
+
+<script>
+    $(document).ready(function () {
+        $('#initialBalancesTableEdit').DataTable({
+            "paging": true,
+            "searching": true,
+            "ordering": false,
+            "responsive": true,
+        });
+    })
 </script>
 
 @endsection

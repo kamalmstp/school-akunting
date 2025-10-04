@@ -47,7 +47,7 @@
                         <div class="alert alert-danger">{{ session('error') }}</div>
                     @endif
                     <div class="table-responsive">
-                        <table class="table align-middle" style="min-width: max-content;">
+                        <table id="initialBalancesTable" class="table table-striped" style="min-width: max-content;">
                             <thead>
                                 <tr>
                                     <th>No</th>
@@ -81,5 +81,20 @@
     <!-- Row end -->
 </div>
 <!-- App body ends -->
+
+@endsection
+
+@section('js')
+
+<script>
+    $(document).ready(function () {
+        $('#initialBalancesTable').DataTable({
+            "paging": true,
+            "searching": true,
+            "ordering": false,
+            "responsive": true,
+        });
+    })
+</script>
 
 @endsection

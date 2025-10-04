@@ -27,9 +27,13 @@ class InitialBalanceController extends Controller
             abort(403);
         }
 
-        $accounts = Account::where('school_id', $school->id)->with(['initialBalances' => function ($query) use ($financialPeriod) {
-            $query->where('financial_period_id', $financialPeriod->id);
-        }])->get();
+        $accounts = Account::where('school_id', $school->id)
+            ->whereIn('account_type', ['Aset Lancar', 'Aset Tetap', 'Kewajiban', 'Aset Neto'])
+            ->whereDoesntHave('children')
+            ->with(['initialBalances' => function ($query) use ($financialPeriod) {
+                $query->where('financial_period_id', $financialPeriod->id);
+            }])
+            ->get();
 
         return view('initial-balances.index', compact('accounts', 'financialPeriod', 'school'));
     }
@@ -67,9 +71,12 @@ class InitialBalanceController extends Controller
             abort(403);
         }
 
-        $accounts = Account::where('school_id', $school->id)->with(['initialBalances' => function ($query) use ($financialPeriod) {
-            $query->where('financial_period_id', $financialPeriod->id);
-        }])->get();
+        $accounts = Account::where('school_id', $school->id)
+            ->whereIn('account_type', ['Aset Lancar', 'Aset Tetap', 'Kewajiban', 'Aset Neto'])
+            ->whereDoesntHave('children')
+            ->with(['initialBalances' => function ($query) use ($financialPeriod) {
+                $query->where('financial_period_id', $financialPeriod->id);
+            }])->get();
 
         return view('initial-balances.edit', compact('accounts', 'financialPeriod', 'school'));
     }
