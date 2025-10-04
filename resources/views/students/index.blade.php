@@ -69,7 +69,7 @@
 					<div class="card-header">
 						<div class="d-flex justify-content-between align-items-center">
 							<h5 class="card-title">Daftar Siswa</h5>
-							@if(auth()->user()->role != 'AdminMonitor')
+							@if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
 							<div>
                                 <a href="{{ auth()->user()->role == 'SuperAdmin' ? route('students.create') : route('school-students.create', $school) }}" class="btn btn-primary" title="Tambah Siswa">
 									<span class="d-lg-block d-none">Tambah Siswa</span>
@@ -110,7 +110,7 @@
                                         <th>Alamat</th>
                                         <th>Kelas</th>
                                         <th>Status</th>
-                                        @if(auth()->user()->role != 'AdminMonitor')<th></th>@endif
+                                        @if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))<th></th>@endif
 									</tr>
 								</thead>
 								<tbody>
@@ -124,7 +124,7 @@
                                             <td>{{ $student->address }}</td>
                                             <td>{{ $student->class }}</td>
                                             <td>{{ $student->is_active ? 'Aktif' : 'Tidak Aktif' }}</td>
-											@if(auth()->user()->role != 'AdminMonitor')
+											@if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
 												<td>
 													<a href="{{ route('school-students.edit', [$student->school, $student]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
 													<!-- <form action="{{ route('school-students.destroy', [$student->school, $student]) }}" method="POST" style="display:inline;">
@@ -137,7 +137,7 @@
                                         </tr>
 									@empty
 										<tr>
-											<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '9' : '8'}}">Belum ada siswa</td>
+											<td colspan="{{ !in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']) ? '9' : '8'}}">Belum ada siswa</td>
 										</tr>										
 									@endempty
                                 </tbody>

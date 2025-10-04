@@ -103,7 +103,7 @@
 					<div class="card-header">
 						<div class="d-flex justify-content-between align-items-center">
 							<h5 class="card-title">Daftar Pembayaran</h5>
-							@if(auth()->user()->role !== 'AdminMonitor')
+							@if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
                             <div class="d-flex gap-2">
 								<a href="{{ auth()->user()->role == 'SuperAdmin' ? route('schedules.create') : route('school-schedules.create', $school) }}" class="btn btn-primary" title="Tambah Jadwal">
 									<span class="d-lg-block d-none">Tambah Pembayaran</span>
@@ -138,7 +138,7 @@
                                         <th scope="col">Tipe Pembayaran</th>
                                         <th scope="col" class="text-end">Jumlah</th>
                                         <th scope="col" class="text-center">Status</th>
-                                        @if (auth()->user()->role != 'AdminMonitor') <th></th> @endif
+                                        @if (!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas'])) <th></th> @endif
 									</tr>
 								</thead>
 								<tbody>
@@ -152,7 +152,7 @@
                                             <td>{{ $schedule->schedule_type }}</td>
                                             <td class="text-end">{{ number_format($schedule->amount, 0, ',', '.') }}</td>
                                             <td class="text-center">{{ $schedule->status ? 'Aktif' : 'Tidak Aktif' }}</td>
-                                            @if (auth()->user()->role != 'AdminMonitor')
+                                            @if (!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
                                                 <td class="text-center">
                                                     <a href="{{ route('school-schedules.edit', [$schedule->school, $schedule]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
                                                     <form action="{{ route('school-schedules.destroy', [$schedule->school, $schedule]) }}" method="POST" style="display:inline;">
@@ -165,7 +165,7 @@
                                         </tr>
 									@empty
 										<tr>
-											<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '9' : '8' }}">Belum ada data pembayaran</td>
+											<td colspan="{{ !in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']) ? '9' : '8' }}">Belum ada data pembayaran</td>
 										</tr>										
 									@endempty
                                 </tbody>

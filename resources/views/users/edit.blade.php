@@ -109,6 +109,7 @@
                                                     <label for="role" class="form-label">Role</label>
                                                     <select class="form-select @error('role') is-invalid @enderror" id="role" name="role">
                                                         <option value="SuperAdmin" {{ old('role', $user->role) === 'SuperAdmin' ? 'selected' : '' }}>SuperAdmin</option>
+                                                        <option value="Pengawas" {{ old('role', $user->role) === 'Pengawas' ? 'selected' : '' }}>Pengawas</option>
                                                         <option value="AdminMonitor" {{ old('role', $user->role) === 'AdminMonitor' ? 'selected' : '' }}>AdminMonitor</option>
                                                         <option value="SchoolAdmin" {{ old('role', $user->role) === 'SchoolAdmin' ? 'selected' : '' }}>SchoolAdmin</option>
                                                     </select>

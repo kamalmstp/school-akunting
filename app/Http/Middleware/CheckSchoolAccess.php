@@ -9,17 +9,13 @@ use App\Models\School;
 
 class CheckSchoolAccess
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
+
     public function handle(Request $request, Closure $next): Response
     {
         $user = auth()->user();
         $school = $request->route('school');
 
-        if ($user->role === 'SuperAdmin' || $user->role === 'AdminMonitor') {
+        if ($user->role === 'SuperAdmin' || $user->role === 'AdminMonitor' || $user->role === 'Pengawas') {
             return $next($request);
         }
 

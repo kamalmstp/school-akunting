@@ -63,7 +63,7 @@
 					<div class="card-header">
 						<div class="d-flex justify-content-between align-items-center">
 							<h5 class="card-title">Daftar Dana</h5>
-							@if(auth()->user()->role != 'AdminMonitor')
+							@if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
 							<div>
                                 <a href="{{ auth()->user()->role == 'SuperAdmin' ? route('fund-managements.create') : route('school-fund-managements.create', $school) }}" class="btn btn-primary" title="Tambah Dana">
 									<span class="d-lg-block d-none">Tambah Dana</span>
@@ -94,7 +94,7 @@
                                         @if(auth()->user()->role == 'SuperAdmin')<th>Sekolah</th>@endif
                                         <th>Nama</th>
                                         <th>Jumlah</th>
-                                        @if(auth()->user()->role != 'AdminMonitor')<th></th>@endif
+                                        @if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))<th></th>@endif
 									</tr>
 								</thead>
 								<tbody>
@@ -104,7 +104,7 @@
                                             @if(auth()->user()->role == 'SuperAdmin')<td>{{ $fund_management->school->name }}</td>@endif
                                             <td>{{ $fund_management->name }}</td>
                                             <td>Rp{{ number_format($fund_management->amount, 0, ',', '.') }}{{ $fund_management->account_id ? ' ('.$fund_management->account->code.' - '.$fund_management->account->name.')':'' }}</td>
-											@if(auth()->user()->role != 'AdminMonitor')
+											@if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
 												<td>
 													<a href="{{ route('school-fund-managements.edit', [$fund_management->school, $fund_management]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
 													<form action="{{ route('school-fund-managements.destroy', [$fund_management->school, $fund_management]) }}" method="POST" style="display:inline;">
@@ -117,7 +117,7 @@
                                         </tr>
 									@empty
 										<tr>
-											<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '5' : '4'}}">Belum ada dana</td>
+											<td colspan="{{ !in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']) ? '5' : '4'}}">Belum ada dana</td>
 										</tr>										
 									@endempty
                                 </tbody>

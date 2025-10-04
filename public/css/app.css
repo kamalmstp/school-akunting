@@ -1,28 +1,25 @@
 :root {
-    --app-header-height: 60px; /* Sesuaikan jika tinggi header Anda berbeda */
+    --app-header-height: 60px;
 }
 
-/* Pastikan ini ada di file CSS Anda */
 .sidebar-menu .treeview.active > .treeview-menu {
     display: block !important;
 }
 
-/* Pastikan semua elemen utama memiliki tinggi penuh untuk menghitung layout */
 html, body {
     height: 100%;
     min-height: 100vh;
     margin: 0;
     padding: 0;
-    /* overflow: hidden; Mencegah scroll pada body utama (penting untuk fixed header) */
+    overflow: hidden;
 }
 
-/* Kontainer utama aplikasi */
 .page-wrapper {
     height: 100%;
-    overflow: hidden; /* Mencegah scroll ganda di sini */
+    display: flex;
+    flex-direction: column;
 }
 
-/* Header harus Fixed */
 .app-header {
     position: fixed;
     top: 0;
@@ -30,52 +27,38 @@ html, body {
     right: 0;
     z-index: 1000;
     height: var(--app-header-height);
-    /* Tambahkan style tambahan header Anda di sini, misalnya background-color */
 }
 
-/* 1. Main Container (Sidebar + Content) */
 .main-container {
     display: flex;
-    /* Tinggi sisa viewport setelah dikurangi tinggi header */
     height: calc(100vh - var(--app-header-height)); 
-    margin-top: var(--app-header-height); /* Offset agar di bawah header fixed */
-    overflow: hidden; /* Kontrol scroll hanya ada di anak-anaknya */
+    margin-top: var(--app-header-height);
     width: 100%;
 }
 
-/* 2. Sidebar Wrapper */
 #sidebar, .sidebar-wrapper {
-    /* Mengambil tinggi penuh dari main-container */
-    height: 100% !important; 
+    height: 100%; 
     flex-shrink: 0; 
     display: flex;
-    flex-direction: column; /* KRITIS: Atur sebagai flex container vertikal */
+    flex-direction: column;
+    overflow: hidden;
 }
 
-/* 3. Elemen Menu yang Dapat Di-scroll (SOLUSI UTAMA) */
 .sidebarMenuScroll {
-    /* Memastikan elemen mengambil semua sisa ruang vertikal yang ada */
     flex-grow: 1; 
-    
-    /* PENTING untuk Flexbox: Memungkinkan elemen untuk di-scroll di dalam batas tingginya */
     min-height: 0; 
-    
-    /* Memaksa scrollbar bawaan browser muncul jika konten melebihi batas */
     overflow-y: auto !important; 
     overflow-x: hidden;
-    
-    /* Opsional: Tambahkan sedikit padding/margin agar scrollbar tidak terlalu mepet */
     padding-bottom: 20px; 
+    max-height: calc(100vh - var(--app-header-height));
 }
 
-/* 4. Konten Utama juga harus bisa scroll jika isinya panjang */
 .app-container {
     flex-grow: 1; 
     display: flex;
     flex-direction: column;
     overflow-y: auto; 
     height: 100%;
-    /* Gunakan padding atas/samping sesuai kebutuhan Anda */
 }
 
 .total-receivable {
@@ -85,24 +68,29 @@ html, body {
     margin-bottom: 2rem;
     font-weight: 600;
 }
+
 .select2-container .select2-selection--single {
     display: block;
     height: 35.59px !important;
 }
+
 .select2-container--default .select2-selection--single .select2-selection__rendered {
     padding: .375rem 2.25rem .375rem .75rem !important;
     font-size: 0.9rem;
     font-weight: 400;
     line-height: 1.5 !important;
 }
+
 .select2-container--default .select2-selection--single .select2-selection__placeholder {
     color: #03070b !important;
 }
+
 .select2-container--default .select2-selection--single .select2-selection__arrow {
     height: 35.59px !important;
     top: 0 !important;
     right: 10px !important;
 }
+
 @media screen and (max-width: 768px) {
     .total-receivable {
         flex-direction: column;

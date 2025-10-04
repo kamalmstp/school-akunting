@@ -27,7 +27,7 @@
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="card-title">Daftar Saldo Awal Periode {{ $financialPeriod->name }}</h5>
-                        @if(auth()->user()->role != 'AdminMonitor')
+                        @if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
                             <div>
                                 <a href="{{ route('school-initial-balances.edit', [$school, $financialPeriod]) }}" class="btn btn-primary" title="Tambah/Edit Saldo Awal">
                                     <span class="d-lg-block d-none">Tambah/Edit Saldo</span>

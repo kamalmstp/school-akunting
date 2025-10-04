@@ -66,7 +66,7 @@
 					<div class="card-header">
 						<div class="d-flex justify-content-between align-items-center">
 							<h5 class="card-title">Daftar Sekolah</h5>
-							@if(auth()->user()->role != 'AdminMonitor')
+							@if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
                             <a href="{{ route('schools.create') }}" class="btn btn-primary" title="Tambah Sekolah">
 								<span class="d-lg-block d-none">Tambah Sekolah</span>
 								<span class="d-sm-block d-lg-none">
@@ -97,7 +97,7 @@
 										<th>Telepon</th>
 										<th>Alamat</th>
 										<th>Status</th>
-										@if(auth()->user()->role != 'AdminMonitor')<th></th>@endif
+										@if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))<th></th>@endif
 									</tr>
 								</thead>
 								<tbody>
@@ -109,7 +109,7 @@
 											<td>{{ $school->phone ?? '-' }}</td>
 											<td>{{ $school->address ?? '-' }}</td>
 											<td>{{ $school->status ? 'Aktif' : 'Tidak Aktif' }}</td>
-											@if(auth()->user()->role != 'AdminMonitor')
+											@if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
 											<td>
 												<a href="{{ route('schools.edit', $school) }}" class="btn btn-sm btn-outline-primary">Edit</a>
 												<form action="{{ route('schools.destroy', $school) }}" method="POST" style="display:inline;">

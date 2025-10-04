@@ -99,7 +99,7 @@
 					<div class="card-header">
 						<div class="d-flex justify-content-between align-items-center">
 							<h5 class="card-title">Daftar Piutang Guru</h5>
-							@if(auth()->user()->role != 'AdminMonitor')
+							@if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
 								<a href="{{ auth()->user()->role == 'SuperAdmin' ? route('teacher-receivables.create') : route('school-teacher-receivables.create', $school) }}" class="btn btn-primary" title="Tambah Penerimaan">
 									<span class="d-lg-block d-none">Tambah Penerimaan</span>
 									<span class="d-sm-block d-lg-none">
@@ -132,7 +132,7 @@
                                         <th scope="col" class="text-end">Terbayar</th>
                                         <th scope="col" class="text-center">Status</th>
                                         <th scope="col" class="text-center">Jatuh Tempo</th>
-                                        @if (auth()->user()->role != 'AdminMonitor') <th scope="col"></th> @endif
+                                        @if (!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas'])) <th scope="col"></th> @endif
 									</tr>
 								</thead>
 								<tbody>
@@ -154,7 +154,7 @@
                                                 </span>
                                             </td>
                                             <td class="text-center">{{ $receivable->due_date ? \Carbon\Carbon::parse($receivable->due_date)->format('d-m-Y') : '-' }}</td>
-                                            @if (auth()->user()->role != 'AdminMonitor')
+                                            @if (!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
                                                 <td class="text-center">
                                                     @if($receivable->status !== 'Paid')
                                                         <a href="{{ route('school-teacher-receivables.pay', [$receivable->school, $receivable]) }}" class="btn btn-sm btn-success">Bayar</a>
@@ -169,7 +169,7 @@
                                             @endif
                                         </tr>
 										<tr class="collapse" id="details{{ $receivable->id }}">
-                                            <td colspan="{{auth()->user()->role != 'AdminMonitor' ? '9' : '8' }}">
+                                            <td colspan="{{!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']) ? '9' : '8' }}">
                                                 <table class="table table-bordered">
                                                     <thead>
                                                         <tr>
@@ -177,7 +177,7 @@
                                                             <th scope="col">Deskripsi</th>
                                                             <th scope="col" class="text-end">Jumlah Pembayaran</th>
                                                             <th scope="col">Alasan Perubahan</th>
-															@if (auth()->user()->role != 'AdminMonitor')<th scope="col"></th>@endif
+															@if (!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))<th scope="col"></th>@endif
                                                         </tr>
                                                     </thead>
                                                     <tbody>
@@ -188,7 +188,7 @@
                                                                 <td>{{ $detail->description }}</td>
                                                                 <td class="text-end">{{ number_format($detail->amount, 0, ',', '.') }}</td>
                                                                 <td>{{ $detail->reason ?? '-' }}</td>
-																@if (auth()->user()->role != 'AdminMonitor')
+																@if (!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
 																<td class="text-center">
 																	<a href="{{ route('school-teacher-receivables.receipt', [$receivable->school, $detail]) }}" class="btn btn-sm btn-info">Kwitansi</a>
 																	<a href="{{ route('school-teacher-receivables.edit-pay', [$receivable->school, $detail]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
@@ -198,7 +198,7 @@
                                                             </tr>
 														@empty
 															<tr>
-																<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '5' : '4' }}">Belum pembayaran piutang</td>
+																<td colspan="{{ !in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']) ? '5' : '4' }}">Belum pembayaran piutang</td>
 															</tr>
                                                         @endforelse
                                                         </tr>
@@ -213,7 +213,7 @@
                                         </tr>
 									@empty
 										<tr>
-											<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '9' : '8' }}">Belum ada piutang</td>
+											<td colspan="{{ !in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']) ? '9' : '8' }}">Belum ada piutang</td>
 										</tr>										
 									@endempty
                                 </tbody>

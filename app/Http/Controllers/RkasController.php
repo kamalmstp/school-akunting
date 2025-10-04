@@ -46,7 +46,7 @@ class RkasController extends Controller
         $user = auth()->user();
 
         $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor', 'Pengawas']) ? School::all() : collect([$user->school]);
         $schoolId = $school ? [$school->id] : $schools->pluck('id');
 
         $activePeriod = $schoolId ? FinancialPeriod::where('school_id', $schoolId)->where('is_active', true)->first() : null;
@@ -106,7 +106,7 @@ class RkasController extends Controller
     {
         $user = auth()->user();
         $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor', 'Pengawas']) ? School::all() : collect([$user->school]);
         $schoolId = $school ? [$school->id] : $schools->pluck('id');
 
         $activePeriod = $schoolId ? FinancialPeriod::where('school_id', $schoolId)->where('is_active', true)->first() : null;

@@ -16,7 +16,7 @@ class SchoolController extends Controller
 {
     public function __construct()
     {
-        $this->middleware(['auth', 'role:SuperAdmin,AdminMonitor']);
+        $this->middleware(['auth', 'role:SuperAdmin,AdminMonitor,Pengawas']);
     }
 
     /**

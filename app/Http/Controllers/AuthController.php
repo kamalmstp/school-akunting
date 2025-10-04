@@ -54,6 +54,8 @@ class AuthController extends Controller
                     return redirect()->route('dashboard.index', $user->school_id);
                 } elseif ($user->role === 'AdminMonitor') {
                     return redirect()->route('schools.index');
+                } elseif ($user->role === 'Pengawas') {
+                    return redirect()->route('schools.index');
                 }
             } else {
                 $request->session()->invalidate();

@@ -83,7 +83,7 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Super Admin, Admin Monitor Routes
-    Route::middleware(['role:SuperAdmin,AdminMonitor'])->group(function () {
+    Route::middleware(['role:SuperAdmin,AdminMonitor,Pengawas'])->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::resource('schools', SchoolController::class);
         Route::prefix('rkas')->name('rkas.')->group(function () {
@@ -212,7 +212,7 @@ Route::middleware(['auth'])->group(function () {
         });
     });
 
-    Route::middleware(['role:SuperAdmin,SchoolAdmin,AdminMonitor'])->group(function() {
+    Route::middleware(['role:SuperAdmin,SchoolAdmin,AdminMonitor,Pengawas'])->group(function() {
         Route::post('student-receivables/student/filter', [StudentReceivableController::class, 'getStudent'])->name('student-receivables.filter');
         Route::post('student-alumni/student/filter', [StudentAlumniController::class, 'getStudent'])->name('student-alumni.filter');
         Route::post('student-alumni/year/filter', [StudentAlumniController::class, 'getYear']);

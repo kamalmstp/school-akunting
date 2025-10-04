@@ -128,7 +128,7 @@ class ReportController extends Controller
         Log::info('Accessing Beginning Balance', ['request' => $request->all()]);
         $user = auth()->user();
         $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor', 'Pengawas']) ? School::all() : collect([$user->school]);
         $schoolId = $school ? $school->id : null;
         $perPage = 10;
         $currentPage = $request->input('page', 1);
@@ -311,7 +311,7 @@ class ReportController extends Controller
         Log::info('Accessing General Journal', ['request' => $request->all()]);
         $user = auth()->user();
         $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor', 'Pengawas']) ? School::all() : collect([$user->school]);
 
         $activePeriod = null;
         if ($school) {
@@ -490,7 +490,7 @@ class ReportController extends Controller
         Log::info('Accessing Ledger', ['request' => $request->all()]);
         $user = auth()->user();
         $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor', 'Pengawas']) ? School::all() : collect([$user->school]);
         $schoolIds = $school ? collect([$school->id]) : collect();
 
         $activePeriod = null;
@@ -640,7 +640,7 @@ class ReportController extends Controller
         Log::info('Accessing Financial Statements', ['request' => $request->all()]);
         $user = auth()->user();
         $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor', 'Pengawas']) ? School::all() : collect([$user->school]);
         $schoolIds = $school ? [$school->id] : $schools->pluck('id');
 
         $activePeriod = null;
@@ -865,7 +865,7 @@ class ReportController extends Controller
         Log::info('Accessing Trial Balance', ['request' => $request->all()]);
         $user = auth()->user();
         $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor', 'Pengawas']) ? School::all() : collect([$user->school]);
         $schoolId = $school ? $school->id : null;
 
         $activePeriod = null;
@@ -929,7 +929,7 @@ class ReportController extends Controller
         Log::info('Accessing Trial Balance Before', ['request' => $request->all()]);
         $user = auth()->user();
         $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor', 'Pengawas']) ? School::all() : collect([$user->school]);
         $schoolIds = $school ? [$school->id] : $schools->pluck('id');
 
         $date = Carbon::parse($request->input('date', now()->endOfMonth()))->toDateString();
@@ -948,7 +948,7 @@ class ReportController extends Controller
         Log::info('Accessing Adjusting Entries', ['request' => $request->all()]);
         $user = auth()->user();
         $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor', 'Pengawas']) ? School::all() : collect([$user->school]);
 
         $startDate = Carbon::parse($request->input('start_date', now()->startOfMonth()))->toDateString();
         $endDate = Carbon::parse($request->input('end_date', now()->endOfMonth()))->toDateString();
@@ -1022,7 +1022,7 @@ class ReportController extends Controller
         Log::info('Accessing Trial Balance After', ['request' => $request->all()]);
         $user = auth()->user();
         $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor', 'Pengawas']) ? School::all() : collect([$user->school]);
         $schoolIds = $school ? [$school->id] : $schools->pluck('id');
 
         $date = Carbon::parse($request->input('date', now()->endOfMonth()))->toDateString();
@@ -1143,7 +1143,7 @@ class ReportController extends Controller
         Log::info('Accessing Cash Reports', ['request' => $request->all()]);
         $user = auth()->user();
         $school = $this->resolveSchool($user, $school);
-        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor']) ? School::all() : collect([$user->school]);
+        $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor', 'Pengawas']) ? School::all() : collect([$user->school]);
 
         $activePeriod = null;
         if ($school) {

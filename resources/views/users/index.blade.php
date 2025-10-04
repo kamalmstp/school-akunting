@@ -42,6 +42,7 @@
 										<select name="role" class="form-select" id="role">
 											<option value="">Pilih Role</option>
 											<option value="SuperAdmin" {{ $role == 'SuperAdmin' ? 'selected' : '' }}>Super Admin</option>
+											<option value="Pengawas" {{ $role == 'Pengawas' ? 'selected' : '' }}>Pengawas</option>
 											<option value="AdminMonitor" {{ $role == 'AdminMonitor' ? 'selected' : '' }}>Admin Monitor</option>
 											<option value="SchoolAdmin" {{ $role == 'SchoolAdmin' ? 'selected' : '' }}>Admin Sekolah</option>
 										</select>

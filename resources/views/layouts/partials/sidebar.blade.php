@@ -131,7 +131,7 @@
                     </a>
                 </li>
 
-            @elseif(auth()->user()->role === 'AdminMonitor')
+            @elseif(auth()->user()->role === 'AdminMonitor' || auth()->user()->role === 'Pengawas')
                 <li class="@if(Route::is('dashboard')) active current-page @endif">
                     <a href="{{ route('dashboard') }}">
                         <i class="bi bi-pie-chart"></i>

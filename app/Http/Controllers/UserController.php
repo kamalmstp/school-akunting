@@ -14,7 +14,7 @@ class UserController extends Controller
     public function __construct()
     {
         $this->middleware('auth');
-        $this->middleware('role:SuperAdmin,AdminMonitor,SchoolAdmin')->only(['profile', 'resetPassword']);
+        $this->middleware('role:SuperAdmin,AdminMonitor,Pengawas,SchoolAdmin')->only(['profile', 'resetPassword']);
     }
 
     /**
@@ -54,7 +54,7 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'phone' => 'required|max:13',
             'password' => 'required|string|min:8|confirmed',
-            'role' => 'required|in:SuperAdmin,AdminMonitor,SchoolAdmin',
+            'role' => 'required|in:SuperAdmin,AdminMonitor,Pengawas,SchoolAdmin',
             'school_id' => 'required_if:role,SchoolAdmin|exists:schools,id|nullable',
         ], [
             'name.required' => 'Nama pengguna wajib diisi',
@@ -101,7 +101,7 @@ class UserController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id . '|nullable',
             'phone' => 'required|max:13',
-            'role' => 'required|in:SuperAdmin,AdminMonitor,SchoolAdmin',
+            'role' => 'required|in:SuperAdmin,AdminMonitor,Pengawas,SchoolAdmin',
             'school_id' => 'required_if:role,SchoolAdmin|exists:schools,id|nullable',
             'password' => 'nullable|string|min:8|confirmed',
         ], [

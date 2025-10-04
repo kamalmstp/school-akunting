@@ -25,7 +25,7 @@
 						<!-- Row start -->
 						<form method="GET" class="mb-4">
 							<div class="row gx-3">
-								@if (auth()->user()->role == 'SuperAdmin' || auth()->user()->role == 'AdminMonitor')
+								@if (auth()->user()->role == 'SuperAdmin' || auth()->user()->role == 'AdminMonitor' || auth()->user()->role == 'Pengawas')
 									<div class="col-xl-4 col-md-6 col-12">
 										<div class="mb-3">
 											<label for="schoolFilter" class="form-label">Filter Sekolah</label>
@@ -69,7 +69,7 @@
 					<div class="card-header">
 						<div class="d-flex justify-content-between align-items-center">
 							<h5 class="card-title">Daftar Karyawan</h5>
-							@if(auth()->user()->role != 'AdminMonitor')
+							@if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
 							<div>
                                 <a href="{{ auth()->user()->role == 'SuperAdmin' ? route('employees.create') : route('school-employees.create', $school) }}" class="btn btn-primary" title="Tambah Karyawan">
 									<span class="d-lg-block d-none">Tambah Karyawan</span>
@@ -110,7 +110,7 @@
                                         <th>Telepon</th>
                                         <th>Alamat</th>
                                         <th>Status</th>
-                                        @if(auth()->user()->role != 'AdminMonitor')<th></th>@endif
+                                        @if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))<th></th>@endif
 									</tr>
 								</thead>
 								<tbody>
@@ -124,7 +124,7 @@
                                             <td>{{ $employee->phone }}</td>
                                             <td>{{ $employee->address }}</td>
                                             <td>{{ $employee->is_active ? 'Aktif' : 'Tidak Aktif' }}</td>
-											@if(auth()->user()->role != 'AdminMonitor')
+											@if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
 												<td>
 													<a href="{{ route('school-employees.edit', [$employee->school, $employee]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
 													<form action="{{ route('school-employees.destroy', [$employee->school, $employee]) }}" method="POST" style="display:inline;">
@@ -137,7 +137,7 @@
                                         </tr>
 									@empty
 										<tr>
-											<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '9' : '8' }}">Belum ada karyawan</td>
+											<td colspan="{{ !in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']) ? '9' : '8' }}">Belum ada karyawan</td>
 										</tr>										
 									@endempty
                                 </tbody>

@@ -102,7 +102,7 @@
 					<div class="card-header">
 						<div class="d-flex justify-content-between align-items-center">
 							<h5 class="card-title">Daftar Transaksi</h5>
-                            @if(auth()->user()->role != 'AdminMonitor')
+                            @if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
                                 <a href="{{ auth()->user()->role == 'SuperAdmin' ? route('transactions.create') : route('school-transactions.create', $school) }}" class="btn btn-primary" title="Tambah Transaksi">
 									<span class="d-lg-block d-none">Tambah Transaksi</span>
 									<span class="d-sm-block d-lg-none">
@@ -149,7 +149,7 @@
                                             <td>{{ $transaction->description ?? '-' }}</td>
                                             <td class="text-end">{{ number_format($transaction->debit, 0, ',', '.') }}</td>
                                             <td class="text-end">{{ number_format($transaction->credit, 0, ',', '.') }}</td>
-                                            @if (auth()->user()->role != 'AdminMonitor')
+                                            @if (!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
                                                 <td class="text-center">
                                                     <a href="{{ route('school-transactions.edit', [$transaction->school, $transaction]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
                                                     <form action="{{ route('school-transactions.destroy', [$transaction->school, $transaction]) }}" method="POST" style="display:inline;">
@@ -162,7 +162,7 @@
                                         </tr>
 									@empty
 										<tr>
-											<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '9' : '8' }}">Belum ada transaksi</td>
+											<td colspan="{{ !in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']) ? '9' : '8' }}">Belum ada transaksi</td>
 										</tr>										
 									@endempty
                                 </tbody>

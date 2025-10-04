@@ -89,7 +89,7 @@
 					<div class="card-header">
 						<div class="d-flex justify-content-between align-items-center">
 							<h5 class="card-title">Daftar Penyusutan Aset Tetap</h5>
-                            @if(auth()->user()->role != 'AdminMonitor')
+                            @if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
                                 <a href="{{ auth()->user()->role == 'SuperAdmin' ? route('fixed-assets.create') : route('school-fixed-assets.create', $school) }}" class="btn btn-primary" title="Tambah Aset Tetap">
 									<span class="d-lg-block d-none">Tambah Aset Tetap</span>
 									<span class="d-sm-block d-lg-none">
@@ -124,7 +124,7 @@
                                         <th scope="col" class="text-end">Persentase Penyusutan (%)</th>
                                         <!--<th scope="col" class="text-end">Akumulasi Penyusutan</th>-->
                                         <!--<th scope="col" class="text-end">Nilai Buku</th>-->
-                                        @if (auth()->user()->role != 'AdminMonitor')<th></th>@endif
+                                        @if (!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))<th></th>@endif
 									</tr>
 								</thead>
 								<tbody>
@@ -144,7 +144,7 @@
 											<td class="text-end">{{ number_format($fixedAsset->depreciation_percentage, 2, ',', '.') }}</td>
 											<!--<td class="text-end">{{ number_format($fixedAsset->accumulated_depriciation, 0, ',', '.') }}</td>-->
 											<!--<td class="text-end">{{ number_format($fixedAsset->acquisition_cost - $fixedAsset->accumulated_depriciation, 0, ',', '.') }}</td>-->
-											@if (auth() ->user()->role != 'AdminMonitor')
+											@if (!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
 												<td class="text-center">
 													@if($fixedAsset->useful_life != $fixedAsset->depreciations()->count())
 														<a href="{{ route('school-fixed-assets.depreciate', [$fixedAsset->school, $fixedAsset]) }}" class="btn btn-sm btn-success">Susutkan</a>
@@ -159,7 +159,7 @@
 											@endif
                                         </tr>
 										<tr class="collapse" id="details{{ $fixedAsset->id }}">
-                                            <td colspan="{{auth()->user()->role != 'AdminMonitor' ? '7' : '6' }}">
+                                            <td colspan="{{!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']) ? '7' : '6' }}">
                                                 <table class="table table-bordered">
                                                     <thead>
                                                         <tr>
@@ -194,7 +194,7 @@
                                         </tr>
 									@empty
 										<tr>
-											<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '10' : '9' }}">Belum ada aset tetap</td>
+											<td colspan="{{ !in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']) ? '10' : '9' }}">Belum ada aset tetap</td>
 										</tr>										
 									@endempty
                                 </tbody>

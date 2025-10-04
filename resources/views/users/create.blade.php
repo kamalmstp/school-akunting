@@ -108,6 +108,7 @@
                                                     <label for="role" class="form-label">Role</label>
                                                     <select class="form-select @error('role') is-invalid @enderror" id="role" name="role">
                                                         <option value="SuperAdmin" {{ old('role') === 'SuperAdmin' ? 'selected' : '' }}>Super Admin</option>
+                                                        <option value="Pengawas" {{ old('role') === 'Pengawas' ? 'selected' : '' }}>Pengawas</option>
                                                         <option value="AdminMonitor" {{ old('role') === 'AdminMonitor' ? 'selected' : '' }}>Admin Monitor</option>
                                                         <option value="SchoolAdmin" {{ old('role') === 'SchoolAdmin' ? 'selected' : '' }}>Admin Sekolah</option>
                                                     </select>

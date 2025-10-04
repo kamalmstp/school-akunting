@@ -87,7 +87,7 @@
 					<div class="card-header">
 						<div class="d-flex justify-content-between align-items-center">
 							<h5 class="card-title">Daftar Akun</h5>
-							@if(auth()->user()->role != 'AdminMonitor')
+							@if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
                             <div>
                                 <a href="{{ auth()->user()->role == 'SuperAdmin' ? route('accounts.create') : route('school-accounts.create', $school) }}" class="btn btn-primary" title="Tambah Akun">
 									<span class="d-lg-block d-none">Tambah Akun</span>
@@ -127,7 +127,7 @@
                                         <th>Tipe</th>
                                         <th>Saldo Normal</th>
                                         <th>Induk</th>
-                                        @if(auth()->user()->role != 'AdminMonitor')<th></th>@endif
+                                        @if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))<th></th>@endif
 									</tr>
 								</thead>
 								<tbody>
@@ -140,7 +140,7 @@
                                             <td>{{ $account->account_type }}</td>
                                             <td>{{ $account->normal_balance }}</td>
                                             <td>{{ $account->parent ? $account->parent->name : '-' }}</td>
-                                            @if(auth()->user()->role != 'AdminMonitor')
+                                            @if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
 	                                            <td>
 												@if($account->school)
 	                                                <a href="{{ route('school-accounts.edit', [$account->school, $account]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
@@ -157,7 +157,7 @@
                                         </tr>
 									@empty
 										<tr>
-											<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '8' : '7'}}">Belum ada akun</td>
+											<td colspan="{{!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']) ? '8' : '7' }}">Belum ada akun</td>
 										</tr>										
 									@endempty
                                 </tbody>

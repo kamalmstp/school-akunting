@@ -23,7 +23,7 @@
                 <div class="card-header">
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="card-title">Daftar Periode Keuangan</h5>
-                        @if(auth()->user()->role != 'AdminMonitor')
+                        @if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
                             <div>
                                 <a href="{{ route('school-financial-periods.create', $school) }}" class="btn btn-primary" title="Tambah Periode">
                                     <span class="d-lg-block d-none">Tambah Periode</span>
@@ -51,7 +51,7 @@
                                     <th>Tanggal Mulai</th>
                                     <th>Tanggal Akhir</th>
                                     <th>Status</th>
-                                    @if(auth()->user()->role != 'AdminMonitor')<th>Aksi</th>@endif
+                                    @if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))<th>Aksi</th>@endif
                                 </tr>
                             </thead>
                             <tbody>
@@ -68,7 +68,7 @@
                                                 <span class="badge bg-secondary">Tidak Aktif</span>
                                             @endif
                                         </td>
-                                        @if(auth()->user()->role != 'AdminMonitor')
+                                        @if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
                                             <td>
                                                 <a href="{{ route('school-initial-balances.index', [$school, $period]) }}" class="btn btn-sm btn-info" title="Lihat Saldo Awal">
                                                     <i class="bi bi-wallet2"></i> Saldo Awal

@@ -63,7 +63,7 @@
 					<div class="card-header">
 						<div class="d-flex justify-content-between align-items-center">
 							<h5 class="card-title">Daftar Kelas</h5>
-							@if(auth()->user()->role != 'AdminMonitor')
+							@if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
 							<div>
                                 <a href="{{ auth()->user()->role == 'SuperAdmin' ? route('school-majors.create') : route('school-school-majors.create', $school) }}" class="btn btn-primary" title="Tambah Kelas">
 									<span class="d-lg-block d-none">Tambah Kelas</span>
@@ -93,7 +93,7 @@
 										<th>No</th>
                                         <!--<th>Sekolah</th>-->
                                         <th>Nama Kelas</th>
-                                        @if(auth()->user()->role != 'AdminMonitor')<th></th>@endif
+                                        @if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))<th></th>@endif
 									</tr>
 								</thead>
 								<tbody>
@@ -102,7 +102,7 @@
 											<td>{{ $majors->currentPage() * 10 - (9 - $index) }}</td>
                                             <!--<td>{{ $school_major->school->name }}</td>-->
                                             <td>{{ $school_major->name }}</td>
-											@if(auth()->user()->role != 'AdminMonitor')
+											@if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
 												<td>
 													<a href="{{ route('school-school-majors.edit', [$school_major->school, $school_major]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
 													<form action="{{ route('school-school-majors.destroy', [$school_major->school, $school_major]) }}" method="POST" style="display:inline;">
@@ -115,7 +115,7 @@
                                         </tr>
 									@empty
 										<tr>
-											<td colspan="{{ auth()->user()->role != 'AdminMonitor' ? '4' : '3'}}">Belum ada Kelas</td>
+											<td colspan="{{ !in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']) ? '4' : '3'}}">Belum ada Kelas</td>
 										</tr>										
 									@endempty
                                 </tbody>
