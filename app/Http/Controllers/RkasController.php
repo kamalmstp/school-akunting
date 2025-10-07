@@ -96,7 +96,7 @@ class RkasController extends Controller
             $pdf->setPaper('a4', 'landscape');
 
             $filename = "RKAS-Global-" . Str::slug($school->name ?? 'Sekolah') . "-" . date('Ymd') . ".pdf";
-            return $pdf->download($filename);
+            return $pdf->stream($filename);
         }
 
         return view('reports.rkas.global', $data);
@@ -141,7 +141,7 @@ class RkasController extends Controller
         $pdf->setPaper('a4', 'landscape');
 
         $filename = "RKAS-Global-" . Str::slug($school->name ?? 'Sekolah') . "-" . date('Ymd') . ".pdf";
-        return $pdf->download($filename);
+        return $pdf->stream($filename);
     }
 
     public function detail(Request $request, School $school, CashManagement $cashManagement)
@@ -183,7 +183,7 @@ class RkasController extends Controller
             $pdf->setPaper('a4', 'landscape');
 
             $filename = "RKAS-Detail-" . Str::slug($cashManagement->name) . "-" . date('Ymd') . ".pdf";
-            return $pdf->download($filename);
+            return $pdf->stream($filename);
         }
 
         return view('reports.rkas.detail', $data);
@@ -289,6 +289,6 @@ class RkasController extends Controller
         $pdf->setPaper('a4', 'landscape');
 
         $filename = "RKAS-Detail-" . Str::slug($cashManagement->name) . "-" . date('Ymd') . ".pdf";
-        return $pdf->download($filename);
+        return $pdf->stream($filename);
     }
 }

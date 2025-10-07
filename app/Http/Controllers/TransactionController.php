@@ -66,6 +66,10 @@ class TransactionController extends Controller
                 ->when($startDate, function ($q) use ($startDate, $endDate) {
                     $q->whereBetween('date', [Carbon::parse($startDate)->format('Y-m-d'), Carbon::parse($endDate)->format('Y-m-d')]);
                 })
+                ->where(function ($q) use ($referenceStudent, $referenceTeacher) {
+                    $q->whereNull('reference_type')
+                    ->orWhereNotIn('reference_type', [$referenceStudent, $referenceTeacher]);
+                })
                 ->whereHas('account', function($q) use ($accountType) {
                     $q->when($accountType, fn($q) => $q->where('account_type', $accountType));
                 })

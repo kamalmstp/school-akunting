@@ -303,7 +303,7 @@ class ReportController extends Controller
         $schoolName = $school ? \Str::slug($school->name) : 'Semua-Sekolah';
         $fileName = "Jurnal-Umum-{$schoolName}-" . date('Ymd') . ".pdf";
         
-        return $pdf->download($fileName);
+        return $pdf->stream($fileName);
     }
 
     public function generalJournal(Request $request, School $school = null)
@@ -482,7 +482,7 @@ class ReportController extends Controller
         $schoolName = $school ? \Str::slug($school->name) : 'Semua-Sekolah';
         $fileName = "Buku-Besar-{$schoolName}-" . date('Ymd') . ".pdf";
         
-        return $pdf->download($fileName);
+        return $pdf->stream($fileName);
     }
 
     public function ledger(Request $request, School $school = null)
@@ -632,7 +632,7 @@ class ReportController extends Controller
         $schoolName = $school ? Str::slug($school->name) : 'laporan-gabungan';
         $fileName = "laporan-keuangan-{$schoolName}". date('Ymd') .".pdf";
 
-        return $pdf->download($fileName);
+        return $pdf->stream($fileName);
     }
 
     public function financialStatements(Request $request, School $school = null)
