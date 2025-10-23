@@ -69,7 +69,7 @@
                     </div>
                     <div class="card-body">
                         <div class="table-responsive">
-							<table class="table align-middle">
+							<table id="receiptTable" class="table table-bordered align-middle">
 								<thead>
 									<tr>
 										<th scope="col">No</th>
@@ -160,4 +160,19 @@
 @endforeach
 
 
+@endsection
+
+@section('js')
+    <script>
+        $(document).ready(function() {
+            $('#receiptTable').DataTable({
+                "paging": true,
+                "searching": true,
+                "info": true,
+                "ordering": false,
+                "responsive": true,
+                "pageLength": 10
+            });
+        });
+    </script>
 @endsection

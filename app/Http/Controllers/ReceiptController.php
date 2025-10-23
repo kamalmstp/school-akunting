@@ -26,13 +26,11 @@ class ReceiptController extends Controller
     public function filterForm(School $school)
     {
         $students = Student::where('school_id', $school->id)->get();
-        
         return view('receipts.filter', compact('school', 'students'));
     }
 
     public function previewByStudent(School $school, Student $student)
     {
-        // Group by created_at (tanggal input pembayaran)
         $receivables = StudentReceivables::where('school_id', $school->id)
             ->where('student_id', $student->id)
             ->orderBy('created_at', 'asc')

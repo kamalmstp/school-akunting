@@ -165,7 +165,7 @@ class StudentReceivableController extends Controller
     /**
      * Store a newly created receivable in storage.
      */
-    public function store(Request $request, School $school)
+    public function store_old(Request $request, School $school)
     {
         $user = auth()->user();
         if ($user->role === 'SchoolAdmin' && $user->school_id !== $school->id) {
@@ -327,6 +327,183 @@ class StudentReceivableController extends Controller
 
         return $route->with('success', 'Piutang berhasil ditambahkan.');
     }
+
+    public function store(Request $request, School $school)
+{
+    $user = auth()->user();
+    if ($user->role === 'SchoolAdmin' && $user->school_id !== $school->id) {
+        abort(403, 'Unauthorized access to this school.');
+    }
+
+    // Validasi umum (hanya sekali, bukan per item)
+    $rules = [
+        'student_id' => 'required',
+        'account_id' => 'required|array',
+        'income_account_id' => 'required|array',
+        'amount' => 'required|array',
+        'due_date' => 'required|array',
+    ];
+    $messages = [
+        'student_id.required' => 'Pilih salah satu siswa',
+        'account_id.required' => 'Pilih akun piutang',
+        'income_account_id.required' => 'Pilih akun pendapatan',
+        'amount.required' => 'Jumlah wajib diisi',
+        'due_date.required' => 'Tanggal jatuh tempo wajib diisi'
+    ];
+    if (auth()->user()->role == 'SuperAdmin') {
+        $rules['school_id'] = 'required';
+        $messages['school_id.required'] = 'Pilih salah satu sekolah';
+    }
+    $request->validate($rules, $messages);
+
+    $schoolId = auth()->user()->role == 'SuperAdmin' ? $request->school_id : $school->id;
+
+    // === LOOP semua item piutang ===
+    foreach ($request->account_id as $index => $accId) {
+        if (!$accId || empty($request->income_account_id[$index]) || empty($request->amount[$index])) {
+            continue; // skip kalau incomplete
+        }
+
+        // Ambil nilai sesuai index
+        $incomeAccId = $request->income_account_id[$index];
+        $dueDate = $request->due_date[$index];
+        $amount = (float) str_replace('.', '', $request->amount[$index]);
+        $discountLabel = $request->discount_label[$index] ?? null;
+        $discountPercent = isset($request->discount_percent[$index]) ? (int)$request->discount_percent[$index] : 0;
+
+        // ======== COPY DARI store_old() DIBAWAH INI ==========
+        $labels = [];
+        $percents = [];
+        if ($discountLabel) {
+            $labels[] = $discountLabel;
+            $percents[] = $discountPercent;
+        }
+
+        $discounts = [];
+        $totalPotongan = 0;
+        $infaq = 0.04166667;
+        foreach ($labels as $i => $label) {
+            $label = trim($label);
+            $percent = isset($percents[$i]) ? (int)$percents[$i] : 0;
+            if ($label && $percent > 0) {
+                $nominal = intval(round(($percent / 100) * $amount));
+                $discounts[] = [
+                    'label' => $label,
+                    'percent' => $percent,
+                    'nominal' => $nominal,
+                ];
+                $totalPotongan += $nominal;
+            }
+        }
+
+        $totalBayar = max($amount - $totalPotongan, 0);
+        $totalInfaqAwal = max($totalBayar * $infaq, 0);
+        $totalInfaq = ceil($totalInfaqAwal / 1000) * 1000;
+        $totalBayarInfaq = max($totalBayar + $totalInfaq, 0);
+
+        $akun = Account::find($accId)->code;
+        $piutangInfaq = Account::where('code', '=', '1-120002')->where('school_id', '=', $schoolId)->first();
+        $pendapatanInfaq = Account::where('code', '=', '4-120002')->where('school_id', '=', $schoolId)->first();
+
+        // === Cek SPP (buat piutang infaq)
+        if ($akun == '1-120001-3') {
+            $receivableInfaq = StudentReceivables::create([
+                'school_id' => $schoolId,
+                'student_id' => $request->student_id,
+                'account_id' => $piutangInfaq->id,
+                'amount' => $totalInfaq,
+                'paid_amount' => 0,
+                'due_date' => $dueDate,
+                'status' => 'Unpaid',
+                'total_discount' => 0,
+                'total_payable' => $totalInfaq,
+            ]);
+        }
+
+        // === Buat piutang utama ===
+        $receivable = StudentReceivables::create([
+            'school_id' => $schoolId,
+            'student_id' => $request->student_id,
+            'account_id' => $accId,
+            'amount' => $amount,
+            'paid_amount' => 0,
+            'due_date' => $dueDate,
+            'status' => 'Unpaid',
+            'total_discount' => $totalPotongan,
+            'total_payable' => $totalBayar,
+        ]);
+
+        // === Simpan diskon
+        foreach ($discounts as $discount) {
+            $receivable->discounts()->create($discount);
+        }
+
+        $description = Account::find($accId)->name . ' siswa: ' . Student::find($request->student_id)->name;
+        $descriptionInfaq = 'Piutang Internal siswa: ' . Student::find($request->student_id)->name;
+
+        // === Catat transaksi piutang (debit pada akun piutang)
+        if ($akun == '1-120001-3') {
+            Transaction::create([
+                'school_id' => $schoolId,
+                'account_id' => $piutangInfaq->id,
+                'date' => now(),
+                'description' => $descriptionInfaq,
+                'debit' => $totalInfaq,
+                'credit' => 0,
+                'reference_id' => $receivableInfaq->id,
+                'reference_type' => StudentReceivables::class,
+            ]);
+            Transaction::create([
+                'school_id' => $schoolId,
+                'account_id' => $pendapatanInfaq->id,
+                'date' => now(),
+                'description' => $descriptionInfaq,
+                'debit' => 0,
+                'credit' => $totalInfaq,
+                'reference_id' => $receivableInfaq->id,
+                'reference_type' => StudentReceivables::class,
+            ]);
+        }
+
+        // === Catat transaksi utama
+        Transaction::create([
+            'school_id' => $schoolId,
+            'account_id' => $accId,
+            'date' => now(),
+            'description' => $description,
+            'debit' => $totalBayar,
+            'credit' => 0,
+            'reference_id' => $receivable->id,
+            'reference_type' => StudentReceivables::class,
+        ]);
+
+        // === Catat transaksi pendapatan
+        Transaction::create([
+            'school_id' => $schoolId,
+            'account_id' => $incomeAccId,
+            'date' => now(),
+            'description' => $description,
+            'debit' => 0,
+            'credit' => $totalBayar,
+            'reference_id' => $receivable->id,
+            'reference_type' => StudentReceivables::class,
+        ]);
+
+        // === Update FundManagement
+        FundManagement::where('school_id', $schoolId)
+            ->where('account_id', $incomeAccId)
+            ->increment('amount', $totalBayar);
+    }
+
+    // === Redirect tetap sama
+    $route = back();
+    if (auth()->user()->role == 'SuperAdmin') {
+        $route = redirect()->route('student-receivables.index');
+    } else if (auth()->user()->role == 'SchoolAdmin') {
+        $route = redirect()->route('school-student-receivables.index', $school);
+    }
+    return $route->with('success', 'Piutang berhasil ditambahkan.');
+}
 
     /**
      * Show the form for editing the specified receivable.

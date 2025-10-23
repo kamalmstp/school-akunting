@@ -11,7 +11,7 @@ Requirements :
 Revisi :
 
 * Laporan
-[x] Untuk Cetak PDF, dibuat agar preview sebelum dicetak
+[v] Untuk Cetak PDF, dibuat agar preview sebelum dicetak
 [v] Tanggal di bagian Signature dibuat otomatis dengan format Bulan Indonesia
 [v] Nama Kepala Sekolah, Nama Ketua Majelis Dikdasmen, dan Bendahara di set masing masing sekolah
 
@@ -28,7 +28,7 @@ Revisi :
 [x] Menu Kelola Periode (AdminMonitor)
 
 * Tambah Role Baru
-[x] Role Pengawas mirip dg AdminMonitor
+[v] Role Pengawas mirip dg AdminMonitor
 
 * Saldo Awal
 [v] Memilah akun yang dapat diisi saldo awal

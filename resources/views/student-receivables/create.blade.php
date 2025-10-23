@@ -31,156 +31,108 @@
                     </div>
                     <div class="card-body">
                         <form action="{{ auth()->user()->role == 'SuperAdmin' ? route('student-receivables.store') : route('school-student-receivables.store', $school) }}" method="POST">
-                        @csrf
-                            <div class="create-invoice-wrapper">
-                                <!-- Row start -->
-                                <div class="row gx-3">
-                                    <div class="col-sm-6 col-12">
-                                        <!-- Row start -->
-                                        @if(auth()->user()->role == 'SuperAdmin')
-                                            <div class="row gx-3">
-                                                <div class="col-sm-12 col-12">
-                                                    <div class="mb-3">
-                                                        <label for="school_id" class="form-label">Sekolah</label>
-                                                        <select name="school_id" class="form-select @error('school_id') is-invalid @enderror" id="school_id">
-                                                            <option value="">Pilih Sekolah</option>
-                                                            @foreach(\App\Models\School::pluck('name', 'id') as $key => $schoolName)
-                                                                <option value="{{ $key }}">{{ $schoolName }}</option>
-                                                            @endforeach
-                                                        </select>
-                                                        @error('school_id')
-                                                            <div class="invalid-feedback">{{ $message }}</div>
-                                                        @enderror
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        @else
-                                            <input type="hidden" name="school_id" id="school_id" value="{{auth()->user()->school_id}}">
-                                        @endif
-                                        <div class="row gx-3">
-                                            <div class="col-sm-12 col-12">
-                                                <!-- Form group start -->
-                                                <div class="mb-3">
-                                                    <label for="student_id" class="form-label">Siswa</label>
-                                                    <select class="form-select @error('student_id') is-invalid @enderror" id="student_id" name="student_id">
-                                                        <option value="">Pilih Siswa</option>
-                                                        @foreach($students as $student)
-                                                            <option value="{{ $student->id }}" {{ old('student_id') == $student->id ? 'selected' : '' }}>
-                                                                {{ $student->name }} ({{ $student->student_id_number }})
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                    @error('student_id')
-                                                        <div class="invalid-feedback">{{ $message }}</div>
-                                                    @enderror
-                                                </div>
-                                                <!-- Form group end -->
-                                            </div>
-                                        </div>
-                                        <div class="row gx-3">
-                                            <div class="col-sm-12 col-12">
-                                                <!-- Form group start -->
-                                                <div class="mb-3">
-                                                    <label for="account_id" class="form-label">Akun Piutang</label>
-                                                    <select class="form-select @error('account_id') is-invalid @enderror" id="account_id" name="account_id">
-                                                        <option value="">Pilih Akun Piutang</option>
-                                                        @foreach($accounts as $account)
-                                                            <option value="{{ $account->id }}" {{ old('account_id') == $account->id ? 'selected' : '' }}>
-                                                                {{ $account->code }} - {{ $account->name }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                    @error('account_id')
-                                                        <div class="invalid-feedback">{{ $message }}</div>
-                                                    @enderror
-                                                </div>
-                                                <!-- Form group end -->
-                                            </div>
-                                        </div>
-                                        <div class="row gx-3">
-                                            <div class="col-sm-12 col-12">
-                                                <!-- Form group start -->
-                                                <div class="mb-3">
-                                                    <label for="income_account_id" class="form-label">Akun Pendapatan</label>
-                                                    <select class="form-select @error('income_account_id') is-invalid @enderror" id="income_account_id" name="income_account_id">
-                                                        <option value="">Pilih Akun Pendapatan</option>
-                                                        @foreach(\App\Models\Account::where('school_id', auth()->user()->school_id)->where('account_type', 'Pendapatan')->get() as $account)
-                                                            <option value="{{ $account->id }}" {{ old('account_id') == $account->id ? 'selected' : '' }}>
-                                                                {{ $account->code }} - {{ $account->name }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
-                                                    @error('income_account_id')
-                                                        <div class="invalid-feedback">{{ $message }}</div>
-                                                    @enderror
-                                                </div>
-                                                <!-- Form group end -->
-                                            </div>
-                                        </div>
-                                        <div class="row gx-3">
-                                            <div class="col-sm-12 col-12">
-                                                <!-- Form group start -->
-                                                <div class="mb-3">
-                                                    <label for="amount" class="form-label">Jumlah</label>
-                                                    <input type="text" class="form-control angka @error('amount') is-invalid @enderror" id="amount" name="amount" value="{{ old('amount') }}">
-                                                    @error('amount')
-                                                        <div class="invalid-feedback">{{ $message }}</div>
-                                                    @enderror
-                                                    <input type="hidden" id="final_amount" name="final_amount" value="{{ old('amount') }}">
-                                                </div>
-                                                <!-- Form group end -->
-                                            </div>
-                                        </div>
+    @csrf
+    <div class="create-invoice-wrapper">
+        <div class="row gx-3">
+            <div class="col-sm-6 col-12">
+                {{-- === SEKOLAH (jika SuperAdmin) === --}}
+                @if(auth()->user()->role == 'SuperAdmin')
+                    <div class="mb-3">
+                        <label for="school_id" class="form-label">Sekolah</label>
+                        <select name="school_id" class="form-select @error('school_id') is-invalid @enderror" id="school_id">
+                            <option value="">Pilih Sekolah</option>
+                            @foreach(\App\Models\School::pluck('name', 'id') as $key => $schoolName)
+                                <option value="{{ $key }}">{{ $schoolName }}</option>
+                            @endforeach
+                        </select>
+                        @error('school_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+                @else
+                    <input type="hidden" name="school_id" id="school_id" value="{{auth()->user()->school_id}}">
+                @endif
 
-                                        <div class="mb-3" id="show_pembayaran" style="display:none">
-                                            <label for="persen_bayar" class="form-label">Pembayaran (%)</label>
-                                            <input type="number" max="100" class="form-control" id="persen_bayar" name="persen_bayar" value="100">
-                                        </div>
+                {{-- === SISWA === --}}
+                <div class="mb-3">
+                    <label for="student_id" class="form-label">Siswa</label>
+                    <select class="form-select @error('student_id') is-invalid @enderror" id="student_id" name="student_id">
+                        <option value="">Pilih Siswa</option>
+                        @foreach($students as $student)
+                            <option value="{{ $student->id }}">{{ $student->name }} ({{ $student->student_id_number }})</option>
+                        @endforeach
+                    </select>
+                    @error('student_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
 
-                                        <div class="mb-3">
-                                            <label class="form-label">Potongan</label>
-                                            <div class="d-flex align-items-start gap-2 mb-2">
-                                                <input type="text" name="discount_label[]" class="form-control" placeholder="Misal: Anak Guru">
-                                                <select name="discount_percent[]" class="form-select" style="max-width: 100px;">
-                                                    <option value="0">0%</option>
-                                                    @foreach([5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100] as $percent)
-                                                    <option value="{{ $percent }}">{{ $percent }}%</option>
-                                                    @endforeach
-                                                </select>
-                                                <button type="button" class="btn btn-outline-secondary" id="add-discount">
-                                                    <i class="bi bi-plus-lg"></i>
-                                                </button>
-                                            </div>
-                                            <div id="discount-list"></div>
-                                        </div>
+                {{-- === BLOK PIUTANG BERULANG === --}}
+                <div id="piutang-container">
+                    <div class="piutang-item border rounded p-3 mb-3 bg-light">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Piutang #1</h6>
+                            <button type="button" class="btn btn-outline-danger btn-sm remove-piutang" style="display:none;">
+                                <i class="bi bi-x-lg"></i> Hapus
+                            </button>
+                        </div>
 
-                                        <div class="row gx-3">
-                                            <div class="col-sm-12 col-12">
-                                                <!-- Form group start -->
-                                                <div class="mb-3">
-                                                    <label for="due_date" class="form-label">Tanggal Jatuh Tempo</label>
-                                                    <input type="date" class="form-control @error('due_date') is-invalid @enderror" id="due_date" name="due_date" value="{{ old('due_date') }}">
-                                                    @error('due_date')
-                                                        <div class="invalid-feedback">{{ $message }}</div>
-                                                    @enderror
-                                                </div>
-                                                <!-- Form group end -->
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row gx-3">
-                                <div class="col-12">
-                                    <div class="text-start">
-                                        <input type="hidden" name="total_potongan" id="total_potongan" value="0">
-                                        <input type="hidden" name="total_bayar" id="total_bayar" value="0">
-                                        <button type="submit" class="btn btn-success">Simpan</button>
-                                        <a href="{{ auth()->user()->role == 'SuperAdmin' ? route('student-receivables.index') : route('school-student-receivables.index', $school) }}" class="btn btn-outline-success ms-1">Batal</a>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
+                        {{-- Akun Piutang --}}
+                        <div class="mb-3">
+                            <label class="form-label">Akun Piutang</label>
+                            <select class="form-select" name="account_id[]">
+                                <option value="">Pilih Akun Piutang</option>
+                                @foreach($accounts as $account)
+                                    <option value="{{ $account->id }}">{{ $account->code }} - {{ $account->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- Akun Pendapatan --}}
+                        <div class="mb-3">
+                            <label class="form-label">Akun Pendapatan</label>
+                            <select class="form-select" name="income_account_id[]">
+                                <option value="">Pilih Akun Pendapatan</option>
+                                @foreach(\App\Models\Account::where('school_id', auth()->user()->school_id)->where('account_type', 'Pendapatan')->get() as $account)
+                                    <option value="{{ $account->id }}">{{ $account->code }} - {{ $account->name }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- Jumlah --}}
+                        <div class="mb-3">
+                            <label class="form-label">Jumlah</label>
+                            <input type="text" class="form-control angka" name="amount[]" placeholder="Masukkan nominal">
+                        </div>
+
+                        {{-- Potongan --}}
+                        <div class="mb-3">
+                            <label class="form-label">Potongan</label>
+                            <input type="text" class="form-control" name="discount_label[]" placeholder="Misal: Anak Guru">
+                            <select name="discount_percent[]" class="form-select mt-2" style="max-width: 120px;">
+                                <option value="0">0%</option>
+                                @foreach([5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100] as $percent)
+                                    <option value="{{ $percent }}">{{ $percent }}%</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- Tanggal Jatuh Tempo --}}
+                        <div class="mb-3">
+                            <label class="form-label">Tanggal Jatuh Tempo</label>
+                            <input type="date" class="form-control" name="due_date[]">
+                        </div>
+                    </div>
+                </div>
+
+                <button type="button" class="btn btn-outline-primary mb-3" id="add-piutang">
+                    <i class="bi bi-plus-lg"></i> Tambah Piutang
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-start">
+        <button type="submit" class="btn btn-success">Simpan</button>
+        <a href="{{ auth()->user()->role == 'SuperAdmin' ? route('student-receivables.index') : route('school-student-receivables.index', $school) }}" class="btn btn-outline-success ms-1">Batal</a>
+    </div>
+</form>
                     </div>
                 </div>
             </div>
@@ -409,5 +361,34 @@
 				}
 			})
 		})
+
+        // === MULTI PIUTANG HANDLER ===
+$(document).ready(function () {
+    let piutangIndex = 1;
+
+    $('#add-piutang').click(function () {
+        piutangIndex++;
+        let newPiutang = $('.piutang-item:first').clone();
+        newPiutang.find('input, select').val('');
+        newPiutang.find('h6').text('Piutang #' + piutangIndex);
+        newPiutang.find('.remove-piutang').show();
+        $('#piutang-container').append(newPiutang);
+    });
+
+    $(document).on('click', '.remove-piutang', function () {
+        $(this).closest('.piutang-item').remove();
+        // Reindex titles
+        $('#piutang-container .piutang-item').each(function (i) {
+            $(this).find('h6').text('Piutang #' + (i + 1));
+        });
+    });
+
+    // Format angka otomatis
+    $(document).on('input', '.angka', function () {
+        $(this).val(function (index, value) {
+            return value.replace(/[^0-9]/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        });
+    });
+});
 	</script>
 @endsection
