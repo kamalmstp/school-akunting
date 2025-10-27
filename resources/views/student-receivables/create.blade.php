@@ -35,7 +35,7 @@
                             <div class="create-invoice-wrapper">
                                 <div class="row gx-3">
                                     <div class="col-sm-6 col-12">
-                                        {{-- === SEKOLAH (jika SuperAdmin) === --}}
+
                                         @if(auth()->user()->role == 'SuperAdmin')
                                             <div class="mb-3">
                                                 <label for="school_id" class="form-label">Sekolah</label>
@@ -51,7 +51,6 @@
                                             <input type="hidden" name="school_id" id="school_id" value="{{auth()->user()->school_id}}">
                                         @endif
 
-                                        {{-- === SISWA === --}}
                                         <div class="mb-3">
                                             <label for="student_id" class="form-label">Siswa</label>
                                             <select class="form-select @error('student_id') is-invalid @enderror" id="student_id" name="student_id">
@@ -63,7 +62,7 @@
                                             @error('student_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
                                         </div>
 
-                                        {{-- === BLOK PIUTANG BERULANG === --}}
+
                                         <div id="piutang-container">
                                             <div class="piutang-item border rounded p-3 mb-3 bg-light">
                                                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -73,7 +72,6 @@
                                                     </button>
                                                 </div>
 
-                                                {{-- Akun Piutang --}}
                                                 <div class="mb-3">
                                                     <label class="form-label">Akun Piutang</label>
                                                     <select class="form-select" name="account_id[]">
@@ -84,7 +82,6 @@
                                                     </select>
                                                 </div>
 
-                                                {{-- Akun Pendapatan --}}
                                                 <div class="mb-3">
                                                     <label class="form-label">Akun Pendapatan</label>
                                                     <select class="form-select" name="income_account_id[]">
@@ -95,13 +92,11 @@
                                                     </select>
                                                 </div>
 
-                                                {{-- Jumlah --}}
                                                 <div class="mb-3">
                                                     <label class="form-label">Jumlah</label>
                                                     <input type="text" class="form-control angka" name="amount[]" placeholder="Masukkan nominal">
                                                 </div>
 
-                                                {{-- Potongan --}}
                                                 <div class="mb-3">
                                                     <label class="form-label">Potongan</label>
                                                     <input type="text" class="form-control" name="discount_label[]" placeholder="Misal: Anak Guru">
@@ -113,7 +108,6 @@
                                                     </select>
                                                 </div>
 
-                                                {{-- Tanggal Jatuh Tempo --}}
                                                 <div class="mb-3">
                                                     <label class="form-label">Tanggal Jatuh Tempo</label>
                                                     <input type="date" class="form-control" name="due_date[]">
@@ -351,33 +345,32 @@
 			})
 		})
 
-        // === MULTI PIUTANG HANDLER ===
-$(document).ready(function () {
-    let piutangIndex = 1;
+        $(document).ready(function () {
+            let piutangIndex = 1;
 
-    $('#add-piutang').click(function () {
-        piutangIndex++;
-        let newPiutang = $('.piutang-item:first').clone();
-        newPiutang.find('input, select').val('');
-        newPiutang.find('h6').text('Piutang #' + piutangIndex);
-        newPiutang.find('.remove-piutang').show();
-        $('#piutang-container').append(newPiutang);
-    });
+            $('#add-piutang').click(function () {
+                piutangIndex++;
+                let newPiutang = $('.piutang-item:first').clone();
+                newPiutang.find('input, select').val('');
+                newPiutang.find('h6').text('Piutang #' + piutangIndex);
+                newPiutang.find('.remove-piutang').show();
+                $('#piutang-container').append(newPiutang);
+            });
 
-    $(document).on('click', '.remove-piutang', function () {
-        $(this).closest('.piutang-item').remove();
-        // Reindex titles
-        $('#piutang-container .piutang-item').each(function (i) {
-            $(this).find('h6').text('Piutang #' + (i + 1));
+            $(document).on('click', '.remove-piutang', function () {
+                $(this).closest('.piutang-item').remove();
+                // Reindex titles
+                $('#piutang-container .piutang-item').each(function (i) {
+                    $(this).find('h6').text('Piutang #' + (i + 1));
+                });
+            });
+
+            // Format angka otomatis
+            $(document).on('input', '.angka', function () {
+                $(this).val(function (index, value) {
+                    return value.replace(/[^0-9]/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                });
+            });
         });
-    });
-
-    // Format angka otomatis
-    $(document).on('input', '.angka', function () {
-        $(this).val(function (index, value) {
-            return value.replace(/[^0-9]/g, '').replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-        });
-    });
-});
 	</script>
 @endsection

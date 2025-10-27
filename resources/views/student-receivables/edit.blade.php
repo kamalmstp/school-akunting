@@ -16,10 +16,7 @@
 	</div>
 
 	<div class="app-body">
-
-		<!-- Row start -->
 		<div class="row gx-3">
-            <!-- Left column: Form -->
 			<div class="col-xl-8">
 				<div class="card mb-3">
 					<div class="card-header">
@@ -29,10 +26,9 @@
 					</div>
 					<div class="card-body">
                         <form action="{{ route('school-student-receivables.update', [$school, $student_receivable]) }}" method="POST">
-                        @csrf
-                        @method('PUT')
+                            @csrf
+                            @method('PUT')
                             <div class="create-invoice-wrapper">
-                                <!-- Row start -->
                                 <div class="row gx-3">
                                     <div class="col-sm-6 col-12">
                                         <!-- Row start -->
@@ -187,8 +183,6 @@
 					</div>
 				</div>
 			</div>
-
-            <!-- Right column: Info Pembayaran -->
             <div class="col-xl-4">
                 <!-- <div class="position-sticky" style="top: 0px; z-index: 10;"> -->
                     <div class="card mb-3">
@@ -250,12 +244,9 @@
                     </div>
                 <!-- </div> -->
             </div>
-
 		</div>
-		<!-- Row end -->
-
 	</div>
-	<!-- App body ends -->
+
 @endsection
 @section('js')
     <script>

@@ -131,7 +131,6 @@
 
 	</div>
 	<!-- App body ends -->
-</div>
 @endsection
 @section('js')
     <script>

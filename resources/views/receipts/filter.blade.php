@@ -19,46 +19,6 @@
     <!-- App body starts -->
 	<div class="app-body">
 
-        <!--
-		<div class="row gx-3">
-			<div class="col-xl-12">
-				<div class="card">
-					<div class="card-body">
-                        <form class="mb-4" method="POST" action="{{ route('school-student-receipts.print', $school) }}">
-                            @csrf
-                            <div class="row gx-3">
-                                <div class="col-xl-4 col-md-6 col-12">
-									<div class="mb-3">
-                                        <label for="studentFilter" class="form-label">Pilih Siswa</label>
-                                        <select name="student_id" class="form-select" id="studentFilter" required>
-                                            <option value="">-- Pilih --</option>
-                                            @foreach($students as $student)
-                                                <option value="{{ $student->id }}">{{ $student->name }}</option>
-                                            @endforeach
-                                        </select>
-									</div>
-								</div>
-
-                                <div class="col-xl-4 col-md-6 col-12">
-									<div class="mb-3">
-                                        <label for="dateFilter" class="form-label">Pilih Tanggal</label>
-                                        <input class="form-control" id="dateFilter" type="date" name="date" required>
-									</div>
-								</div>
-                            </div>
-
-                            <div class="row gx-3">
-								<div class="col-xl-4 col-md-6 col-12">
-									<button type="submit" class="btn btn-primary">Cetak Kwitansi</button>
-								</div>
-							</div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-        -->
-
         <div class="row gx-3">
 			<div class="col-xxl-12">
 				<div class="card">
@@ -103,61 +63,40 @@
     </div>
 
     @foreach($students as $row)
-    <!-- Modal -->
-    <div class="modal fade" id="previewModal-{{ $row->id }}" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="previewModalLabel">Preview Kwitansi {{ $row->name }}</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                
-                <?php 
-                    $studentCoba = $row;
-                    $schoolCoba = $school;
-                    $receivables = \App\Models\StudentReceivables::where('school_id', $school->id)
-                                        ->where('student_id', $row->id)
-                                        ->orderBy('created_at', 'asc')
-                                        ->get()
-                                        ->groupBy(fn($r) => \Carbon\Carbon::parse($r->created_at)->format('Y-m-d'));
-                    
-                ?>
-                @forelse($receivables as $date => $items)
-                    <h5 class="mt-3">Tanggal Pembayaran: {{ $date }}</h5>
-                    <table class="table table-bordered table-sm">
-                        <thead>
-                            <tr>
-                                <th>Jenis Tagihan</th>
-                                <th>Nominal</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($items as $item)
-                                <tr>
-                                    <td>{{ $item->account->code.' - '.$item->account->name }}</td>
-                                    <td>Rp {{ number_format($item->amount, 2, ',', '.') }}</td>
-                                </tr>
-                            @endforeach
-                            <tr class="table-light">
-                                <td><strong>Total</strong></td>
-                                <td><strong>Rp {{ number_format($items->sum('amount'), 2, ',', '.') }}</strong></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <a href="{{ route('school-student-receipts.printByStudentAndDate', [$schoolCoba, $studentCoba, $date]) }}" target="_blank" class="btn btn-success btn-sm">
-                        Cetak Kwitansi
-                    </a>
-                    <hr>
-                @empty
-                    <h5>Belum Ada Transaksi</h5>
-                @endforelse
+        <!-- Modal -->
+        <div class="modal fade" id="previewModal-{{ $row->id }}" tabindex="-1" aria-labelledby="previewModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="previewModalLabel">Preview Kwitansi {{ $row->name }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
 
-            </div>
+                    <div class="modal-body">
+                        <div class="row mb-3">
+                            <div class="col-md-5">
+                                <label class="form-label">Tanggal Awal</label>
+                                <input type="date" class="form-control start-date" id="startDate-{{ $row->id }}">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Tanggal Akhir</label>
+                                <input type="date" class="form-control end-date" id="endDate-{{ $row->id }}">
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-primary w-100 filter-btn" data-student="{{ $row->id }}" data-school="{{ $school->id }}">
+                                    Tampilkan
+                                </button>
+                            </div>
+                        </div>
+
+                        <div id="receipt-content-{{ $row->id }}">
+                            <div class="text-center text-muted py-3">Silakan pilih rentang tanggal untuk melihat data.</div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
-@endforeach
+    @endforeach
 
 
 @endsection
@@ -172,6 +111,33 @@
                 "ordering": false,
                 "responsive": true,
                 "pageLength": 10
+            });
+
+            $(document).on('click', '.filter-btn', function() {
+                let studentId = $(this).data('student');
+                let schoolId = $(this).data('school');
+                let startDate = $('#startDate-' + studentId).val();
+                let endDate = $('#endDate-' + studentId).val();
+
+                if (!startDate || !endDate) {
+                    alert('Silakan pilih tanggal awal dan akhir!');
+                    return;
+                }
+
+                $.ajax({
+                    url: '/schools/' + schoolId + '/student-receipts/' + studentId + '/receipts/filter',
+                    type: 'GET',
+                    data: { start_date: startDate, end_date: endDate },
+                    beforeSend: function() {
+                        $('#receipt-content-' + studentId).html('<div class="text-center text-muted py-3">Memuat data...</div>');
+                    },
+                    success: function(response) {
+                        $('#receipt-content-' + studentId).html(response);
+                    },
+                    error: function() {
+                        $('#receipt-content-' + studentId).html('<div class="text-danger text-center py-3">Gagal memuat data.</div>');
+                    }
+                });
             });
         });
     </script>

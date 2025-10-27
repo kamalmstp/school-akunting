@@ -97,4 +97,51 @@ class ReceiptController extends Controller
         $pdf = \PDF::loadView('receipts.print-by-date', $data);
         return $pdf->download("kwitansi-{$student->id}-{$date}.pdf");
     }
+
+    public function filterByDate(Request $request, School $school, Student $student)
+    {
+        $start = $request->start_date;
+        $end = $request->end_date;
+
+        $receivables = \App\Models\StudentReceivables::where('school_id', $school->id)
+            ->where('student_id', $student->id)
+            ->whereDate('created_at', '>=', $start)
+            ->whereDate('created_at', '<=', $end)
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->groupBy(fn($r) => \Carbon\Carbon::parse($r->created_at)->format('Y-m-d'));
+
+        if ($receivables->isEmpty()) {
+            return '<div class="text-center text-muted py-3">Tidak ada data pada rentang tanggal tersebut.</div>';
+        }
+
+        $html = '';
+        foreach ($receivables as $date => $items) {
+            $html .= '
+                <h5 class="mt-3">Tanggal Pembayaran: ' . $date . '</h5>
+                <table class="table table-bordered table-sm">
+                    <thead><tr><th>Jenis Tagihan</th><th>Nominal</th></tr></thead>
+                    <tbody>';
+            foreach ($items as $item) {
+                $html .= '
+                    <tr>
+                        <td>' . $item->account->code . ' - ' . $item->account->name . '</td>
+                        <td>Rp ' . number_format($item->amount, 2, ',', '.') . '</td>
+                    </tr>';
+            }
+            $html .= '
+                    <tr class="table-light">
+                        <td><strong>Total</strong></td>
+                        <td><strong>Rp ' . number_format($items->sum('amount'), 2, ',', '.') . '</strong></td>
+                    </tr>
+                    </tbody>
+                </table>
+                <a href="' . route('school-student-receipts.printByStudentAndDate', [$school, $student, $date]) . '" target="_blank" class="btn btn-success btn-sm">
+                    Cetak Kwitansi
+                </a>
+                <hr>';
+        }
+
+        return $html;
+    }
 }
