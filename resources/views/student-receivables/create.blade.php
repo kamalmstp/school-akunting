@@ -31,108 +31,108 @@
                     </div>
                     <div class="card-body">
                         <form action="{{ auth()->user()->role == 'SuperAdmin' ? route('student-receivables.store') : route('school-student-receivables.store', $school) }}" method="POST">
-    @csrf
-    <div class="create-invoice-wrapper">
-        <div class="row gx-3">
-            <div class="col-sm-6 col-12">
-                {{-- === SEKOLAH (jika SuperAdmin) === --}}
-                @if(auth()->user()->role == 'SuperAdmin')
-                    <div class="mb-3">
-                        <label for="school_id" class="form-label">Sekolah</label>
-                        <select name="school_id" class="form-select @error('school_id') is-invalid @enderror" id="school_id">
-                            <option value="">Pilih Sekolah</option>
-                            @foreach(\App\Models\School::pluck('name', 'id') as $key => $schoolName)
-                                <option value="{{ $key }}">{{ $schoolName }}</option>
-                            @endforeach
-                        </select>
-                        @error('school_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
-                @else
-                    <input type="hidden" name="school_id" id="school_id" value="{{auth()->user()->school_id}}">
-                @endif
+                            @csrf
+                            <div class="create-invoice-wrapper">
+                                <div class="row gx-3">
+                                    <div class="col-sm-6 col-12">
+                                        {{-- === SEKOLAH (jika SuperAdmin) === --}}
+                                        @if(auth()->user()->role == 'SuperAdmin')
+                                            <div class="mb-3">
+                                                <label for="school_id" class="form-label">Sekolah</label>
+                                                <select name="school_id" class="form-select @error('school_id') is-invalid @enderror" id="school_id">
+                                                    <option value="">Pilih Sekolah</option>
+                                                    @foreach(\App\Models\School::pluck('name', 'id') as $key => $schoolName)
+                                                        <option value="{{ $key }}">{{ $schoolName }}</option>
+                                                    @endforeach
+                                                </select>
+                                                @error('school_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                            </div>
+                                        @else
+                                            <input type="hidden" name="school_id" id="school_id" value="{{auth()->user()->school_id}}">
+                                        @endif
 
-                {{-- === SISWA === --}}
-                <div class="mb-3">
-                    <label for="student_id" class="form-label">Siswa</label>
-                    <select class="form-select @error('student_id') is-invalid @enderror" id="student_id" name="student_id">
-                        <option value="">Pilih Siswa</option>
-                        @foreach($students as $student)
-                            <option value="{{ $student->id }}">{{ $student->name }} ({{ $student->student_id_number }})</option>
-                        @endforeach
-                    </select>
-                    @error('student_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                </div>
+                                        {{-- === SISWA === --}}
+                                        <div class="mb-3">
+                                            <label for="student_id" class="form-label">Siswa</label>
+                                            <select class="form-select @error('student_id') is-invalid @enderror" id="student_id" name="student_id">
+                                                <option value="">Pilih Siswa</option>
+                                                @foreach($students as $student)
+                                                    <option value="{{ $student->id }}">{{ $student->name }} ({{ $student->student_id_number }})</option>
+                                                @endforeach
+                                            </select>
+                                            @error('student_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                                        </div>
 
-                {{-- === BLOK PIUTANG BERULANG === --}}
-                <div id="piutang-container">
-                    <div class="piutang-item border rounded p-3 mb-3 bg-light">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h6 class="mb-0">Piutang #1</h6>
-                            <button type="button" class="btn btn-outline-danger btn-sm remove-piutang" style="display:none;">
-                                <i class="bi bi-x-lg"></i> Hapus
-                            </button>
-                        </div>
+                                        {{-- === BLOK PIUTANG BERULANG === --}}
+                                        <div id="piutang-container">
+                                            <div class="piutang-item border rounded p-3 mb-3 bg-light">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <h6 class="mb-0">Piutang #1</h6>
+                                                    <button type="button" class="btn btn-outline-danger btn-sm remove-piutang" style="display:none;">
+                                                        <i class="bi bi-x-lg"></i> Hapus
+                                                    </button>
+                                                </div>
 
-                        {{-- Akun Piutang --}}
-                        <div class="mb-3">
-                            <label class="form-label">Akun Piutang</label>
-                            <select class="form-select" name="account_id[]">
-                                <option value="">Pilih Akun Piutang</option>
-                                @foreach($accounts as $account)
-                                    <option value="{{ $account->id }}">{{ $account->code }} - {{ $account->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                                                {{-- Akun Piutang --}}
+                                                <div class="mb-3">
+                                                    <label class="form-label">Akun Piutang</label>
+                                                    <select class="form-select" name="account_id[]">
+                                                        <option value="">Pilih Akun Piutang</option>
+                                                        @foreach($accounts as $account)
+                                                            <option value="{{ $account->id }}">{{ $account->code }} - {{ $account->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
 
-                        {{-- Akun Pendapatan --}}
-                        <div class="mb-3">
-                            <label class="form-label">Akun Pendapatan</label>
-                            <select class="form-select" name="income_account_id[]">
-                                <option value="">Pilih Akun Pendapatan</option>
-                                @foreach(\App\Models\Account::where('school_id', auth()->user()->school_id)->where('account_type', 'Pendapatan')->get() as $account)
-                                    <option value="{{ $account->id }}">{{ $account->code }} - {{ $account->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
+                                                {{-- Akun Pendapatan --}}
+                                                <div class="mb-3">
+                                                    <label class="form-label">Akun Pendapatan</label>
+                                                    <select class="form-select" name="income_account_id[]">
+                                                        <option value="">Pilih Akun Pendapatan</option>
+                                                        @foreach(\App\Models\Account::where('school_id', auth()->user()->school_id)->where('account_type', 'Pendapatan')->get() as $account)
+                                                            <option value="{{ $account->id }}">{{ $account->code }} - {{ $account->name }}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
 
-                        {{-- Jumlah --}}
-                        <div class="mb-3">
-                            <label class="form-label">Jumlah</label>
-                            <input type="text" class="form-control angka" name="amount[]" placeholder="Masukkan nominal">
-                        </div>
+                                                {{-- Jumlah --}}
+                                                <div class="mb-3">
+                                                    <label class="form-label">Jumlah</label>
+                                                    <input type="text" class="form-control angka" name="amount[]" placeholder="Masukkan nominal">
+                                                </div>
 
-                        {{-- Potongan --}}
-                        <div class="mb-3">
-                            <label class="form-label">Potongan</label>
-                            <input type="text" class="form-control" name="discount_label[]" placeholder="Misal: Anak Guru">
-                            <select name="discount_percent[]" class="form-select mt-2" style="max-width: 120px;">
-                                <option value="0">0%</option>
-                                @foreach([5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100] as $percent)
-                                    <option value="{{ $percent }}">{{ $percent }}%</option>
-                                @endforeach
-                            </select>
-                        </div>
+                                                {{-- Potongan --}}
+                                                <div class="mb-3">
+                                                    <label class="form-label">Potongan</label>
+                                                    <input type="text" class="form-control" name="discount_label[]" placeholder="Misal: Anak Guru">
+                                                    <select name="discount_percent[]" class="form-select mt-2" style="max-width: 120px;">
+                                                        <option value="0">0%</option>
+                                                        @foreach([5,10,15,20,25,30,35,40,45,50,55,60,65,70,75,80,85,90,95,100] as $percent)
+                                                            <option value="{{ $percent }}">{{ $percent }}%</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
 
-                        {{-- Tanggal Jatuh Tempo --}}
-                        <div class="mb-3">
-                            <label class="form-label">Tanggal Jatuh Tempo</label>
-                            <input type="date" class="form-control" name="due_date[]">
-                        </div>
-                    </div>
-                </div>
+                                                {{-- Tanggal Jatuh Tempo --}}
+                                                <div class="mb-3">
+                                                    <label class="form-label">Tanggal Jatuh Tempo</label>
+                                                    <input type="date" class="form-control" name="due_date[]">
+                                                </div>
+                                            </div>
+                                        </div>
 
-                <button type="button" class="btn btn-outline-primary mb-3" id="add-piutang">
-                    <i class="bi bi-plus-lg"></i> Tambah Piutang
-                </button>
-            </div>
-        </div>
-    </div>
+                                        <button type="button" class="btn btn-outline-primary mb-3" id="add-piutang">
+                                            <i class="bi bi-plus-lg"></i> Tambah Piutang
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
 
-    <div class="text-start">
-        <button type="submit" class="btn btn-success">Simpan</button>
-        <a href="{{ auth()->user()->role == 'SuperAdmin' ? route('student-receivables.index') : route('school-student-receivables.index', $school) }}" class="btn btn-outline-success ms-1">Batal</a>
-    </div>
-</form>
+                            <div class="text-start">
+                                <button type="submit" class="btn btn-success">Simpan</button>
+                                <a href="{{ auth()->user()->role == 'SuperAdmin' ? route('student-receivables.index') : route('school-student-receivables.index', $school) }}" class="btn btn-outline-success ms-1">Batal</a>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -182,47 +182,29 @@
 @section('js')
     <script>
         $(document).ready(function () {
-            function getPaymentHistory() {
-                let school_id = $('#school_id').val();
-                let student_id = $('#student_id').val();
-                let account_id = $('#account_id').val();
+            function getPaymentHistory(school_id, student_id, account_id) {
+                if (!school_id || !student_id || !account_id) return;
+
                 $.ajax({
-                    type:'POST',
-                    url:'/student-receivables/payment-history/filter',
-                    data: {school_id:school_id,student_id:student_id,account_id:account_id},
+                    type: 'POST',
+                    url: '/student-receivables/payment-history/filter',
+                    data: { school_id, student_id, account_id },
                     dataType: 'json',
-                    headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+                    headers: { 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') },
                     beforeSend: function () {
                         $('#loading-spinner').show();
                         $('#info_pembayaran_masuk').html('');
                         $('#show_history').hide();
                     },
-                    success:function(data){
+                    success: function (data) {
                         let html = '';
                         if (Array.isArray(data) && data.length > 0) {
-                            html += '<div class="table-responsive"><table class="table align-middle" style="min-width: max-content;"><thead><tr><th>Tanggal</th><th>Jumlah</th><th>Deskripsi</th></tr></thead><tbody>';
-                            $.each(data, function(key, row) {
+                            html += '<div class="table-responsive"><table class="table align-middle"><thead><tr><th>Tanggal</th><th>Jumlah</th><th>Deskripsi</th></tr></thead><tbody>';
+                            $.each(data, function (key, row) {
                                 const date = new Date(row.period);
-
-                                // Format tanggal (contoh: 11 Jul 2025)
-                                const formattedDate = date.toLocaleDateString('id-ID', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    year: 'numeric'
-                                });
-
-                                // Format angka ke format Rp Indonesia
+                                const formattedDate = date.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
                                 const formattedAmount = new Intl.NumberFormat('id-ID').format(row.amount);
-
-                                // Buat baris <tr>
-                                const baris = `
-                                <tr>
-                                <td>${formattedDate}</td>
-                                <td>Rp${formattedAmount}</td>
-                                <td>${row.description}</td>
-                                </tr>
-                                `;
-                                html += baris;
+                                html += `<tr><td>${formattedDate}</td><td>Rp${formattedAmount}</td><td>${row.description}</td></tr>`;
                             });
                             html += '</tbody></table></div>';
                             $('#info_pembayaran_masuk').html(html);
@@ -232,6 +214,13 @@
                     }
                 });
             }
+
+            $(document).on('change', 'select[name="account_id[]"]', function () {
+                const school_id = $('#school_id').val();
+                const student_id = $('#student_id').val();
+                const account_id = $(this).val();
+                getPaymentHistory(school_id, student_id, account_id);
+            });
 
             function formatRupiah(angka) {
                 return 'Rp ' + angka.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');

@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <!-- App hero header starts -->
+
 	<div class="app-hero-header d-flex align-items-start">
 
 		<!-- Breadcrumb start -->
@@ -14,9 +14,7 @@
 		</ol>
 		<!-- Breadcrumb end -->
 	</div>
-	<!-- App Hero header ends -->
 
-	<!-- App body starts -->
 	<div class="app-body">
 
 		<!-- Row start -->
@@ -258,7 +256,6 @@
 
 	</div>
 	<!-- App body ends -->
-</div>
 @endsection
 @section('js')
     <script>
