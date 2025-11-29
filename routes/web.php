@@ -327,4 +327,10 @@ Route::middleware(['auth'])->group(function () {
             Route::post('financial-periods/{financialPeriod}/copy-balances', [FinancialPeriodController::class, 'copyBalances'])->name('financial-periods.copy-balances');
         });
     });
+
+    // Student Receivables Import Routes (SchoolAdmin only)
+    Route::middleware(['role:SchoolAdmin', 'school.access'])->group(function () {
+        Route::post('/schools/{school}/student-receivables/import', [StudentReceivableController::class, 'import'])->name('school-student-receivables.import');
+        Route::get('/schools/{school}/student-receivables/download-template', [StudentReceivableController::class, 'downloadTemplate'])->name('school-student-receivables.download-template');
+    });
 });

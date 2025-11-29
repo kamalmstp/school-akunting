@@ -33,3 +33,32 @@ Revisi :
 * Saldo Awal
 [v] Memilah akun yang dapat diisi saldo awal
 [v] Pagination, Search, Datatables di saldo awal
+
+* Alumni
+[!] Semua siswa muncul di alumni, harusnya dipisah untuk siswa yang lulus saja yang muncul di daftar alumni
+[!] Untuk detail akun tiap siswa sebaiknya digabungkan saja berdasarkan jenis akun, dan nominal nya di jumlahkan saja, tetapi apakah dipisah untuk status terbayar dan tidak terbayar, atau dipisahkan, yang sudah terbayar digabungkan.
+case : Apabila digabungkan per akun, bagaimana dengan detail tanggal jatuh tempo nya, dan keterangan nya
+[!] untuk pembayaran alumni untuk pengambilan ijazah hanya perlu membayar sebagian saja, sisanya dianggap lunas, tetapi di pencatatan akuntansi nya dicatat sebagai piutang tak tertagih.
+[!] Apakah perlu dibikin status untuk pengambilan ijazah nya
+
+
+- Minta nya cepet untuk performa -> Next Js
+- VPS
+- Notifikasi nya WA Blast dan email
+
+Reseller Software Solidworks. Jualan License
+Untuk Costumer biasanya Perusahaan sama Kampus
+
+
+Login :
+- Untuk login logout setiap 30 menit
+- Setiap Bulan, Waktu untuk pengingat pergantian password, ditambahkan notifikasi
+- Untuk Level User ada Super Admin, Admin/Manager tiap area, Sales, User dan Customer (mobile).
+- untuk login, log activity dibagi 2, log login dan log perubahan data. (IP - negara, Browser, Device)
+* Level Manager
+- bisa melihat log activity user bawahan nya
+
+Alur Manual:
+- Pertama kali pekerjaan dimulai dari Sales
+- Setelah ACC Masuk ke Technical Support, Demo Ke perusahaan, dan Training. Sekaligus Menghandle ticket dari customer
+- Ketika Tiket masuk, manager menentukan melempar ke Technical Support yang mana.

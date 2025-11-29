@@ -15,6 +15,10 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use PDF;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Illuminate\Support\Facades\DB;
 
 class StudentReceivableController extends Controller
 {
@@ -488,6 +492,24 @@ class StudentReceivableController extends Controller
             $route = redirect()->route('school-student-receivables.index', $school);
         }
         return $route->with('success', 'Piutang berhasil ditambahkan.');
+    }
+
+    /**
+     * Show the specified receivable.
+     */
+    public function show(School $school, StudentReceivables $student_receivable)
+    {
+        $user = auth()->user();
+        if ($user->role === 'SchoolAdmin' && $user->school_id !== $school->id) {
+            abort(403, 'Unauthorized access to this school.');
+        }
+
+        $student_receivable->load(['school', 'student', 'account', 'student_receivable_details']);
+        
+        return view('student-receivables.show', [
+            'school' => $school,
+            'receivable' => $student_receivable,
+        ]);
     }
 
     /**
@@ -1022,5 +1044,240 @@ class StudentReceivableController extends Controller
 
         $pdf = \PDF::loadView('student-receivables.receipt-all', $data);
         return $pdf->download('kwitansi.pdf');
+    }
+
+    /**
+     * Download template import piutang siswa dalam format Excel
+     */
+    public function downloadTemplate(School $school = null)
+    {
+        $user = auth()->user();
+        $school = $school ?? $user->school;
+
+        if (!$school || ($user->role === 'SchoolAdmin' && $user->school_id !== $school->id)) {
+            abort(403, 'Unauthorized access to this school.');
+        }
+
+        $templatePath = public_path('templates/template_import_piutang_siswa.xlsx');
+
+        // Jika template belum ada, generate terlebih dahulu
+        if (!file_exists($templatePath)) {
+            $this->generateTemplateFile();
+        }
+
+        return response()->download($templatePath, 'template_import_piutang_siswa.xlsx');
+    }
+
+    /**
+     * Generate template file Excel ke public/templates using PhpSpreadsheet
+     */
+    private function generateTemplateFile()
+    {
+        $spreadsheet = new Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+
+        // Header row
+        $headers = [
+            'Nomor Induk Siswa',
+            'Kode Akun Piutang',
+            'Kode Akun Pendapatan',
+            'Jumlah Piutang',
+            'Deskripsi (Opsional)'
+        ];
+
+        foreach ($headers as $index => $header) {
+            $column = chr(65 + $index); // A, B, C, D, E
+            $sheet->setCellValue($column . '1', $header);
+        }
+
+        // Sample data
+        $sampleData = [
+            ['001234', '1-120001-1', '4-120001-1', 500000, 'SPP November 2025'],
+            ['001235', '1-120001-1', '4-120001-1', 500000, 'SPP November 2025'],
+            ['001236', '1-120001-2', '4-120001-2', 250000, 'DPP November 2025'],
+        ];
+
+        $row = 2;
+        foreach ($sampleData as $data) {
+            foreach ($data as $index => $value) {
+                $column = chr(65 + $index); // A, B, C, D, E
+                $sheet->setCellValue($column . $row, $value);
+            }
+            $row++;
+        }
+
+        // Pastikan folder templates ada
+        if (!is_dir(public_path('templates'))) {
+            mkdir(public_path('templates'), 0755, true);
+        }
+
+        // Save file
+        $writer = new Xlsx($spreadsheet);
+        $writer->save(public_path('templates/template_import_piutang_siswa.xlsx'));
+    }
+
+    
+    public function import(Request $request, School $school = null)
+    {
+        $user = auth()->user();
+        $school = $school ?? $user->school;
+
+        if (!$school || ($user->role === 'SchoolAdmin' && $user->school_id !== $school->id)) {
+            abort(403, 'Unauthorized access to this school.');
+        }
+
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,xls|max:5120'
+        ]);
+
+        try {
+            $file = $request->file('file');
+            $spreadsheet = IOFactory::load($file->getPathname());
+            $sheet = $spreadsheet->getActiveSheet();
+            $rows = $sheet->toArray();
+
+            if (empty($rows) || empty($rows[0])) {
+                return response()->json(['message' => 'File Excel kosong'], 400);
+            }
+
+            $successCount = 0;
+            $errorCount = 0;
+            $errors = [];
+
+            // Skip header row jika ada
+            $startRow = 0;
+            if (!is_numeric($rows[0][0] ?? null)) {
+                $startRow = 1;
+            }
+
+            DB::beginTransaction();
+
+            for ($i = $startRow; $i < count($rows); $i++) {
+                $row = $rows[$i];
+
+                // Skip jika baris kosong
+                if (empty(array_filter($row))) {
+                    continue;
+                }
+
+                $studentIdNumber = trim($row[0] ?? '');
+                $accountCode = trim($row[1] ?? '');
+                $incomeAccountCode = trim($row[2] ?? '');
+                $amount = (int) ($row[3] ?? 0);
+                $description = trim($row[4] ?? '') ?: 'Import dari Excel';
+
+                // Validasi data
+                if (empty($studentIdNumber) || empty($accountCode) || empty($incomeAccountCode) || $amount <= 0) {
+                    $errorCount++;
+                    $errors[] = "Baris " . ($i + 1) . ": Data tidak lengkap (siswa, akun piutang, akun pendapatan, jumlah)";
+                    continue;
+                }
+
+                // Cari siswa berdasarkan nomor induk
+                $student = Student::where('student_id_number', $studentIdNumber)
+                    ->where('school_id', $school->id)
+                    ->first();
+
+                if (!$student) {
+                    $errorCount++;
+                    $errors[] = "Baris " . ($i + 1) . ": Siswa dengan nomor induk '$studentIdNumber' tidak ditemukan";
+                    continue;
+                }
+
+                // Set tanggal jatuh tempo otomatis ke tanggal 10 bulan berjalan
+                $today = Carbon::now();
+                $dueDateTime = Carbon::createFromDate($today->year, $today->month, 10);
+                // Jika tanggal 10 sudah lewat, set ke tanggal 10 bulan depan
+                if ($today->day > 10) {
+                    $dueDateTime->addMonth();
+                }
+
+                // Cari akun piutang berdasarkan kode
+                $receivableAccount = Account::where('code', $accountCode)
+                    ->where('school_id', $school->id)
+                    //->where('code', 'like', '1-12%')
+                    ->first();
+
+                if (!$receivableAccount) {
+                    $errorCount++;
+                    $errors[] = "Baris " . ($i + 1) . ": Akun piutang dengan kode '$accountCode' tidak ditemukan";
+                    continue;
+                }
+
+                // Cari akun pendapatan berdasarkan kode
+                $incomeAccount = Account::where('code', $incomeAccountCode)
+                    ->where('school_id', $school->id)
+                    //->where('code', 'like', '4-12%')
+                    ->first();
+
+                if (!$incomeAccount) {
+                    $errorCount++;
+                    $errors[] = "Baris " . ($i + 1) . ": Akun pendapatan dengan kode '$incomeAccountCode' tidak ditemukan";
+                    continue;
+                }
+
+                try {
+                    // Buat piutang baru
+                    $receivable = StudentReceivables::create([
+                        'school_id' => $school->id,
+                        'student_id' => $student->id,
+                        'account_id' => $receivableAccount->id,
+                        'amount' => $amount,
+                        'paid_amount' => 0,
+                        'due_date' => $dueDateTime->toDateString(),
+                        'status' => 'Unpaid',
+                        'total_discount' => 0,
+                        'total_payable' => $amount,
+                    ]);
+
+                    // Catat transaksi piutang (Debit pada akun piutang)
+                    Transaction::create([
+                        'school_id' => $school->id,
+                        'account_id' => $receivableAccount->id,
+                        'date' => now(),
+                        'description' => $receivableAccount->name . ' siswa: ' . $student->name,
+                        'debit' => $amount,
+                        'credit' => 0,
+                        'reference_id' => $receivable->id,
+                        'reference_type' => StudentReceivables::class,
+                    ]);
+
+                    // Catat transaksi pendapatan (Kredit pada akun pendapatan)
+                    Transaction::create([
+                        'school_id' => $school->id,
+                        'account_id' => $incomeAccount->id,
+                        'date' => now(),
+                        'description' => $incomeAccount->name . ' siswa: ' . $student->name,
+                        'debit' => 0,
+                        'credit' => $amount,
+                        'reference_id' => $receivable->id,
+                        'reference_type' => StudentReceivables::class,
+                    ]);
+
+                    $successCount++;
+                } catch (\Exception $e) {
+                    $errorCount++;
+                    $errors[] = "Baris " . ($i + 1) . ": " . $e->getMessage();
+                }
+            }
+
+            DB::commit();
+
+            $message = "Import berhasil! $successCount piutang baru berhasil dibuat";
+            if ($errorCount > 0) {
+                $message .= " (" . $errorCount . " baris gagal)";
+            }
+
+            return response()->json([
+                'message' => $message,
+                'success' => $successCount,
+                'errors' => $errorCount,
+                'details' => $errors
+            ]);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
+        }
     }
 }

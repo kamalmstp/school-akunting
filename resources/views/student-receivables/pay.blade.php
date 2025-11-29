@@ -90,7 +90,7 @@
                                                 <!-- Form group start -->
                                                 <div class="mb-3">
                                                     <label for="amount" class="form-label">Jumlah Pembayaran</label>
-                                                    <input type="text" class="form-control angka @error('amount') is-invalid @enderror" id="amount" name="amount" value="{{ old('amount') }}">
+                                                    <input type="text" class="form-control angka @error('amount') is-invalid @enderror" id="amount" name="amount" value="{{ old('amount', $receivable->total_payable - $receivable->paid_amount) }}">
                                                     @error('amount')
                                                         <div class="invalid-feedback">{{ $message }}</div>
                                                     @enderror

@@ -106,12 +106,22 @@
 						<div class="d-flex justify-content-between align-items-center">
 							<h5 class="card-title">Daftar Piutang Siswa</h5>
 							@if(!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
-								<a href="{{ auth()->user()->role == 'SuperAdmin' ? route('student-receivables.create') : route('school-student-receivables.create', $school) }}" class="btn btn-primary" title="Tambah Penerimaan">
-									<span class="d-lg-block d-none">Tambah Penerimaan</span>
-									<span class="d-sm-block d-lg-none">
-										<i class="bi bi-plus"></i>
-									</span>
-								</a>
+								<div class="d-flex gap-2">
+									<a href="{{ auth()->user()->role == 'SuperAdmin' ? route('student-receivables.create') : route('school-student-receivables.create', $school) }}" class="btn btn-primary" title="Tambah Penerimaan">
+										<span class="d-lg-block d-none">Tambah Penerimaan</span>
+										<span class="d-sm-block d-lg-none">
+											<i class="bi bi-plus"></i>
+										</span>
+									</a>
+									@if(auth()->user()->role == 'SchoolAdmin')
+										<button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#importModal" title="Import Pembayaran">
+											<span class="d-lg-block d-none">Import Pembayaran</span>
+											<span class="d-sm-block d-lg-none">
+												<i class="bi bi-upload"></i>
+											</span>
+										</button>
+									@endif
+								</div>
 							@endif
 						</div>
 					</div>
@@ -249,6 +259,78 @@
 			</div>
 		</div>
 	</div>
+
+	<!-- Import Modal -->
+	<div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Import Piutang Siswa</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<form id="importForm" method="POST" enctype="multipart/form-data">
+					@csrf
+					<div class="modal-body">
+						<div class="mb-3">
+							<label for="importFile" class="form-label">Pilih File Excel</label>
+							<div class="input-group">
+								<input type="file" class="form-control" id="importFile" name="file" accept=".xlsx,.xls" required>
+								@if(auth()->user()->role == 'SchoolAdmin' && isset($school))
+									<a href="{{ asset('templates/template_import_piutang_siswa.xlsx') }}" class="btn btn-outline-secondary" title="Download Template" target="_blank" rel="noopener">
+										<i class="bi bi-download"></i> Template
+									</a>
+								@endif
+							</div>
+							<small class="form-text text-muted">Format yang didukung: Excel (.xlsx, .xls)</small>
+						</div>
+						<div class="alert alert-info" role="alert">
+							<strong>Format File:</strong>
+							<table class="table table-sm mb-0 mt-2">
+								<thead>
+									<tr>
+										<th>Kolom</th>
+										<th>Nama</th>
+										<th>Contoh</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td>1</td>
+										<td>Nomor Induk Siswa</td>
+										<td>001234</td>
+									</tr>
+									<tr>
+										<td>2</td>
+										<td>Kode Akun Piutang</td>
+										<td>1-120001-1</td>
+									</tr>
+									<tr>
+										<td>3</td>
+										<td>Kode Akun Pendapatan</td>
+										<td>4-120001-1</td>
+									</tr>
+									<tr>
+										<td>4</td>
+										<td>Jumlah Piutang</td>
+										<td>500000</td>
+									</tr>
+									<tr>
+										<td>5</td>
+										<td>Deskripsi (Opsional)</td>
+										<td>SPP November 2025</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+						<button type="submit" class="btn btn-primary">Import</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
 @endsection
 @section('js')
 	<script>
@@ -265,9 +347,40 @@
 			if (school) {
 				getStudent(school, @json($studentId))
 			} else {
-				$('#studentFilter').select2();
+				$('#studentFilter').select2(); 
 				$('#studentFilter').prop("disabled", true);
 			}
+
+			// Handle Import Form
+			$('#importForm').on('submit', function(e) {
+				e.preventDefault();
+				const formData = new FormData(this);
+				const school = $('#schoolAdmin').val() || @json($school->id ?? null);
+				const url = '/schools/' + school + '/student-receivables/import';
+				
+				$.ajax({
+					type: 'POST',
+					url: url,
+					data: formData,
+					processData: false,
+					contentType: false,
+					headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+					success: function(response) {
+						$('#importModal').modal('hide');
+						$('#importForm')[0].reset();
+						setTimeout(() => {
+							location.reload();
+						}, 1000);
+					},
+					error: function(xhr) {
+						let message = 'Terjadi kesalahan saat import file';
+						if (xhr.responseJSON && xhr.responseJSON.message) {
+							message = xhr.responseJSON.message;
+						}
+						alert(message);
+					}
+				});
+			});
 
 			function getStudent(school, single) {
 				$('#studentFilter').select2();

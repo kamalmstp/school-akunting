@@ -348,12 +348,32 @@
         $(document).ready(function () {
             let piutangIndex = 1;
 
+            // Fungsi untuk set tanggal jatuh tempo ke tanggal 10 bulan berjalan
+            function setDefaultDueDate(input) {
+                const today = new Date();
+                const currentMonth = today.getMonth();
+                const currentYear = today.getFullYear();
+                const dueDate = new Date(currentYear, currentMonth, 10);
+                
+                // Jika tanggal 10 sudah lewat, set ke tanggal 10 bulan depan
+                if (today.getDate() > 10) {
+                    dueDate.setMonth(currentMonth + 1);
+                }
+                
+                const year = dueDate.getFullYear();
+                const month = String(dueDate.getMonth() + 1).padStart(2, '0');
+                const day = String(dueDate.getDate()).padStart(2, '0');
+                $(input).val(`${year}-${month}-${day}`);
+            }
+
             $('#add-piutang').click(function () {
                 piutangIndex++;
                 let newPiutang = $('.piutang-item:first').clone();
                 newPiutang.find('input, select').val('');
                 newPiutang.find('h6').text('Piutang #' + piutangIndex);
                 newPiutang.find('.remove-piutang').show();
+                // Set default due date untuk field baru
+                setDefaultDueDate(newPiutang.find('input[name="due_date[]"]'));
                 $('#piutang-container').append(newPiutang);
             });
 
@@ -364,6 +384,9 @@
                     $(this).find('h6').text('Piutang #' + (i + 1));
                 });
             });
+
+            // Set default due date untuk piutang item pertama saat page load
+            setDefaultDueDate('input[name="due_date[]"]:first');
 
             // Format angka otomatis
             $(document).on('input', '.angka', function () {
