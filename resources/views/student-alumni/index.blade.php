@@ -130,49 +130,68 @@
 										@endif
                                         <th scope="col">Alumni</th>
                                         <th scope="col">Siswa</th>
-                                        <th scope="col">Akun</th>
-                                        <th scope="col" class="text-end">Jumlah</th>
-                                        <th scope="col" class="text-end">Terbayar</th>
-                                        <th scope="col" class="text-center">Status</th>
-                                        <th scope="col" class="text-center">Jatuh Tempo</th>
+										<th scope="col" class="text-end">Total Tagihan</th>
+										<th scope="col" class="text-end">Terbayar</th>
+										<th scope="col" class="text-end">Outstanding</th>
+										<th scope="col" class="text-center">Status</th>
+										<th scope="col" class="text-center">Aksi</th>
 									</tr>
 								</thead>
 								<tbody>
 									@forelse($students as $index => $student)
-										@php $rowSpan = max(count($student->receivables), 1); @endphp
-									    @if(count($student->receivables))
-									        @foreach($student->receivables as $i => $receivable)
-									            <tr>
-									                @if($i == 0)
-									                    <td rowspan="{{ $rowSpan }}">{{ $students->currentPage() * 10 - (9 - $index) }}</td>
-									                    @if (auth()->user()->role != 'SchoolAdmin')
-											            <td rowspan="{{ $rowSpan }}">{{ $schools[$student->school_id] ?? '-' }}</td>
-											            @endif
-									                    <td rowspan="{{ $rowSpan }}">{{ $student->year }}</td>
-									                    <td rowspan="{{ $rowSpan }}">{{ $student->name }} ({{ $student->student_id_number }})</td>
-									                @endif
-									                <td>{{ $receivable->account->code }} - {{ $receivable->account->name }}</td>
-									                <td class="text-end">{{ number_format($receivable->total_payable, 0, ',', '.') }}</td>
-									                <td class="text-end">{{ number_format($receivable->paid_amount, 0, ',', '.') }}</td>
-									                <td class="text-center">
-									                    <span class="badge bg-{{ $receivable->status === 'Paid' ? 'success' : ($receivable->status === 'Partial' ? 'warning' : 'danger') }}">
-									                        {{ $receivable->status }}
-									                    </span>
-									                </td>
-									                <td class="text-center">{{ \Carbon\Carbon::parse($receivable->due_date)->format('d-m-Y') }}</td>
-									            </tr>
-									        @endforeach
-									    @else
-									        <tr>
-									            <td>{{ $students->currentPage() * 10 - (9 - $index) }}</td>
-									            @if (auth()->user()->role != 'SchoolAdmin')
-									            <td>{{ $schools[$student->school_id] ?? '-' }}</td>
-									            @endif
-									            <td>{{ $student->year }}</td>
-									            <td>{{ $student->name }} ({{ $student->student_id_number }})</td>
-									            <td colspan="5" class="text-center">Tidak ada piutang</td>
-									        </tr>
-									    @endif
+										<tr>
+											<td>{{ $students->currentPage() * 10 - (9 - $index) }}</td>
+											@if (auth()->user()->role != 'SchoolAdmin')
+											<td>{{ $schools[$student->school_id] ?? '-' }}</td>
+											@endif
+											<td>{{ $student->year }}</td>
+											<td>{{ $student->name }} ({{ $student->student_id_number }})</td>
+											@php 
+												$totalPayable = $student->receivables_sum_total_payable ?? 0;
+												$totalPaid = $student->receivables_sum_paid_amount ?? 0;
+												$outstanding = $totalPayable - $totalPaid;
+											@endphp
+											<td class="text-end">{{ number_format($totalPayable, 0, ',', '.') }}</td>
+											<td class="text-end">{{ number_format($totalPaid, 0, ',', '.') }}</td>
+											<td class="text-end">{{ number_format($outstanding, 0, ',', '.') }}</td>
+										<td class="text-center">
+											@if($outstanding <= 0)
+												<span class="badge bg-success">Lunas</span>
+											@else
+												<span class="badge bg-danger">Tertunggak</span>
+											@endif
+										</td>
+										<td class="text-center">
+											@if($outstanding <= 0)
+												<!-- Button untuk student lunas (ijazah) -->
+												<button class="btn btn-sm btn-certificate" 
+													data-student-id="{{ $student->id }}" 
+													data-student-name="{{ $student->name }}"
+													data-certificate-status="{{ $student->certificate_status }}"
+													@if (auth()->user()->role == 'SchoolAdmin')
+														data-school-id="{{ $school->id }}"
+													@endif>
+													@if($student->certificate_status === 'taken')
+														<i class="bi bi-check-circle-fill"></i> Sudah Diambil
+													@else
+														<i class="bi bi-circle"></i> Belum Diambil
+													@endif
+												</button>
+											@else
+												<!-- Info tertunggak -->
+												<span class="text-danger">
+													<i class="bi bi-exclamation-circle"></i> Tertunggak
+												</span>
+											@endif
+										</td>
+										<td class="text-center">
+											@if (auth()->user()->role == 'SchoolAdmin')
+												<a href="{{ route('school-student-receivables.index', $school) }}?student_id={{ $student->id }}" class="btn btn-sm btn-outline-primary">Lihat Rincian</a>
+											@else
+												<a href="{{ route('student-receivables.index') }}?student_id={{ $student->id }}" class="btn btn-sm btn-outline-primary">Lihat Rincian</a>
+											@endif
+										</td>
+										</tr>
 									@empty
 										<tr>
 											<td colspan="9">Tidak ada siswa ditemukan</td>
@@ -203,9 +222,45 @@
 			</div>
 		</div>
 	</div>
+
+	<!-- Certificate Status Modal -->
+	<div class="modal fade" id="certificateModal" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title">Status Pengambilan Ijazah</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+				</div>
+				<div class="modal-body">
+					<p>Nama Siswa: <strong id="modalStudentName"></strong></p>
+					<div class="alert alert-info">
+						Pilih status pengambilan ijazah untuk siswa ini:
+					</div>
+					<div class="btn-group w-100" role="group">
+						<input type="radio" class="btn-check" name="certificateStatus" id="notTaken" value="not_taken" autocomplete="off">
+						<label class="btn btn-outline-danger w-50" for="notTaken">
+							<i class="bi bi-circle"></i> Belum Diambil
+						</label>
+
+						<input type="radio" class="btn-check" name="certificateStatus" id="taken" value="taken" autocomplete="off">
+						<label class="btn btn-outline-success w-50" for="taken">
+							<i class="bi bi-check-circle-fill"></i> Sudah Diambil
+						</label>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+					<button type="button" class="btn btn-primary" id="saveCertificateBtn">Simpan</button>
+				</div>
+			</div>
+		</div>
+	</div>
 @endsection
 @section('js')
 	<script>
+		let currentStudentId = null;
+		let currentSchoolId = @json(auth()->user()->role == 'SchoolAdmin' ? $school->id : null);
+
 		$(document).ready(function(){
 			const school = $('#schoolAdmin').val() || @json($school);
 			if (@json(auth()->user()->role) != 'SchoolAdmin') {
@@ -277,6 +332,70 @@
 					$('#studentFilter').prop("disabled", true);
 				}
 			}
+
+			// Certificate Status Button Handler
+			$(document).on('click', '.btn-certificate', function() {
+				currentStudentId = $(this).data('student-id');
+				const studentName = $(this).data('student-name');
+				const status = $(this).data('certificate-status');
+				
+				$('#modalStudentName').text(studentName);
+				
+				// Set radio button
+				$('input[name="certificateStatus"][value="' + status + '"]').prop('checked', true);
+				
+				const certificateModal = new bootstrap.Modal(document.getElementById('certificateModal'));
+				certificateModal.show();
+			});
+
+			// Save Certificate Status
+			$('#saveCertificateBtn').click(function() {
+				const status = $('input[name="certificateStatus"]:checked').val();
+				
+				if (!status) {
+					alert('Pilih status terlebih dahulu');
+					return;
+				}
+
+				const url = currentSchoolId 
+					? `/schools/${currentSchoolId}/student-alumni/${currentStudentId}/certificate-status`
+					: `/schools/1/student-alumni/${currentStudentId}/certificate-status`; // default untuk superadmin
+
+				$.ajax({
+					type: 'POST',
+					url: url,
+					data: {
+						certificate_status: status,
+						_token: $('meta[name="csrf-token"]').attr('content')
+					},
+					success: function(response) {
+						// Update button UI
+						const btn = $(`button[data-student-id="${currentStudentId}"]`);
+						if (status === 'taken') {
+							btn.html('<i class="bi bi-check-circle-fill"></i> Sudah Diambil');
+							btn.removeClass('btn-outline-danger').addClass('btn-outline-success');
+						} else {
+							btn.html('<i class="bi bi-circle"></i> Belum Diambil');
+							btn.removeClass('btn-outline-success').addClass('btn-outline-danger');
+						}
+						btn.data('certificate-status', status);
+
+						// Close modal and show success
+						const certificateModal = bootstrap.Modal.getInstance(document.getElementById('certificateModal'));
+						certificateModal.hide();
+						
+						const successAlert = $('<div class="alert alert-success alert-dismissible fade show" role="alert">' +
+							'Status ijazah berhasil diperbarui' +
+							'<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+							'</div>');
+						$('.card-body').prepend(successAlert);
+						setTimeout(() => successAlert.fadeOut(() => successAlert.remove()), 3000);
+					},
+					error: function(xhr) {
+						alert('Terjadi kesalahan: ' + (xhr.responseJSON?.message || 'Gagal memperbarui status'));
+					}
+				});
+			});
 		})
 	</script>
 @endsection

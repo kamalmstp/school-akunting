@@ -45,7 +45,10 @@ class StudentAlumniController extends Controller
                 ->when($studentId, fn($q) => $q->where('id', $studentId))
                 ->when($year, fn($q) => $q->where('year', $year))
                 ->when($school, fn($q) => $q->where('school_id', $school))
+                ->where('is_alumni', 1)
                 ->whereNotNull('year')
+                ->withSum('receivables', 'total_payable')
+                ->withSum('receivables', 'paid_amount')
                 ->orderBy('updated_at', 'desc')
                 ->paginate(10)
                 ->withQueryString();
@@ -67,7 +70,10 @@ class StudentAlumniController extends Controller
             ->where('school_id', $school->id)
             ->when($studentId, fn($q) => $q->where('id', $studentId))
             ->when($year, fn($q) => $q->where('year', $year))
+            ->where('is_alumni', 1)
             ->whereNotNull('year')
+            ->withSum('receivables', 'total_payable')
+            ->withSum('receivables', 'paid_amount')
             ->orderBy('updated_at', 'desc')
             ->paginate(10)
             ->withQueryString();
@@ -77,13 +83,39 @@ class StudentAlumniController extends Controller
 
     public function getStudent(Request $request)
     {
-        $students = Student::where('school_id', $request->school)->whereNotNull('year')->get();
+        $students = Student::where('school_id', $request->school)->where('is_alumni', 1)->whereNotNull('year')->get();
         return response()->json($students, 200);
     }
 
     public function getYear(Request $request)
     {
-        $students = Student::select('year')->where('school_id', $request->school)->whereNotNull('year')->groupBy('year')->orderBy('year', 'asc')->get();
+        $students = Student::select('year')->where('school_id', $request->school)->where('is_alumni', 1)->whereNotNull('year')->groupBy('year')->orderBy('year', 'asc')->get();
         return response()->json($students, 200);
+    }
+
+    public function updateCertificateStatus(Request $request, School $school, Student $student)
+    {
+        $user = auth()->user();
+        
+        // Validasi akses
+        if (($user->role !== 'SuperAdmin' && $user->school_id !== $school->id) || $student->school_id !== $school->id) {
+            abort(403, 'Unauthorized access to this school or student.');
+        }
+
+        // Validasi input
+        $request->validate([
+            'certificate_status' => 'required|in:taken,not_taken'
+        ]);
+
+        // Update status
+        $student->update([
+            'certificate_status' => $request->certificate_status
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Status ijazah berhasil diperbarui',
+            'certificate_status' => $student->certificate_status
+        ]);
     }
 }

@@ -216,6 +216,7 @@ Route::middleware(['auth'])->group(function () {
         Route::post('student-receivables/student/filter', [StudentReceivableController::class, 'getStudent'])->name('student-receivables.filter');
         Route::post('student-alumni/student/filter', [StudentAlumniController::class, 'getStudent'])->name('student-alumni.filter');
         Route::post('student-alumni/year/filter', [StudentAlumniController::class, 'getYear']);
+        Route::post('schools/{school}/student-alumni/{student}/certificate-status', [StudentAlumniController::class, 'updateCertificateStatus'])->name('student-alumni.update-certificate');
         Route::post('student-receivables/payment-history/filter', [StudentReceivableController::class, 'getPaymentHistory']);
         Route::post('teacher-receivables/payment-history/filter', [TeacherReceivableController::class, 'getPaymentHistory']);
         Route::post('employee-receivables/payment-history/filter', [EmployeeReceivableController::class, 'getPaymentHistory']);
