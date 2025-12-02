@@ -90,6 +90,8 @@ class StudentController extends Controller
             'phone' => 'required|max:13',
             'class' => 'required|string|max:50',
             'is_active' => 'boolean',
+            'is_alumni' => 'required|in:0,1',
+            'graduation_year' => 'nullable|integer|min:2000|max:' . date('Y'),
         ];
 
         $messages = [
@@ -109,7 +111,12 @@ class StudentController extends Controller
             'name.required' => 'Nama siswa wajib diisi',
             'phone.required' => 'Telepon siswa wajib diisi',
             'phone.max' => 'Telepon siswa maksimal 13 angka',
-            'class.required' => 'Kelas siswa wajib diisi'
+            'class.required' => 'Kelas siswa wajib diisi',
+            'is_alumni.required' => 'Kategori wajib dipilih',
+            'is_alumni.in' => 'Kategori tidak valid',
+            'graduation_year.integer' => 'Tahun Lulus harus berupa angka',
+            'graduation_year.min' => 'Tahun Lulus minimal 2000',
+            'graduation_year.max' => 'Tahun Lulus tidak boleh melebihi tahun saat ini'
         ];
 
         if (auth()->user()->role == 'SuperAdmin' && !isset($request->school_id)) {
@@ -137,6 +144,8 @@ class StudentController extends Controller
             'address' => $request->address,
             'class' => $request->class,
             'is_active' => $request->is_active ?? true,
+            'is_alumni' => $request->is_alumni,
+            'graduation_year' => $request->graduation_year,
         ]);
 
         $route = back();
@@ -186,6 +195,8 @@ class StudentController extends Controller
             'phone' => 'required|max:13',
             'class' => 'required|string|max:50',
             'is_active' => 'boolean',
+            'is_alumni' => 'required|in:0,1',
+            'graduation_year' => 'nullable|integer|min:2000|max:' . date('Y'),
         ], [
             'student_id_number.required' => 'NIS wajib diisi',
             'student_id_number.max' => 'NIS maksimal 20 digit',
@@ -203,7 +214,12 @@ class StudentController extends Controller
             'phone.required' => 'Telepon siswa wajib diisi',
             'phone.max' => 'Telepon siswa maksimal 13 angka',
             'name.required' => 'Nama siswa wajib diisi',
-            'class.required' => 'Kelas siswa wajib diisi'
+            'class.required' => 'Kelas siswa wajib diisi',
+            'is_alumni.required' => 'Kategori wajib dipilih',
+            'is_alumni.in' => 'Kategori tidak valid',
+            'graduation_year.integer' => 'Tahun Lulus harus berupa angka',
+            'graduation_year.min' => 'Tahun Lulus minimal 2000',
+            'graduation_year.max' => 'Tahun Lulus tidak boleh melebihi tahun saat ini'
         ]);
 
         if ($validator->fails()) {
@@ -223,6 +239,8 @@ class StudentController extends Controller
             'address' => $request->address,
             'class' => $request->class,
             'is_active' => $request->is_active ?? true,
+            'is_alumni' => $request->is_alumni,
+            'graduation_year' => $request->graduation_year,
         ]);
 
         $route = back();

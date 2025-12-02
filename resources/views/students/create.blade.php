@@ -212,6 +212,34 @@
                                                 <!-- Form group end -->
                                             </div>
                                         </div>
+                                        <div class="row gx-3">
+                                            <div class="col-sm-6 col-12">
+                                                <!-- Form group start -->
+                                                <div class="mb-3">
+                                                    <label for="is_alumni" class="form-label">Kategori</label>
+                                                    <select class="form-select @error('is_alumni') is-invalid @enderror" id="is_alumni" name="is_alumni">
+                                                        <option value="">Pilih Kategori</option>
+                                                        <option value="0" {{ old('is_alumni') == 0 ? 'selected' : '' }}>Peserta Didik</option>
+                                                        <option value="1" {{ old('is_alumni') == 1 ? 'selected' : '' }}>Alumni</option>
+                                                    </select>
+                                                    @error('is_alumni')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <!-- Form group end -->
+                                            </div>
+                                            <div class="col-sm-6 col-12">
+                                                <!-- Form group start -->
+                                                <div class="mb-3">
+                                                    <label for="graduation_year" class="form-label">Tahun Lulus</label>
+                                                    <input type="number" class="form-control @error('graduation_year') is-invalid @enderror" id="graduation_year" name="graduation_year" value="{{ old('graduation_year') }}" min="2000" max="{{ date('Y') }}">
+                                                    @error('graduation_year')
+                                                        <div class="invalid-feedback">{{ $message }}</div>
+                                                    @enderror
+                                                </div>
+                                                <!-- Form group end -->
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -237,6 +265,7 @@
     <script>
         $(document).ready(function() {
             $('#is_active').select2();
+            $('#is_alumni').select2();
             $('#class').select2();
             if(@json(auth()->user()->role == 'SuperAdmin')) {
                 $('#school_id').select2();
