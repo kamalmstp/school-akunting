@@ -116,10 +116,20 @@ class TransactionController extends Controller
     {
         $user = auth()->user();
 
-        $accounts = Account::where('account_type', $request->accountType)
-            ->whereNotNull('parent_id')
-            ->where('school_id', '=', $user->school_id)
-            ->get();
+        $schoolId = $request->school ?: $user->school_id;
+
+        if (!$schoolId) {
+            // For SuperAdmin without school selected, get distinct accounts by accountType from all schools
+            $accounts = Account::where('account_type', $request->accountType)
+                ->whereNotNull('parent_id')
+                ->distinct('code')
+                ->get();
+        } else {
+            $accounts = Account::where('account_type', $request->accountType)
+                ->whereNotNull('parent_id')
+                ->where('school_id', '=', $schoolId)
+                ->get();
+        }
         return response()->json($accounts, 200);
     }
 
@@ -128,6 +138,24 @@ class TransactionController extends Controller
         $funds = FundManagement::where('school_id', $request->school_id)
             ->get();
         return response()->json($funds, 200);
+    }
+
+    public function getAccountTypes(Request $request)
+    {
+        $user = auth()->user();
+        $schoolId = $request->school ?: $user->school_id;
+
+        if (!$schoolId) {
+            // For SuperAdmin without school selected, get all account types
+            $accountTypes = Account::whereNull('parent_id')
+                ->distinct('name')
+                ->pluck('name', 'id');
+        } else {
+            $accountTypes = Account::whereNull('parent_id')
+                ->where('school_id', $schoolId)
+                ->pluck('name', 'id');
+        }
+        return response()->json($accountTypes, 200);
     }
 
     /**

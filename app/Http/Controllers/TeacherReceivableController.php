@@ -25,6 +25,7 @@ class TeacherReceivableController extends Controller
      */
     public function index(Request $request, School $school = null)
     {
+        try {
         $user     = auth()->user();
         $account  = $request->get('account');
         $dueDate  = $request->get('date') ? Carbon::parse($request->get('date'))->format('Y-m-d') : null;
@@ -33,7 +34,12 @@ class TeacherReceivableController extends Controller
 
         // SuperAdmin: bisa lihat semua sekolah
         if ($user->role !== 'SchoolAdmin') {
-            $schools  = School::pluck('name', 'id');
+            try {
+                $schools  = School::all()->pluck('name', 'id');
+            } catch (\Exception $e) {
+                Log::error('Error in School query', ['error' => $e->getMessage()]);
+                abort(500, 'Error loading schools: ' . $e->getMessage());
+            }
             $schoolId = $request->get('school');
             $schoolVar = $schoolId ? School::find($schoolId) : null;
 
@@ -83,8 +89,8 @@ class TeacherReceivableController extends Controller
             ->where('is_active', true)
             ->first();
 
-        $receivables = TeacherReceivable::where('school_id', $schoolId)
-            ->with(['teacher', 'account'])
+        $receivables = TeacherReceivable::with(['teacher', 'account','school'])
+            ->where('school_id', $schoolId)
             ->when($teacherId, fn($q) => $q->where('teacher_id', $teacherId))
             ->when($account, fn($q) => $q->where('account_id', $account))
             ->when($dueDate, fn($q) => $q->where('due_date', $dueDate))
@@ -106,6 +112,10 @@ class TeacherReceivableController extends Controller
             'status'      => $status,
             'teacherId'   => $teacherId,
         ]);
+        } catch (\Exception $e) {
+            Log::error('Error in teacher receivable index', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            abort(500, 'Internal Server Error: ' . $e->getMessage());
+        }
     }
 
 
@@ -113,6 +123,16 @@ class TeacherReceivableController extends Controller
     {
         $teachers = Teacher::where('school_id', $request->school)->get();
         return response()->json($teachers, 200);
+    }
+
+    public function getAccount(Request $request)
+    {
+        $schoolId = $request->school;
+        $accounts = Account::where('school_id', $schoolId)
+            ->where('account_type', 'Aset Lancar')
+            ->where('code', 'like', '1-12%')
+            ->get();
+        return view('partials.account-options', compact('accounts'))->render();
     }
 
     public function getReceivableDetail($receivableId)
@@ -267,6 +287,7 @@ class TeacherReceivableController extends Controller
             })
             ->where('account_type', 'Aset Lancar')
             ->where('code', 'like', '1-12%')
+            ->distinct()
             ->get();
         $transaction = Transaction::where([
             ['reference_id', '=', $teacher_receivable->id],

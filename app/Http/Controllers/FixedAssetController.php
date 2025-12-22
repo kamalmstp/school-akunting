@@ -442,4 +442,22 @@ class FixedAssetController extends Controller
 
         return $route->with('success', 'Penyusutan berhasil dicatat.');
     }
+
+    public function getAccounts(Request $request)
+    {
+        $user = auth()->user();
+        $schoolId = $request->school ?: $user->school_id;
+
+        if (!$schoolId) {
+            $accounts = Account::where('account_type', 'Aset Tetap')
+                ->where('name', 'not like', '%akumulasi%')
+                ->get();
+        } else {
+            $accounts = Account::where('account_type', 'Aset Tetap')
+                ->where('name', 'not like', '%akumulasi%')
+                ->where('school_id', $schoolId)
+                ->get();
+        }
+        return response()->json($accounts, 200);
+    }
 }

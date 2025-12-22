@@ -36,9 +36,15 @@
                                         <label for="accountType" class="form-label">Tipe Akun</label>
                                         <select name="account_type" class="form-select" id="accountType">
                                             <option value="">Pilih Tipe Akun</option>
-                                            @foreach (\App\Models\Account::whereNull('parent_id')->pluck('name', 'id') as $key => $type)
-                                                <option value="{{ $type }}" {{ $accountType == $type ? 'selected' : '' }}>{{ $type }}</option>
-                                            @endforeach
+                                            @if($school)
+                                                @foreach (\App\Models\Account::whereNull('parent_id')->where('school_id', $school->id)->pluck('name', 'id') as $key => $type)
+                                                    <option value="{{ $type }}" {{ $accountType == $type ? 'selected' : '' }}>{{ $type }}</option>
+                                                @endforeach
+                                            @else
+                                                @foreach (\App\Models\Account::whereNull('parent_id')->distinct('name')->pluck('name') as $type)
+                                                    <option value="{{ $type }}" {{ $accountType == $type ? 'selected' : '' }}>{{ $type }}</option>
+                                                @endforeach
+                                            @endif
                                         </select>
                                     </div>
                                 </div>
@@ -243,7 +249,7 @@
                         url:'/transactions/account-parent',
                         data: {school, accountType},
                         dataType: 'json',
-                        headers: {'X-CSRF-TOKEN': $('meta[name="csrf-csrf-token"]').attr('content')},
+                        headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
                         success:function(data){
                             let options = '<option value="">Pilih Akun</option>';
                             $.each(data, function(key, value) {

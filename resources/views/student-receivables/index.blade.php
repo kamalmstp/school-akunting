@@ -61,9 +61,11 @@
 													<option value="{{ $accountData->id }}" {{ $account == $accountData->id ? 'selected' : '' }}>{{ $accountData->code }} - {{ $accountData->name }}</option>
 												@endforeach
 											@else
-												@foreach (\App\Models\Account::where('code', 'like', '1-12%')->get() as $key => $accountData)
-													<option value="{{ $accountData->id }}" {{ $account == $accountData->id ? 'selected' : '' }}>{{ $accountData->code }} - {{ $accountData->name }}</option>
-												@endforeach
+												@if($schoolId)
+													@foreach (\App\Models\Account::where('code', 'like', '1-12%')->where('school_id', $schoolId)->get() as $key => $accountData)
+														<option value="{{ $accountData->id }}" {{ $account == $accountData->id ? 'selected' : '' }}>{{ $accountData->code }} - {{ $accountData->name }}</option>
+													@endforeach
+												@endif
 											@endif
 										</select>
 									</div>
@@ -155,13 +157,13 @@
 									@forelse($receivables as $index => $receivable)
                                         <tr>
 											<td>{{ $receivables->currentPage() * 10 - (9 - $index) }}</td>
-                                            @if (auth()->user()->role != 'SchoolAdmin')<td>{{ $receivable->school->name }}</td>@endif
+                                            @if (auth()->user()->role != 'SchoolAdmin')<td>{{ $receivable->school ? $receivable->school->name : 'N/A' }}</td>@endif
                                             <td>
 												<a href="javascript:void;" class="text-decoration-none" data-bs-toggle="collapse" data-bs-target="#details{{ $receivable->id }}">
-													{{ $receivable->student->name }} ({{ $receivable->student->student_id_number }})
+													{{ $receivable->student ? $receivable->student->name : 'N/A' }} ({{ $receivable->student ? $receivable->student->student_id_number : 'N/A' }})
 												</a>
 											</td>
-                                            <td>{{ $receivable->account->code }} - {{ $receivable->account->name }}</td>
+                                            <td>{{ $receivable->account ? $receivable->account->code . ' - ' . $receivable->account->name : 'N/A' }}</td>
                                             <td class="text-end">{{ number_format($receivable->total_payable, 0, ',', '.') }}</td>
                                             <td class="text-end">{{ number_format($receivable->paid_amount, 0, ',', '.') }}</td>
                                             <td class="text-center">
@@ -172,17 +174,23 @@
                                             <td class="text-center">{{ $receivable->due_date ? \Carbon\Carbon::parse($receivable->due_date)->format('d-m-Y') : '-' }}</td>
                                             @if (!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
                                                 <td class="text-center">
-                                                    @if($receivable->status !== 'Paid')
+                                                    @if($receivable->status !== 'Paid' && $receivable->school)
                                                         <a href="{{ route('school-student-receivables.pay', [$receivable->school, $receivable]) }}" class="btn btn-sm btn-success">Bayar</a>
 													@else
-														<a href="{{ route('school-student-receivables.receipt-all', [$receivable->school, $receivable]) }}" class="btn btn-sm btn-primary">Kwitansi</a>
+														@if($receivable->school)
+															<a href="{{ route('school-student-receivables.receipt-all', [$receivable->school, $receivable]) }}" class="btn btn-sm btn-primary">Kwitansi</a>
+														@endif
                                                     @endif
-                                                    <a href="{{ route('school-student-receivables.edit', [$receivable->school, $receivable]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
-                                                    <form action="{{ route('school-student-receivables.destroy', [$receivable->school, $receivable]) }}" method="POST" style="display:inline;">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus Piutang ini?')">Hapus</button>
-                                                    </form>
+                                                    @if($receivable->school)
+														<a href="{{ route('school-student-receivables.edit', [$receivable->school, $receivable]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+                                                    @endif
+                                                    @if($receivable->school)
+														<form action="{{ route('school-student-receivables.destroy', [$receivable->school, $receivable]) }}" method="POST" style="display:inline;">
+															@csrf
+															@method('DELETE')
+															<button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Yakin ingin menghapus Piutang ini?')">Hapus</button>
+														</form>
+													@endif
                                                 </td> 
                                             @endif
                                         </tr>
@@ -208,8 +216,10 @@
 																<td>{{ $detail->reason ?? '-' }}</td>
 																@if (!in_array(auth()->user()->role, ['AdminMonitor', 'Pengawas']))
 																<td class="text-center">
-																	<a href="{{ route('school-student-receivables.receipt', [$receivable->school, $detail]) }}" class="btn btn-sm btn-info">Kwitansi</a>
-																	<a href="{{ route('school-student-receivables.edit-pay', [$receivable->school, $detail]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+																	@if($receivable->school)
+																		<a href="{{ route('school-student-receivables.receipt', [$receivable->school, $detail]) }}" class="btn btn-sm btn-info">Kwitansi</a>
+																		<a href="{{ route('school-student-receivables.edit-pay', [$receivable->school, $detail]) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+																	@endif
 																	<a href="https://wa.me/{{ preg_replace('/^0/', '62', $receivable->student->phone) }}?text=halo%2C%20berikut%20kami%20sampaikan%20kwitansi%20pembayaran%20bpk%2Fibu" class="btn btn-sm btn-outline-success" target="_blank" title="Kirim WhatsApp">WA</a>
 																</td>
 																@endif
@@ -335,17 +345,19 @@
 @section('js')
 	<script>
 		$(document).ready(function(){
-			const school = $('#schoolAdmin').val() || @json($school);
+			const school = $('#schoolAdmin').val() || @json($school ? $school->id : null);
 			if (@json(auth()->user()->role) != 'SchoolAdmin') {
 				$('#schoolFilter').select2();
 				$('#schoolFilter').on('change', function () {
 					getStudent($(this).val(), @json($studentId));
+					getAccount($(this).val(), @json($account));
 				})
 			}
 			$('#accountFilter').select2();
 			$('#statusFilter').select2();
 			if (school) {
 				getStudent(school, @json($studentId))
+				getAccount(school, @json($account))
 			} else {
 				$('#studentFilter').select2(); 
 				$('#studentFilter').prop("disabled", true);
@@ -407,6 +419,33 @@
 					});
 				} else {
 					$('#studentFilter').prop("disabled", true);
+				}
+			}
+
+			function getAccount(school, single) {
+				if (school) {
+					$.ajax({
+						type:'POST',
+						url:'/student-receivables/account/filter',
+						data: {school},
+						dataType: 'json',
+						headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+						success:function(data){
+							let options = '<option value="">Pilih Akun</option>';
+							$.each(data, function(key, value) {
+								if (single && parseInt(single) === value['id']) {
+									options += '<option value=' + value['id'] + ' selected>' + value['code'] + ' - ' + value['name'] + '</option>';
+								} else {
+									options += '<option value=' + value['id'] + '>' + value['code'] + ' - ' + value['name'] + '</option>';
+								}
+							});
+							$('#accountFilter').empty();
+							$('#accountFilter').append(options);	
+						}
+					});
+				} else {
+					$('#accountFilter').empty();
+					$('#accountFilter').append('<option value="">Pilih Akun</option>');
 				}
 			}
 		})

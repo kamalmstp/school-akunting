@@ -62,3 +62,14 @@ Alur Manual:
 - Pertama kali pekerjaan dimulai dari Sales
 - Setelah ACC Masuk ke Technical Support, Demo Ke perusahaan, dan Training. Sekaligus Menghandle ticket dari customer
 - Ketika Tiket masuk, manager menentukan melempar ke Technical Support yang mana.
+
+*Admin Monitor
+[x] Penerimaan Piutang Siswa Kolom Akun muncul berulang
+[x] Piutang Guru & Karyawan tidak bisa diakses
+[x] Piutang Karyawan double juga
+[x] Penerimaan Tunai Bagian Akun tidak muncul atau tidak bisa di pilih
+[x] Buku Besar tipe akun mengulang data yang sama
+[x] Buku Besar List Akun tidak muncul
+[x] Cetak PDF Jurnal Umum tidak bisa
+[x] Cetak buku Besar pdf Error
+

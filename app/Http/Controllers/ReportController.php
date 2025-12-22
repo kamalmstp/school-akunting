@@ -487,7 +487,7 @@ class ReportController extends Controller
 
     public function ledger(Request $request, School $school = null)
     {
-        Log::info('Accessing Ledger', ['request' => $request->all()]);
+        try {
         $user = auth()->user();
         $school = $this->resolveSchool($user, $school);
         $schools = in_array($user->role, ['SuperAdmin', 'AdminMonitor', 'Pengawas']) ? School::all() : collect([$user->school]);
@@ -513,11 +513,9 @@ class ReportController extends Controller
         $accountType = $request->get('account_type');
         $singleAccount = Account::find($account);
         
-        if ($schoolIds->isEmpty() || !$activePeriod) {
-             return view('reports.ledger', compact('school', 'schools', 'startDate', 'endDate', 'accountType', 'account', 'singleAccount'))->with(['accounts' => collect()]);
-        }
-
-        $initialBalances = collect();
+            if ($schoolIds->isEmpty() || !$activePeriod || !$startDate || !$endDate) {
+                 return view('reports.ledger', compact('school', 'schools', 'startDate', 'endDate', 'accountType', 'account', 'singleAccount'))->with(['accounts' => collect()]);
+            }        $initialBalances = collect();
         if ($activePeriod) {
             $initialBalances = InitialBalance::where('school_id', $school->id)
                 ->where('financial_period_id', $activePeriod->id)
@@ -560,12 +558,7 @@ class ReportController extends Controller
             ->when($account, function ($q) use ($account) {
                 $q->where('id', $account);
             })
-            ->orderByRaw("
-                CAST(SUBSTRING_INDEX(code, '-', 1) AS INTEGER),
-                LENGTH(SUBSTRING_INDEX(code, '-', 2)),
-                CAST(SUBSTRING_INDEX(code, '-', 2) AS INTEGER),
-                CAST(COALESCE(SUBSTRING_INDEX(code, '-', 3), '0') AS INTEGER)
-            ")
+            ->orderBy('code')
             ->get()
             ->map(function ($account) use ($startDate, $schoolIds, $paymentDetails, $paymentTeacherDetails, $paymentEmployeeDetails, $activePeriod, $initialBalances, $transactionsBeforeReportStart) {
                 
@@ -617,10 +610,12 @@ class ReportController extends Controller
             return $this->printLedgerPdf($school, $schools, $accounts, $startDate, $endDate, $accountType, $account, $singleAccount);
         }
 
-        return view('reports.ledger', compact('school', 'schools', 'accounts', 'startDate', 'endDate', 'accountType', 'account', 'singleAccount'));
-    }
-
-    protected function printFinancialStatementsPdf($school, $profitLoss, $balanceSheet, $date, $activePeriod)
+            return view('reports.ledger', compact('school', 'schools', 'accounts', 'startDate', 'endDate', 'accountType', 'account', 'singleAccount'));
+        } catch (\Exception $e) {
+            Log::error('Error in ledger method', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            abort(500, 'Internal Server Error: ' . $e->getMessage());
+        }
+    }    protected function printFinancialStatementsPdf($school, $profitLoss, $balanceSheet, $date, $activePeriod)
     {
         Log::info('Printing Financial Statements PDF', ['school_id' => $school?->id ]);
         

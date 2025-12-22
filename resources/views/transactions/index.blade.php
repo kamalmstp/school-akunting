@@ -45,15 +45,6 @@
 										<label for="accountType" class="form-label">Tipe Akun</label>
 										<select name="account_type" class="form-select" id="accountType">
 											<option value="">Pilih Tipe Akun</option>
-											@if(auth()->user()->role == 'SchoolAdmin')
-												@foreach (\App\Models\Account::whereNull('parent_id')->where('school_id', '=', auth()->user()->school_id)->pluck('name', 'id') as $key => $type)
-													<option value="{{ $type }}" {{ $accountType == $type ? 'selected' : '' }}>{{ $type }}</option>
-												@endforeach
-											@else
-												@foreach (\App\Models\Account::whereNull('parent_id')->pluck('name', 'id') as $key => $type)
-													<option value="{{ $type }}" {{ $accountType == $type ? 'selected' : '' }}>{{ $type }}</option>
-												@endforeach
-											@endif
 										</select>
 									</div>
 								</div>
@@ -197,6 +188,34 @@
 				getAccount($(this).val(), null);
 				
 			})
+
+			$(document).on('change', '#schoolFilter', function() {
+				getAccountTypes();
+				$('#accountParent').empty().append('<option value="">Pilih Akun</option>');
+			})
+
+			getAccountTypes();
+
+			function getAccountTypes() {
+				const school = $('#schoolFilter').val() || @json(auth()->user()->school_id);
+				$.ajax({
+					type:'POST',
+					url:'/transactions/account-types',
+					data: {school},
+					dataType: 'json',
+					headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+					success:function(data){
+						let options = '<option value="">Pilih Tipe Akun</option>';
+						let selectedType = @json($accountType);
+						$.each(data, function(key, value) {
+							let selected = (selectedType && selectedType === value) ? ' selected' : '';
+							options += '<option value="' + value + '"' + selected + '>' + value + '</option>';
+						});
+						$('#accountType').empty();
+						$('#accountType').append(options);
+					}
+				});
+			}
 
 			function getAccount(account, single) {
 				const school = $('#schoolFilter').val();

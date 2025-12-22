@@ -214,6 +214,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::middleware(['role:SuperAdmin,SchoolAdmin,AdminMonitor,Pengawas'])->group(function() {
         Route::post('student-receivables/student/filter', [StudentReceivableController::class, 'getStudent'])->name('student-receivables.filter');
+        Route::post('student-receivables/account/filter', [StudentReceivableController::class, 'getAccount'])->name('student-receivables.account.filter');
         Route::post('student-alumni/student/filter', [StudentAlumniController::class, 'getStudent'])->name('student-alumni.filter');
         Route::post('student-alumni/year/filter', [StudentAlumniController::class, 'getYear']);
         Route::post('schools/{school}/student-alumni/{student}/certificate-status', [StudentAlumniController::class, 'updateCertificateStatus'])->name('student-alumni.update-certificate');
@@ -222,8 +223,11 @@ Route::middleware(['auth'])->group(function () {
         Route::post('employee-receivables/payment-history/filter', [EmployeeReceivableController::class, 'getPaymentHistory']);
         Route::post('teacher-receivables/teacher/filter', [TeacherReceivableController::class, 'getTeacher'])->name('teacher-receivables.filter');
         Route::post('employee-receivables/employee/filter', [EmployeeReceivableController::class, 'getEmployee'])->name('employee-receivables.filter');
+        Route::post('teacher-receivables/account/filter', [TeacherReceivableController::class, 'getAccount']);
+        Route::post('employee-receivables/account/filter', [EmployeeReceivableController::class, 'getAccount']);
         Route::post('transactions/account-parent', [TransactionController::class, 'getAccountParent'])->name('transactions.getAccountParent');
         Route::post('transactions/fund-source', [TransactionController::class, 'getFundSource'])->name('transactions.getFundSource');
+        Route::post('transactions/account-types', [TransactionController::class, 'getAccountTypes'])->name('transactions.getAccountTypes');
         Route::get('/users/profile', [UserController::class, 'profile'])->name('users.profile');
         Route::put('/users/profile/{user}', [UserController::class, 'edit_profile'])->name('users.edit-profile');
         Route::post('/users/reset/passsword', [UserController::class, 'resetPassword'])->name('users.resetPassword');
@@ -244,6 +248,7 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/schools/{school}/fixed-assets/{fixed_asset}', [FixedAssetController::class, 'destroy'])->name('school-fixed-assets.destroy');
         Route::get('schools/{school}/fixed-assets/{fixed_asset}/depreciate', [FixedAssetController::class, 'depreciateForm'])->name('school-fixed-assets.depreciate');
         Route::post('schools/{school}/fixed-assets/{fixed_asset}/depreciate', [FixedAssetController::class, 'depreciate']);
+        Route::post('fixed-assets/accounts', [FixedAssetController::class, 'getAccounts'])->name('fixed-assets.getAccounts');
 
         Route::get('/schools/{school}/student-receivables/{student_receivable}', [StudentReceivableController::class, 'show'])->name('school-student-receivables.show');
         Route::get('/schools/{school}/student-receivables/{student_receivable}/edit', [StudentReceivableController::class, 'edit'])->name('school-student-receivables.edit');

@@ -32,7 +32,12 @@ class EmployeeReceivableController extends Controller
         $employeeId = $request->get('employee_id');
 
         if ($user->role !== 'SchoolAdmin') {
-            $schools   = School::pluck('name', 'id');
+            try {
+                $schools  = School::all()->pluck('name', 'id');
+            } catch (\Exception $e) {
+                Log::error('Error in School query', ['error' => $e->getMessage()]);
+                abort(500, 'Error loading schools: ' . $e->getMessage());
+            }
             $schoolId  = $request->get('school');
             $schoolVar = $schoolId ? School::find($schoolId) : null;
 
@@ -75,6 +80,8 @@ class EmployeeReceivableController extends Controller
             abort(403, 'Unauthorized access to this school.');
         }
 
+        $schoolId = $school->id;
+
         // Dapatkan periode aktif untuk sekolah yang sedang login
         $activePeriod = FinancialPeriod::where('school_id', $school->id)
             ->where('is_active', true)
@@ -95,7 +102,7 @@ class EmployeeReceivableController extends Controller
             ->withQueryString();
 
         return view('employee-receivables.index', compact(
-            'receivables', 'school', 'account', 'dueDate', 'status', 'employeeId'
+            'receivables', 'school', 'schoolId', 'account', 'dueDate', 'status', 'employeeId'
         ));
     }
 
@@ -103,6 +110,16 @@ class EmployeeReceivableController extends Controller
     {
         $employees = Employee::where('school_id', $request->school)->get();
         return response()->json($employees, 200);
+    }
+
+    public function getAccount(Request $request)
+    {
+        $schoolId = $request->school;
+        $accounts = Account::where('school_id', $schoolId)
+            ->where('account_type', 'Aset Lancar')
+            ->where('code', 'like', '1-12%')
+            ->get();
+        return view('partials.account-options', compact('accounts'))->render();
     }
 
     public function getReceivableDetail($receivableId)

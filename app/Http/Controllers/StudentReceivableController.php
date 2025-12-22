@@ -1280,4 +1280,14 @@ class StudentReceivableController extends Controller
             return response()->json(['message' => 'Terjadi kesalahan: ' . $e->getMessage()], 500);
         }
     }
+
+    public function getAccount(Request $request)
+    {
+        $schoolId = $request->school;
+        $accounts = Account::where('school_id', $schoolId)
+            ->where('account_type', 'Aset Lancar')
+            ->where('code', 'like', '1-12%')
+            ->get();
+        return response()->json($accounts);
+    }
 }

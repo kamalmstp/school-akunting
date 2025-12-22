@@ -46,15 +46,6 @@
 										<label for="accountFilter" class="form-label">Akun</label>
 										<select name="account" class="form-select" id="accountFilter">
 											<option value="">Pilih Akun</option>
-											@if(auth()->user()->role == 'SchoolAdmin')
-												@foreach (\App\Models\Account::where('account_type', 'Aset Tetap')->where('name', 'not like', '%akumulasi%')->where('school_id', '=', auth()->user()->school_id)->get() as $key => $accountData)
-													<option value="{{ $accountData->id }}" {{ $account == $accountData->id ? 'selected' : '' }}>{{ $accountData->code }} - {{ $accountData->name }}</option>
-												@endforeach
-											@else
-												@foreach (\App\Models\Account::where('account_type', 'Aset Tetap')->where('name', 'not like', '%akumulasi%')->get() as $key => $accountData)
-													<option value="{{ $accountData->id }}" {{ $account == $accountData->id ? 'selected' : '' }}>{{ $accountData->code }} - {{ $accountData->name }}</option>
-												@endforeach
-											@endif
 										</select>
 									</div>
 								</div>
@@ -219,6 +210,33 @@
 				$('#schoolFilter').select2();
 			}
 			$('#accountFilter').select2();
+
+			$(document).on('change', '#schoolFilter', function() {
+				getAccounts();
+			})
+
+			getAccounts();
+
+			function getAccounts() {
+				const school = $('#schoolFilter').val() || @json(auth()->user()->school_id);
+				$.ajax({
+					type:'POST',
+					url:'/fixed-assets/accounts',
+					data: {school},
+					dataType: 'json',
+					headers: {'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')},
+					success:function(data){
+						let options = '<option value="">Pilih Akun</option>';
+						let selectedAccount = @json($account);
+						$.each(data, function(key, value) {
+							let selected = (selectedAccount && selectedAccount == value.id) ? ' selected' : '';
+							options += '<option value="' + value.id + '"' + selected + '>' + value.code + ' - ' + value.name + '</option>';
+						});
+						$('#accountFilter').empty();
+						$('#accountFilter').append(options);
+					}
+				});
+			}
 		})
 	</script>
 @endsection
